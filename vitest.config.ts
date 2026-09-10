@@ -15,6 +15,10 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       include: ["src/lib/**", "src/scrapers/**", "src/middleware.ts", "src/app/api/**", "src/components/**"],
       exclude: [
+        // Vitest 5's v8 provider pulls uncovered files in through `include`, so
+        // src/scrapers/data/README.md reached the parser and logged a RolldownError
+        // before being skipped. Nothing was broken, but the log looked like one.
+        "**/*.md",
         "src/generated/**",
         "src/**/*.test.ts",
         "src/**/*.test.tsx",

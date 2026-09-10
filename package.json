@@ -48,7 +48,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.3",
     "jsdom": "^30.0.1",
@@ -57,7 +57,7 @@
     "tailwindcss": "^4.2.1",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.4"
+    "vitest": "^5.0.0"
   },
   "overrides": {
     "hono": "^4.12.31",
