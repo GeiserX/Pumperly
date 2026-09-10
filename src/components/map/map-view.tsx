@@ -3,6 +3,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map from "react-map-gl/maplibre";
 import type { MapRef, ViewStateChangeEvent } from "react-map-gl/maplibre";
+import { setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { FuelType, StationsGeoJSONCollection } from "@/types/station";
@@ -14,6 +15,18 @@ import { RouteLayer } from "./route-layer";
 import { CountryMarkers } from "./country-markers";
 import { useConvertedStations } from "@/lib/currency";
 import { useTheme } from "@/lib/theme";
+// Serve MapLibre's module worker ourselves. Left to the bundler, the worker is
+// emitted as a static asset whose relative `./maplibre-gl-shared.mjs` import is
+// NOT rewritten to the content-hashed filename, so it 404s, the worker never
+// boots and the map paints only its background — with a green build and no
+// console error loud enough to notice. `public/maplibre/` keeps both files side
+// by side under their original names (see scripts/copy-maplibre-worker.mjs), so
+// the relative import resolves. Module scope, browser-only: it must be set
+// before the first Map mounts, and there is no worker to configure during SSR.
+if (typeof window !== "undefined") {
+  setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
+}
+
 const DEBOUNCE_MS = 100;
 
 const EMPTY_COLLECTION: StationsGeoJSONCollection = {

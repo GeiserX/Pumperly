@@ -4,7 +4,9 @@
   "description": "Open-source energy route planner for fuel and electric vehicles. Self-hostable.",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -27,7 +29,7 @@
     "@prisma/client": "^7.10.0",
     "dotenv": "^17.4.2",
     "json5": "^2.2.3",
-    "maplibre-gl": "^5.24.0",
+    "maplibre-gl": "^6.9.0",
     "next": "^16.3.3",
     "prisma": "^7.10.0",
     "react": "^19.2.8",
