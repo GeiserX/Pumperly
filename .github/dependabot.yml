@@ -27,15 +27,15 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
-      # maplibre-gl v6 broke the map in production: its module-worker resolves a
-      # relative URL that 404s under the [locale] routes, so MapLibre never
-      # initialises (black map) while the rest of the app works. react-map-gl's
-      # peer range is loose (>=1.13.0) so npm accepts it silently, and CI has no
-      # browser test to catch it. Stay on 5.x until a v6-compatible setup is
-      # verified in a real browser.
-      - dependency-name: maplibre-gl
-        update-types:
-          - version-update:semver-major
+      # NOTE: maplibre-gl majors are no longer ignored here. The v6 major used to
+      # blank the map (its ES-module worker asked for a relative chunk that 404s
+      # once the bundler content-hashes it), so majors were pinned out — which
+      # then blocked the only fix for GHSA-jrc7-96c5-q579, since 5.x never got a
+      # backport. We now serve the worker ourselves from public/maplibre/ (see
+      # scripts/copy-maplibre-worker.mjs) and maplibre-worker-assets.test.ts
+      # fails if a release changes which files the worker needs. That test does
+      # NOT prove the map renders: CI still has no browser, so screenshot the
+      # site after deploying any maplibre-gl major.
   - package-ecosystem: docker
     directory: /docker
     schedule:
