@@ -356,7 +356,10 @@ export class BNetzAScraper extends BaseScraper {
    *
    * Both are gated on a DB-counted floor rather than on the `stationsUpserted`
    * the pipeline reports, because that figure is `batch.length` regardless of
-   * what the database actually did.
+   * what the database actually did. The count covers only rows this run
+   * touched: yesterday's 74k rows must not vouch for a degraded fetch that
+   * refreshed 42 of them, or sweep 1 would delete the other 73,958 and sweep 2
+   * would retire OpenChargeMap on the strength of a near-empty file.
    */
   async run(): Promise<ScraperResult> {
     const result = await super.run();
@@ -376,24 +379,29 @@ export class BNetzAScraper extends BaseScraper {
     const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
     const prisma = new PrismaClient({ adapter });
     try {
+      // Cutoff expressed as a duration back from the database clock rather than
+      // as an app-side timestamp, so clock skew between app and DB cannot make
+      // this delete rows that were just written. The same cutoff separates
+      // "refreshed by this run" from "stale" below, so a row is always on
+      // exactly one side of it.
+      const staleSeconds = runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
+
       const counts: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
         `SELECT count(*) FROM stations
          WHERE country = 'DE' AND station_type = 'ev_charger'
-           AND external_id LIKE 'bnetza-%'`,
+           AND external_id LIKE 'bnetza-%'
+           AND updated_at >= NOW() - make_interval(secs => $1::float8)`,
+        staleSeconds,
       );
-      const stored = Number(counts[0]?.count ?? 0);
-      if (stored < MIN_STATIONS) {
+      const refreshed = Number(counts[0]?.count ?? 0);
+      if (refreshed < MIN_STATIONS) {
         console.warn(
-          `[${this.source}] Only ${stored} station(s) stored (floor ${MIN_STATIONS}) — ` +
-            `skipping cleanup`,
+          `[${this.source}] Only ${refreshed} station(s) refreshed by this run ` +
+            `(floor ${MIN_STATIONS}) — skipping cleanup`,
         );
         return;
       }
 
-      // Cutoff expressed as a duration back from the database clock rather than
-      // as an app-side timestamp, so clock skew between app and DB cannot make
-      // this delete rows that were just written.
-      const staleSeconds = runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
       const stale: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
         `WITH deleted AS (
            DELETE FROM stations
@@ -423,7 +431,7 @@ export class BNetzAScraper extends BaseScraper {
       if (retiredCount > 0) {
         console.log(
           `[${this.source}] Retired ${retiredCount} superseded OpenChargeMap row(s) for DE ` +
-            `(${stored} registry stations in place)`,
+            `(${refreshed} registry stations refreshed this run)`,
         );
       }
     } finally {

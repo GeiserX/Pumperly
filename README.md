@@ -417,7 +417,7 @@ volumes:
 | `PUMPERLY_SCRAPE_INTERVAL_HOURS` | Global scrape interval override (hours, 0=disable) | Per-country |
 | `PUMPERLY_EV_ENABLED` | Enable EV charger scraping (`0` to disable) | `1` |
 | `PUMPERLY_DE_EV_SOURCE` | Germany's EV source: `bnetza` (official registry) or `ocm` | `bnetza` |
-| `PUMPERLY_BNETZA_MIN_STATIONS` | Stations that must be stored before the BNetzA scraper prunes stale rows or retires Open Charge Map's German ones | `10000` |
+| `PUMPERLY_BNETZA_MIN_STATIONS` | Stations a run must refresh before the BNetzA scraper prunes stale rows or retires Open Charge Map's German ones | `10000` |
 | `VALHALLA_URL` | Valhalla routing endpoint | — |
 | `PHOTON_URL` | Photon geocoding endpoint | — |
 

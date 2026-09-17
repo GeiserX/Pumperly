@@ -413,12 +413,13 @@ describe("BNetzAScraper cleanup", () => {
 
   async function setup(opts: {
     results?: Array<Array<{ count: bigint }>>;
+    client?: ReturnType<typeof stubPrisma>;
     errors?: string[];
     durationMs?: number;
   }) {
     const { PrismaClient } = await import("../generated/prisma/client");
     const { BaseScraper } = await import("./base");
-    const stub = stubPrisma(opts.results ?? []);
+    const stub = opts.client ?? stubPrisma(opts.results ?? []);
     // A plain function, not an arrow: this stands in for a constructor.
     vi.mocked(PrismaClient).mockImplementation(function () {
       return stub.client;
@@ -444,7 +445,13 @@ describe("BNetzAScraper cleanup", () => {
 
     expect(result.errors).toEqual([]);
     expect(stub.queries).toHaveLength(3);
+
+    // The floor counts only rows this run refreshed, using the same cutoff as
+    // the stale sweep, so rows left over from an earlier run cannot clear it.
     expect(stub.queries[0].sql).toMatch(/count\(\*\)/);
+    expect(stub.queries[0].sql).toMatch(/external_id LIKE 'bnetza-%'/);
+    expect(stub.queries[0].sql).toMatch(/updated_at >= NOW\(\) - make_interval/);
+    expect(stub.queries[0].params[0]).toBe(30 + 300);
 
     // Stale sweep: scoped to this source, and cut off by a duration measured
     // back from the DB clock so app/DB clock skew cannot delete fresh rows.
@@ -458,7 +465,34 @@ describe("BNetzAScraper cleanup", () => {
     expect(stub.queries[2].sql).toMatch(/station_type = 'ev_charger'/);
   });
 
-  it("deletes nothing when too few stations were stored", async () => {
+  it("leaves yesterday's rows alone when a degraded fetch refreshed too few of them", async () => {
+    // 74,000 rows from yesterday's run plus 42 from today's degraded fetch.
+    // Counting them together would clear the floor and delete the 74,000.
+    const rowAgesSeconds = [...Array<number>(74_000).fill(86_400), ...Array<number>(42).fill(5)];
+    const queries: Array<{ sql: string; params: unknown[] }> = [];
+    const client = {
+      $queryRawUnsafe: vi.fn(async (sql: string, ...params: unknown[]) => {
+        queries.push({ sql, params });
+        if (/DELETE/.test(sql)) throw new Error("sweep ran against a degraded fetch");
+        // Answer the count the way Postgres would: apply the freshness window
+        // if the statement has one, otherwise count every row.
+        const window = /updated_at >= NOW\(\) - make_interval/.test(sql)
+          ? Number(params[0])
+          : Infinity;
+        return [{ count: BigInt(rowAgesSeconds.filter((age) => age <= window).length) }];
+      }),
+      $disconnect: vi.fn(async () => {}),
+    };
+    await setup({ client: { queries, client } });
+    const { BNetzAScraper } = await import("./bnetza");
+
+    const result = await new BNetzAScraper().run();
+
+    expect(result.errors).toEqual([]);
+    expect(queries).toHaveLength(1);
+  });
+
+  it("deletes nothing when too few stations were refreshed", async () => {
     // A degraded fetch that still clears base.run()'s empty-fetch guard must
     // not be able to wipe yesterday's map.
     const stub = await setup({ results: [[{ count: BigInt(42) }]] });
