@@ -159,6 +159,7 @@ function SourcesContent() {
       <ul>
         <li><strong>Open Charge Map</strong> &mdash; EV charging station locations across all supported countries. Community-maintained, Open Data Commons Open Database License (ODbL). <a href="https://openchargemap.org" target="_blank" rel="noopener noreferrer">openchargemap.org</a></li>
         <li><strong>Mapa REVE</strong> &mdash; EV charging station locations in Spain. Source: Red El&eacute;ctrica de Espa&ntilde;a, S.A.U. Used non-commercially and reproduced without alteration. <a href="https://www.mapareve.es" target="_blank" rel="noopener noreferrer">mapareve.es</a></li>
+        <li><strong>Ladesäulenregister</strong> &mdash; EV charging station locations in Germany, from the register operators must file under &sect;5 Ladesäulenverordnung. Source: Bundesnetzagentur.de, Creative Commons Attribution 4.0 (CC BY 4.0). <a href="https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html" target="_blank" rel="noopener noreferrer">bundesnetzagentur.de</a></li>
       </ul>
 
       <h3>Map and routing</h3>

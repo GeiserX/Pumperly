@@ -52,6 +52,8 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   // Spain Mapa REVE — the API allows only 5 requests/hour, so this crawls a
   // few pages at a time and must run hourly to get through the registry.
   EV_ES_REVE: 1,
+  // Germany BNetzA Ladesäulenregister — one bulk TSV, regenerated daily.
+  EV_DE_BNETZA: 24,
 };
 
 export async function register() {
@@ -105,6 +107,8 @@ export async function register() {
   const { OCMScraper } = await import("./scrapers/ocm");
   const { REVEScraper } = await import("./scrapers/reve");
   const { resolveSpainEvSource } = await import("./scrapers/spain-ev-source");
+  const { BNetzAScraper } = await import("./scrapers/bnetza");
+  const { resolveGermanyEvSource } = await import("./scrapers/germany-ev-source");
   const { StaticScraper } = await import("./scrapers/static");
   const { STATIC_DATASETS } = await import("./scrapers/data");
 
@@ -187,6 +191,8 @@ export async function register() {
     EV_US: () => new OCMScraper("US"),
     // Spain's official EV registry — supersedes EV_ES when a key is set (#121)
     EV_ES_REVE: () => new REVEScraper(),
+    // Germany's official EV registry — supersedes EV_DE by default, keyless
+    EV_DE_BNETZA: () => new BNetzAScraper(),
   };
 
   // Register community-contributed static datasets (see scrapers/data/README.md).
@@ -236,6 +242,15 @@ export async function register() {
   if (countries.includes("EV_ES_REVE")) {
     console.log(
       "[scraper] Spain EV: using Mapa REVE (official registry) instead of OpenChargeMap",
+    );
+  }
+
+  // Germany likewise — see scrapers/germany-ev-source.ts, and scrapers/bnetza.ts
+  // for the sweep that retires the OpenChargeMap rows once BNetzA has landed.
+  countries = resolveGermanyEvSource(countries);
+  if (countries.includes("EV_DE_BNETZA")) {
+    console.log(
+      "[scraper] Germany EV: using the BNetzA Ladesäulenregister instead of OpenChargeMap",
     );
   }
 

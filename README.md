@@ -48,7 +48,7 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 
 - **Route planning** — Geocoding via [Photon](https://github.com/komoot/photon), routing via [Valhalla](https://github.com/valhalla/valhalla), with alternative routes
 - **Real-time fuel prices** — From government open data APIs and community sources
-- **EV charging stations** — Via [Open Charge Map](https://openchargemap.org) across all supported countries, and the official [Mapa REVE](https://www.mapareve.es) registry in Spain
+- **EV charging stations** — Via [Open Charge Map](https://openchargemap.org) across all supported countries, plus the official [Mapa REVE](https://www.mapareve.es) registry in Spain and the [BNetzA Ladesäulenregister](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html) in Germany
 - **Detour calculation** — Each station shows estimated detour time from your route
 - **"Cheapest within N min"** — Slider filters stations by maximum detour, highlights the best deal
 - **Corridor station list** — Sorted by position along route, with price deltas vs average
@@ -98,8 +98,11 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 |---|---|---|
 | [Open Charge Map](https://openchargemap.org) | All supported countries + United States (EV-only) | ODbL |
 | [Mapa REVE](https://www.mapareve.es) (Red Eléctrica de España) | Spain — official operator-reported registry | Non-commercial, attribution required |
+| [Ladesäulenregister](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html) (Bundesnetzagentur) | Germany — official operator-reported registry, ~74,000 locations | CC BY 4.0, attribution "Bundesnetzagentur.de" |
 
 Spain uses Mapa REVE when `PUMPERLY_REVE_API_KEY` is set: it is the registry every Spanish charge point operator files into, so it is authoritative where Open Charge Map is crowdsourced. The two overlap heavily, so Open Charge Map stops being scraped for Spain immediately, its existing Spanish rows stay visible while REVE backfills, and they are deleted once REVE reaches 95% of the registry. Expect duplicate Spanish pins until then.
+
+Germany uses the BNetzA Ladesäulenregister by default — no API key, no signup. Every operator of a publicly accessible charge point must file into it under §5 Ladesäulenverordnung, so like REVE it is authoritative where Open Charge Map is crowdsourced, and it is several times larger. It arrives as one daily bulk file, so there is no backfill period: Open Charge Map stops being scraped for Germany, and its existing German rows are retired on the first healthy run. Set `PUMPERLY_DE_EV_SOURCE=ocm` to keep Open Charge Map instead.
 
 ### Map & routing
 
@@ -413,6 +416,8 @@ volumes:
 | `PUMPERLY_PRICE_MIN` / `PUMPERLY_PRICE_MAX` | Price bounds for scraper validation (EUR/L) | `0.30` / `4.00` |
 | `PUMPERLY_SCRAPE_INTERVAL_HOURS` | Global scrape interval override (hours, 0=disable) | Per-country |
 | `PUMPERLY_EV_ENABLED` | Enable EV charger scraping (`0` to disable) | `1` |
+| `PUMPERLY_DE_EV_SOURCE` | Germany's EV source: `bnetza` (official registry) or `ocm` | `bnetza` |
+| `PUMPERLY_BNETZA_MIN_STATIONS` | Stations a run must refresh before the BNetzA scraper prunes stale rows or retires Open Charge Map's German ones | `10000` |
 | `VALHALLA_URL` | Valhalla routing endpoint | — |
 | `PHOTON_URL` | Photon geocoding endpoint | — |
 

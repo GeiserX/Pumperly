@@ -40,6 +40,8 @@ import { MexicoScraper } from "./mexico";
 import { OCMScraper } from "./ocm";
 import { REVEScraper } from "./reve";
 import { resolveSpainEvSource } from "./spain-ev-source";
+import { BNetzAScraper } from "./bnetza";
+import { resolveGermanyEvSource } from "./germany-ev-source";
 
 // ---------------------------------------------------------------------------
 // Scraper CLI
@@ -132,6 +134,8 @@ const SCRAPERS: Record<string, Array<() => BaseScraper>> = {
   EV_US: [() => new OCMScraper("US")],
   // Spain's official EV registry — supersedes EV_ES when a key is set (#121)
   EV_ES_REVE: [() => new REVEScraper()],
+  // Germany's official EV registry — supersedes EV_DE by default, keyless
+  EV_DE_BNETZA: [() => new BNetzAScraper()],
 };
 
 function usage(): never {
@@ -154,11 +158,12 @@ function parseArgs(argv: string[]): { countries: string[] } {
     usage();
   }
 
-  // `all` must not run both Spanish EV sources. Naming EV_ES explicitly still
-  // works — the CLI is a manual override, and asking for it by name means it.
+  // `all` must not run both Spanish or both German EV sources. Naming EV_ES or
+  // EV_DE explicitly still works — the CLI is a manual override, and asking for
+  // it by name means it.
   const countries =
     countryArg === "ALL"
-      ? resolveSpainEvSource(Object.keys(SCRAPERS))
+      ? resolveGermanyEvSource(resolveSpainEvSource(Object.keys(SCRAPERS)))
       : countryArg.split(",").map((c) => c.trim().toUpperCase());
 
   // Validate

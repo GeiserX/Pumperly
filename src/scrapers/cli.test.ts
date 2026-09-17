@@ -33,12 +33,17 @@ function evKeys(source: string, re: RegExp): Set<string> {
 const instrumentation = readSrc("instrumentation.ts");
 const cli = readSrc("scrapers/cli.ts");
 
+// The optional suffix matters: country-specific official registries are keyed
+// EV_XX_SOURCE (EV_ES_REVE, EV_DE_BNETZA). Without it these regexes stop at
+// `EV_ES`, find no `:` after it, and silently drop the key — so the guard was
+// blind to exactly the entries most likely to be added to one table only.
+//
 // EV_XX interval entries: `EV_XX: 24`
-const intervalEvKeys = evKeys(instrumentation, /\b(EV_[A-Z]{2})\s*:\s*\d+/g);
+const intervalEvKeys = evKeys(instrumentation, /\b(EV_[A-Z]{2}(?:_[A-Z0-9]+)?)\s*:\s*\d+/g);
 // EV_XX scraperFactories entries: `EV_XX: () => new OCMScraper(...)`
-const factoryEvKeys = evKeys(instrumentation, /\b(EV_[A-Z]{2})\s*:\s*\(\)\s*=>/g);
+const factoryEvKeys = evKeys(instrumentation, /\b(EV_[A-Z]{2}(?:_[A-Z0-9]+)?)\s*:\s*\(\)\s*=>/g);
 // EV_XX CLI SCRAPERS entries: `EV_XX: [() => new OCMScraper(...)]`
-const cliEvKeys = evKeys(cli, /\b(EV_[A-Z]{2})\s*:\s*\[/g);
+const cliEvKeys = evKeys(cli, /\b(EV_[A-Z]{2}(?:_[A-Z0-9]+)?)\s*:\s*\[/g);
 
 describe("scraper registry alignment", () => {
   it("found EV interval keys to check", () => {
