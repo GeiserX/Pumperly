@@ -48,7 +48,7 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 
 - **Route planning** — Geocoding via [Photon](https://github.com/komoot/photon), routing via [Valhalla](https://github.com/valhalla/valhalla), with alternative routes
 - **Real-time fuel prices** — From government open data APIs and community sources
-- **EV charging stations** — Via [Open Charge Map](https://openchargemap.org) across all supported countries, plus the official [Mapa REVE](https://www.mapareve.es) registry in Spain and the [BNetzA Ladesäulenregister](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html) in Germany
+- **EV charging stations** — Official registries where they exist ([Mapa REVE](https://www.mapareve.es) in Spain, the [BNetzA Ladesäulenregister](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html) in Germany), [Open Charge Map](https://openchargemap.org) everywhere else
 - **Detour calculation** — Each station shows estimated detour time from your route
 - **"Cheapest within N min"** — Slider filters stations by maximum detour, highlights the best deal
 - **Corridor station list** — Sorted by position along route, with price deltas vs average

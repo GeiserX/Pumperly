@@ -70,8 +70,10 @@ const COORD_PRECISION = 5;
 // clears the empty-fetch guard must not be able to retire OpenChargeMap or bulk
 // delete yesterday's stations. The register holds ~74k; 10k is a wide margin.
 const rawMinStations = Number(process.env.PUMPERLY_BNETZA_MIN_STATIONS ?? "10000");
+// Anything that floors below 1 (0, 0.5, negatives) would make `refreshed < MIN_STATIONS`
+// impossible to satisfy and silently disable the guard, so it falls back too.
 const MIN_STATIONS =
-  Number.isFinite(rawMinStations) && rawMinStations > 0 ? Math.floor(rawMinStations) : 10_000;
+  Number.isFinite(rawMinStations) && rawMinStations >= 1 ? Math.floor(rawMinStations) : 10_000;
 
 // Slack added to the staleness cutoff so the sweep can never delete a row
 // written in the opening moments of the run it belongs to.
