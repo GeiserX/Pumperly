@@ -108,6 +108,8 @@ describe("StationPopup", () => {
     expect(copied).toContain("station=ES%3A4710");
     expect(copied).toContain("lat=40.4168");
     expect(copied).toContain("lng=-3.7038");
+    // The layer the popup was opened from travels with the link (#129).
+    expect(copied).toContain("fuel=E5");
     vi.unstubAllGlobals();
   });
 });
