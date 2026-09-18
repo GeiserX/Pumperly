@@ -526,6 +526,22 @@ describe("BNetzAScraper cleanup", () => {
     expect(stub.queries).toHaveLength(1); // fell back to the 10,000 default
   });
 
+  it("treats a floor below 1 as nonsensical too", async () => {
+    // 0.5 floors to 0, and `refreshed < 0` is never true: the guard would be
+    // gone without anyone noticing. Same fallback as a non-numeric value.
+    for (const raw of ["0.5", "0", "-3"]) {
+      vi.stubEnv("PUMPERLY_BNETZA_MIN_STATIONS", raw);
+      const stub = await setup({ results: [[{ count: BigInt(42) }]] });
+      const { BNetzAScraper } = await import("./bnetza");
+
+      await new BNetzAScraper().run();
+
+      expect(stub.queries, `floor "${raw}"`).toHaveLength(1);
+      vi.resetModules();
+      vi.restoreAllMocks();
+    }
+  });
+
   it("does not clean up after a run that reported errors", async () => {
     const stub = await setup({ errors: ["Station batch 0-500: boom"] });
     const { BNetzAScraper } = await import("./bnetza");
