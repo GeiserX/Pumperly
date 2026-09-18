@@ -51,14 +51,17 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
   const lat = geometry.coordinates[1];
   const lng = geometry.coordinates[0];
 
-  // Absolute deep-link to this station (?station=CC:extId&lat&lng on the
-  // current locale path) — shared and copied by the action buttons below.
+  // Absolute deep-link to this station (?station=CC:extId&lat&lng&fuel on the
+  // current locale path) — shared and copied by the action buttons below. The
+  // fuel is the layer this popup was opened from; without it an EV charger
+  // link would open on the default fuel and never load the charger (#129).
   function shareUrl(): string {
     const sp = buildStationQuery({
       country: properties.country ?? "",
       externalId: properties.externalId ?? "",
       lat,
       lng,
+      fuel: properties.fuelType,
     });
     return `${window.location.origin}${window.location.pathname}?${sp}`;
   }

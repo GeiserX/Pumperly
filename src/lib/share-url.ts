@@ -8,11 +8,14 @@
  * Applying the result to the current browser URL lives in components, not here.
  *
  * URL shapes:
- *   STATION: /{locale}?station={COUNTRY}:{externalId}&lat={LAT}&lng={LNG}
+ *   STATION: /{locale}?station={COUNTRY}:{externalId}&lat={LAT}&lng={LNG}&fuel={CODE}
  *   ROUTE:   /{locale}?from={LAT,LNG}&to={LAT,LNG}&via={LAT,LNG}&...&fuel={CODE}
  *
  * Stations are keyed on the durable COUNTRY:externalId (UUIDs churn on re-import);
  * lat/lng is the recenter fallback. Coordinates are rounded to 5 decimal places.
+ * `fuel` is the layer the station was shared from: the viewport fetch is
+ * fuel-filtered, so without it an EV charger link opens on the default fuel and
+ * the charger is never loaded, let alone selected (#129).
  */
 
 /** Maximum number of `via` waypoints honoured when parsing a route. */
@@ -56,14 +59,17 @@ export interface StationShareParams {
   externalId: string;
   lat: number;
   lng: number;
+  /** Fuel code the station was shared from; omitted when empty. */
+  fuel?: string;
 }
 
-/** Build the query for a shared station: `station=CC:extId&lat=..&lng=..`. */
+/** Build the query for a shared station: `station=CC:extId&lat=..&lng=..&fuel=..`. */
 export function buildStationQuery(p: StationShareParams): URLSearchParams {
   const sp = new URLSearchParams();
   sp.set("station", `${p.country.toUpperCase()}:${p.externalId}`);
   sp.set("lat", String(roundCoord(p.lat)));
   sp.set("lng", String(roundCoord(p.lng)));
+  if (p.fuel) sp.set("fuel", p.fuel);
   return sp;
 }
 
@@ -71,13 +77,15 @@ export function buildStationQuery(p: StationShareParams): URLSearchParams {
  * Parse station params from a query. Returns null when no station-ish params are
  * present at all. The `station` value is split on the FIRST colon only, since the
  * external id may itself contain colons. lat/lng are validated independently and
- * may be null while country/externalId are present (and vice versa).
+ * may be null while country/externalId are present (and vice versa). `fuel` is
+ * returned raw (null when absent); the caller validates it against `fuelTypeEnum`.
  */
 export function parseStationParams(sp: URLSearchParams): {
   country: string | null;
   externalId: string | null;
   lat: number | null;
   lng: number | null;
+  fuel: string | null;
 } | null {
   const station = sp.get("station");
   const latRaw = sp.get("lat");
@@ -101,7 +109,7 @@ export function parseStationParams(sp: URLSearchParams): {
   const lat = parseCoordComponent(latRaw, -90, 90);
   const lng = parseCoordComponent(lngRaw, -180, 180);
 
-  return { country, externalId, lat, lng };
+  return { country, externalId, lat, lng, fuel: sp.get("fuel") };
 }
 
 // ---------------------------------------------------------------------------

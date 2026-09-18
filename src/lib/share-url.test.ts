@@ -117,7 +117,27 @@ describe("buildStationQuery / parseStationParams round-trip", () => {
       externalId: "12345",
       lat: 40.41672,
       lng: -3.70379,
+      fuel: null,
     });
+  });
+
+  it("carries the fuel the station was shared from (#129)", () => {
+    // An EV charger only loads on the EV layer: without the fuel, a fresh
+    // visitor lands on the default fuel and the popup can never open.
+    const sp = buildStationQuery({ country: "ES", externalId: "reve-1", lat: 40.4768, lng: -3.6891, fuel: "EV" });
+    expect(sp.get("fuel")).toBe("EV");
+    expect(parseStationParams(sp)?.fuel).toBe("EV");
+  });
+
+  it("omits the fuel param when none is given", () => {
+    const sp = buildStationQuery({ country: "ES", externalId: "1", lat: 1, lng: 2, fuel: "" });
+    expect(sp.has("fuel")).toBe(false);
+    expect(parseStationParams(sp)?.fuel).toBeNull();
+  });
+
+  it("passes fuel through raw without validating it", () => {
+    const parsed = parseStationParams(new URLSearchParams("station=ES:1&lat=1&lng=2&fuel=NOTAFUEL"));
+    expect(parsed?.fuel).toBe("NOTAFUEL");
   });
 
   it("uppercases the country on build", () => {
@@ -145,7 +165,7 @@ describe("buildStationQuery / parseStationParams round-trip", () => {
     const sp = new URLSearchParams();
     sp.set("station", "ES");
     const parsed = parseStationParams(sp);
-    expect(parsed).toEqual({ country: "ES", externalId: null, lat: null, lng: null });
+    expect(parsed).toEqual({ country: "ES", externalId: null, lat: null, lng: null, fuel: null });
   });
 
   it("yields null coords when lat/lng are out of range", () => {
@@ -169,6 +189,7 @@ describe("buildStationQuery / parseStationParams round-trip", () => {
       externalId: null,
       lat: 40.41672,
       lng: -3.70379,
+      fuel: null,
     });
   });
 

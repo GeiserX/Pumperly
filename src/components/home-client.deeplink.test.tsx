@@ -155,6 +155,27 @@ describe("HomeClient — deep-link read on load", () => {
     expect(searchPanelProps.initialRoute).toBeNull();
   });
 
+  it("applies the fuel from a station deep-link so the shared layer is the one that loads (#129)", async () => {
+    // A charger shared from the EV layer: the viewport fetch is fuel-filtered,
+    // so unless the link switches the visitor to EV the charger never loads.
+    window.history.replaceState(null, "", "/es?station=ES:reve-1&lat=40.4768&lng=-3.6891&fuel=EV");
+    renderHome();
+
+    expect(searchPanelProps.selectedFuel).toBe("EV");
+    expect(searchPanelProps.initialRoute).toBeNull();
+    await waitFor(() => expect(flyTo).toHaveBeenCalled());
+  });
+
+  it("keeps the default fuel when a station deep-link carries an invalid or no fuel", () => {
+    window.history.replaceState(null, "", "/es?station=ES:12345&lat=40.41672&lng=-3.70379&fuel=NOTAFUEL");
+    renderHome();
+    expect(searchPanelProps.selectedFuel).toBe("E5");
+
+    window.history.replaceState(null, "", "/es?station=ES:12345&lat=40.41672&lng=-3.70379");
+    renderHome();
+    expect(searchPanelProps.selectedFuel).toBe("E5");
+  });
+
   it("resolves & selects a station deep-link from the lifted on-screen stations", async () => {
     // The real MapView lifts on-screen bbox stations to the parent; the resolve
     // effect matches the deep-linked station (externalId+country) and selects it.

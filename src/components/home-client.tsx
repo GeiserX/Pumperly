@@ -57,7 +57,11 @@ function readDeepLink(): { fuel: FuelType | null; route: InitialRoute | null; st
 
   const station = parseStationParams(sp);
   if (station && station.lat != null && station.lng != null) {
-    return { fuel: null, route: null, station };
+    // Same fuel handling as the route branch: the viewport fetch is fuel-
+    // filtered, so an EV charger shared from the EV layer only ever loads (and
+    // gets selected) if the link puts the visitor on that layer (#129).
+    const parsedFuel = fuelTypeEnum.safeParse(station.fuel);
+    return { fuel: parsedFuel.success ? parsedFuel.data : null, route: null, station };
   }
   return empty;
 }
@@ -476,10 +480,10 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
     const country = feature?.properties.country;
     if (feature && extId != null && country != null) {
       const [lng, lat] = feature.geometry.coordinates;
-      const qs = buildStationQuery({ country, externalId: extId, lat, lng }).toString();
+      const qs = buildStationQuery({ country, externalId: extId, lat, lng, fuel: selectedFuel }).toString();
       window.history.replaceState(null, "", `${pathname}?${qs}`);
     }
-  }, [selectedStationId, routeState, primaryStations]);
+  }, [selectedStationId, routeState, primaryStations, selectedFuel]);
 
   // Streaming Valhalla-based detour calculation — results appear per-station
   const { detourMap, detoursLoading } = useDetourStream({ primaryStations, routeState, detourBasis });
