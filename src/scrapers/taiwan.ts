@@ -14,9 +14,9 @@ import type { FuelType } from "../types/station";
 // Licence: Open Government Data License, version 1.0 (reuse with attribution).
 // Formosa Petrochemical stations are not in this feed.
 //
-// Fuel mapping follows the repo convention for national grades: 95 → E5,
-// 98 → E5_98, super diesel → B7, and the regular 92 grade → E10 (as the WA
-// scraper does for 91 RON). 酒精汽油 (E3 ethanol blend, 14 stations) is skipped.
+// Fuel mapping: 95 → E5, 98 → E5_98, super diesel → B7. The regular 92 grade
+// has no ethanol and no matching code in the fuel model, so it is left out
+// rather than published under a wrong label; so is 酒精汽油 (E3 blend).
 // ---------------------------------------------------------------------------
 
 const PRICE_URL = "https://vipmbr.cpc.com.tw/opendata/mainprodlistprice";
@@ -30,7 +30,6 @@ const LON_MAX = 122.1;
 
 /** Product name in the price list → station flag → harmonised fuel type. */
 const PRODUCTS: ReadonlyArray<{ product: string; flag: string; fuelType: FuelType }> = [
-  { product: "92無鉛汽油", flag: "無鉛92", fuelType: "E10" },
   { product: "95無鉛汽油", flag: "無鉛95", fuelType: "E5" },
   { product: "98無鉛汽油", flag: "無鉛98", fuelType: "E5_98" },
   { product: "超級柴油", flag: "超柴", fuelType: "B7" },

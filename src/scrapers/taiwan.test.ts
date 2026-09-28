@@ -77,7 +77,7 @@ describe("TaiwanScraper", () => {
     ]);
   });
 
-  it("gives each station the list price of only the fuels its flags say it sells", async () => {
+  it("gives each station the list price of only the fuels its flags say it sells, never 92 as E10", async () => {
     const { TaiwanScraper } = await import("./taiwan");
     mockFeeds(PRICES, [station()]);
     const { stations, prices } = await new TaiwanScraper().fetch();
@@ -96,7 +96,6 @@ describe("TaiwanScraper", () => {
       },
     ]);
     expect(prices).toEqual([
-      { stationExternalId: "tw-cpc-AA6212A03", fuelType: "E10", price: 31.2, currency: "TWD" },
       { stationExternalId: "tw-cpc-AA6212A03", fuelType: "E5", price: 32.7, currency: "TWD" },
       { stationExternalId: "tw-cpc-AA6212A03", fuelType: "B7", price: 29.9, currency: "TWD" },
     ]);
@@ -124,7 +123,7 @@ describe("TaiwanScraper", () => {
       station({ 站代號: "A", 營業中: "3" }),
       station({ 站代號: "B", 緯度: 35.0, 經度: 139.0 }),
       station({ 站代號: "C", 緯度: null }),
-      station({ 站代號: "D", 無鉛92: 0, 無鉛95: 0, 無鉛98: 0, 超柴: 0 }),
+      station({ 站代號: "D", 無鉛92: 1, 無鉛95: 0, 無鉛98: 0, 超柴: 0 }),
       station({ 站代號: "E" }),
       station({ 站代號: "E" }),
       null,

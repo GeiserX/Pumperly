@@ -440,7 +440,7 @@ Most countries work without any API key — they use open government data.
 ### Supported Countries
 
 <details>
-<summary><strong>All 36 supported countries</strong></summary>
+<summary><strong>All 39 supported countries</strong></summary>
 
 **Europe (33):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia), IS (Iceland), CY (Cyprus)
 
