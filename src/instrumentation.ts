@@ -38,6 +38,8 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   TR: 12,   // Turkey Fuelo.net — community-sourced, scrape every 12h
   MD: 12,   // Moldova ANRE — government, scrape every 12h
   IS: 6,    // Iceland Gasvaktin — community JSON refreshed every 15 min upstream
+  CY: 6,    // Cyprus Consumer Protection Service observatory — live, 4 requests per run
+  TW: 12,   // Taiwan CPC list prices — revised weekly
   AU: 12,   // Australia FuelWatch (WA) — government, scrape every 12h
   AU_NSW: 12, // Australia FuelCheck (NSW) — government, scrape every 12h
   AR: 12,   // Argentina Secretaría de Energía — government CSV, scrape every 12h
@@ -48,7 +50,7 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   EV_GR: 24, EV_IE: 24, EV_HR: 24, EV_CH: 24, EV_PL: 24, EV_CZ: 24,
   EV_HU: 24, EV_BG: 24, EV_SK: 24, EV_DK: 24, EV_SE: 24, EV_NO: 24,
   EV_RS: 24, EV_FI: 24, EV_EE: 24, EV_LV: 24, EV_LT: 24, EV_BA: 24,
-  EV_MK: 24, EV_TR: 24, EV_MD: 24, EV_IS: 24, EV_AU: 24, EV_AR: 24, EV_MX: 24,
+  EV_MK: 24, EV_TR: 24, EV_MD: 24, EV_IS: 24, EV_CY: 24, EV_TW: 24, EV_AU: 24, EV_AR: 24, EV_MX: 24,
   EV_US: 24,
   // Spain Mapa REVE — the API allows only 5 requests/hour, so this crawls a
   // few pages at a time and must run hourly to get through the registry.
@@ -102,6 +104,8 @@ export async function register() {
   const { TurkeyScraper } = await import("./scrapers/turkey");
   const { MoldovaScraper } = await import("./scrapers/moldova");
   const { IcelandScraper } = await import("./scrapers/iceland");
+  const { CyprusScraper } = await import("./scrapers/cyprus");
+  const { TaiwanScraper } = await import("./scrapers/taiwan");
   const { AustraliaScraper } = await import("./scrapers/australia");
   const { AustraliaNSWScraper } = await import("./scrapers/australia-nsw");
   const { ArgentinaScraper } = await import("./scrapers/argentina");
@@ -149,6 +153,8 @@ export async function register() {
     TR: () => new TurkeyScraper(),
     MD: () => new MoldovaScraper(),
     IS: () => new IcelandScraper(),
+    CY: () => new CyprusScraper(),
+    TW: () => new TaiwanScraper(),
     AU: () => new AustraliaScraper(),
     AU_NSW: () => new AustraliaNSWScraper(),
     AR: () => new ArgentinaScraper(),
@@ -188,6 +194,8 @@ export async function register() {
     EV_TR: () => new OCMScraper("TR"),
     EV_MD: () => new OCMScraper("MD"),
     EV_IS: () => new OCMScraper("IS"),
+    EV_CY: () => new OCMScraper("CY"),
+    EV_TW: () => new OCMScraper("TW"),
     EV_AU: () => new OCMScraper("AU"),
     EV_AR: () => new OCMScraper("AR"),
     EV_MX: () => new OCMScraper("MX"),

@@ -144,6 +144,8 @@ function SourcesContent() {
         <li><strong>Serbia</strong> &mdash; NIS Cena Goriva</li>
         <li><strong>Finland</strong> &mdash; Polttoaine.net</li>
         <li><strong>Iceland</strong> &mdash; Gasvaktin (open data, MIT licence)</li>
+        <li><strong>Cyprus</strong> &mdash; Consumer Protection Service, Retail Fuel Price Observatory (CC BY-SA 4.0)</li>
+        <li><strong>Taiwan</strong> &mdash; CPC Corporation, Taiwan (Open Government Data License v1.0)</li>
         <li><strong>Australia (WA)</strong> &mdash; FuelWatch, Government of Western Australia</li>
         <li><strong>Australia (NSW)</strong> &mdash; FuelCheck, NSW Government (api.onegov.nsw.gov.au)</li>
         <li><strong>Argentina</strong> &mdash; Secretaria de Energia, datos.gob.ar</li>
