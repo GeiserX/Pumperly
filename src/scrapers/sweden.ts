@@ -114,6 +114,11 @@ export class SwedenScraper extends BaseScraper {
    * After a healthy run, retire what the DrivstoffAppen scraper left behind:
    * its prices, then the Swedish fuel stations that end up with no price.
    */
+  /**
+   * Normal run, then retire the dead DrivstoffAppen rows for Sweden once this
+   * source has landed a full, error-free set. The old API is gone for good, so
+   * its prices can never refresh again; keeping them would show stale numbers.
+   */
   async run(): Promise<ScraperResult> {
     const result = await super.run();
     if (result.errors.length > 0 || result.stationsUpserted < MIN_STATIONS) return result;
@@ -147,6 +152,7 @@ export class SwedenScraper extends BaseScraper {
     return result;
   }
 
+  /** Read the whole bensinpriser.nu map feed and turn it into stations and SEK prices. */
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
     console.log(`[${this.source}] Fetching bulk map feed: ${DATA_URL}`);
 
@@ -174,7 +180,10 @@ export class SwedenScraper extends BaseScraper {
     const prices: RawFuelPrice[] = [];
     const seen = new Set<number>();
 
-    for (const s of data as MapStation[]) {
+    for (const raw of data) {
+      // A single bad member must not throw and drop the whole Swedish run.
+      if (raw === null || typeof raw !== "object" || Array.isArray(raw)) continue;
+      const s = raw as MapStation;
       const lat = typeof s.lat === "number" ? s.lat : parseFloat(String(s.lat));
       const lon = typeof s.lng === "number" ? s.lng : parseFloat(String(s.lng));
 

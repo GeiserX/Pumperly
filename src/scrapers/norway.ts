@@ -208,6 +208,7 @@ export class NorwayScraper extends BaseScraper {
    *   - fuelfinder.dk — serves HTTP 403 with an explicit no-scraping notice.
    *   - SSB table 09654 — national monthly averages, not station level.
    */
+  /** Fetch from the DrivstoffAppen API; there is no fallback, so a dead API surfaces as an error. */
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
     return this.fetchFromAPI();
   }

@@ -199,6 +199,13 @@ describe("SwedenScraper", () => {
     expect(stations).toHaveLength(0);
   });
 
+  it("skips non-object members instead of failing the whole run", async () => {
+    const { SwedenScraper } = await import("./sweden");
+    mockFeed([row({ id: 1 }), null, 42, "x", [row({ id: 9 })], row({ id: 2 })]);
+    const { stations } = await new SwedenScraper().fetch();
+    expect(stations.map((s) => s.externalId)).toEqual(["se-bp-1", "se-bp-2"]);
+  });
+
   it("deduplicates repeated feed ids", async () => {
     const { SwedenScraper } = await import("./sweden");
     mockFeed([row(), row()]);

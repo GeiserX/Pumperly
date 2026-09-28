@@ -56,39 +56,23 @@ interface ParseResponse {
   count?: number;
 }
 
-/** Stable per-station coordinate key, used to disambiguate reused `Id`s. */
-function coordKey(s: PecoStation): string {
-  return `${s.lat},${s.lng}`;
-}
-
 /**
- * Build the external id for every row.
+ * External id for a row: `Id@lat,lng`.
  *
- * `Id` alone when it maps to a single location — so existing rows keep their
- * id — and `Id@lat,lng` when upstream reuses one Id for several locations.
- * Duplicate listings of the same station collapse onto the same id either way.
+ * Upstream reuses `Id` for different stations, and which ids collide changes
+ * from one fetch to the next, so the coordinates are always part of the id.
+ * A station keeps its id whether or not its twin is in the feed, and duplicate
+ * listings of one station collapse onto the same id.
  */
-function externalIdFor(rows: PecoStation[]): (s: PecoStation) => string {
-  const locationsById = new Map<string, Set<string>>();
-  for (const s of rows) {
-    const id = s.Id || s.objectId;
-    let locations = locationsById.get(id);
-    if (!locations) {
-      locations = new Set<string>();
-      locationsById.set(id, locations);
-    }
-    locations.add(coordKey(s));
-  }
-  return (s) => {
-    const id = s.Id || s.objectId;
-    return (locationsById.get(id)?.size ?? 0) > 1 ? `${id}@${coordKey(s)}` : id;
-  };
+function externalIdFor(s: PecoStation): string {
+  return `${s.Id || s.objectId}@${s.lat},${s.lng}`;
 }
 
 export class RomaniaScraper extends BaseScraper {
   readonly country = "RO";
   readonly source = "peco_online";
 
+  /** Page through the Peco Online export and collapse it onto coordinate-qualified ids. */
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
     const rows: PecoStation[] = [];
     const LIMIT = 1000;
@@ -129,14 +113,11 @@ export class RomaniaScraper extends BaseScraper {
       await new Promise((r) => setTimeout(r, 200));
     }
 
-    // External ids are assigned once, over the full result set, so a reused
-    // `Id` is resolved the same way no matter which page each row arrived on.
-    const idFor = externalIdFor(rows);
     const stationMap = new Map<string, RawStation>();
     const priceMap = new Map<string, RawFuelPrice>();
 
     for (const s of rows) {
-      const externalId = idFor(s);
+      const externalId = externalIdFor(s);
 
       if (!stationMap.has(externalId)) {
         stationMap.set(externalId, {

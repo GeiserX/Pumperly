@@ -57,7 +57,7 @@ describe("RomaniaScraper", () => {
     const { stations, prices } = await scraper.fetch();
 
     expect(stations).toHaveLength(1);
-    expect(stations[0].externalId).toBe("RO-001");
+    expect(stations[0].externalId).toBe("RO-001@44.4268,26.1025");
     expect(stations[0].name).toBe("Petrom Bucuresti");
     expect(stations[0].brand).toBe("Petrom");
     expect(stations[0].city).toBe("Bucuresti");
@@ -152,7 +152,7 @@ describe("RomaniaScraper", () => {
 
     const { stations } = await scraper.fetch();
     expect(stations).toHaveLength(1);
-    expect(stations[0].externalId).toBe("fallback-id");
+    expect(stations[0].externalId).toBe("fallback-id@45.75,21.23");
   });
 
   it("keeps two different stations apart when upstream reuses one Id across pages", async () => {
@@ -244,7 +244,7 @@ describe("RomaniaScraper", () => {
     // Two identical rows are one station, and must not produce a duplicate
     // external id — the station upsert batch fails outright if they do.
     expect(stations).toHaveLength(1);
-    expect(stations[0].externalId).toBe("RO.1618.8");
+    expect(stations[0].externalId).toBe("RO.1618.8@45.6999,24.2497");
     expect(prices).toHaveLength(2);
   });
 });

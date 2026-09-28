@@ -85,8 +85,9 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 | Sweden | [bensinpriser.nu](https://bensinpriser.nu) | Community | Every 12h |
 | Serbia | NIS / cenagoriva | Brand-level | Every 12h |
 | Finland | polttoaine.net | Community | Every 12h |
-| Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen until we get API access |
-| Turkey | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026 (same Fuelo block) |
+| Iceland | [Gasvaktin](https://github.com/gasvaktin/gasvaktin) | Community (MIT) | Every 6h |
+| Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen and no replacement is confirmed |
+| Turkey | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen and no replacement is confirmed |
 | Moldova | ANRE | Government | Every 12h |
 | Australia (WA + NSW) | FuelWatch / FuelCheck | Government API | Every 12h (NSW needs `NSW_FUEL_API_KEY`; without it only WA updates) |
 | Argentina | Secretaria de Energia | Government API | Down from Europe: datos.energia.gob.ar drops connections from EU addresses |
@@ -439,7 +440,7 @@ Most countries work without any API key — they use open government data.
 <details>
 <summary><strong>All 36 supported countries</strong></summary>
 
-**Europe (31):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia)
+**Europe (32):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia), IS (Iceland)
 
 **Other regions (5):** TR (Turkey), MD (Moldova), AU (Australia), AR (Argentina), MX (Mexico)
 

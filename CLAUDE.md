@@ -103,7 +103,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 | Slovenia | goriva.si REST API | Real-time | ~551 | None | ✅ Running |
 | Denmark | fuelprices.dk API | Real-time | ~3,000+ | Free API key | ✅ Running |
 
-**Community / Commercial APIs (22 countries):**
+**Community / Commercial APIs (23 countries):**
 Mix of Fuelo.net scrapers (`src/scrapers/fuelo.ts`), dedicated scrapers (ANWB, Peco Online, FuelGR, etc.), and other sources.
 | Country | Source | Currency | Stations | Scraper Status |
 |---|---|---|---|---|
@@ -124,6 +124,7 @@ Mix of Fuelo.net scrapers (`src/scrapers/fuelo.ts`), dedicated scrapers (ANWB, P
 | Norway | DrivstoffAppen | NOK | ~2,000+ | ❌ Down: API v1 returns 404, v3 needs auth; drivstoffprisene.no needs a client id |
 | Serbia | NIS / cenagoriva | RSD | ~2,000+ | ✅ Running |
 | Finland | polttoaine.net | EUR | ~2,000+ | ✅ Running |
+| Iceland | Gasvaktin (MIT, GitHub JSON) | ISK | ~245 | ✅ Running |
 | Estonia | Fuelo.net | EUR | ~522 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
 | Latvia | Fuelo.net | EUR | ~809 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
 | Lithuania | Fuelo.net | EUR | ~854 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
@@ -139,7 +140,7 @@ Mix of Fuelo.net scrapers (`src/scrapers/fuelo.ts`), dedicated scrapers (ANWB, P
 | Argentina | Secretaría de Energía | ARS | ~4,600+ | ❌ Down from the EU: datos.energia.gob.ar geo-blocks; reachable only from the Americas |
 | Mexico | CRE | MXN | ~13,500+ | ✅ Running |
 
-**Total: 36 countries, ~145K+ stations**
+**Total: 37 countries, ~145K+ stations**
 
 **Fuelo block (June 2026)**: Fuelo's map endpoint (`/ajax/get_gasstations_within_bounds_mysql_clustering`) returns 403 to our User-Agent and `robots.txt` disallows `/ajax/*`, so the 12 Fuelo scrapers stopped writing on 2026-06-26 and their prices are frozen. We do not spoof the UA. The way back is the official API (`https://fuelo.net/api`, free key, 5,000 requests/day, request at `https://fuelo.net/about/api_key_request`); note it exposes stations and national averages, not per-station prices, so check what the key actually unlocks before rewriting `fuelo.ts`.
 
