@@ -13,6 +13,25 @@ import type { FuelType } from "../types/station";
 //   2. Shift the token string by 1 character (rotate left), MD5-hash the result
 //   3. Use the hash as X-API-KEY header + X-CLIENT-ID header
 //
+// STATUS 2026-09-21: this API is CLOSED and Norway has no working source.
+// Every /api/v1/* path now answers
+//   HTTP 404 {"statusCode":404,"message":"Endpoint not found"}
+// including /authorization-sessions, which is why the scrape has produced
+// nothing since 2026-05-26. The successor /api/v3/* paths answer
+//   HTTP 401 {"statusCode":401,"message":"You are not authorized"}
+// and no public session-minting endpoint remains (/api/v3/authorizations is
+// itself 401), so the dynamic-token bootstrap cannot be re-established.
+//
+// The request below is kept as a cheap probe: if DrivstoffAppen ever restores
+// the public bootstrap, Norway self-heals on the next scrape. Until then
+// fetch() throws, base.run() catches before any DB write, and the last-known-
+// good Norwegian data is preserved untouched.
+//
+// No replacement was adopted. Norway has no official station-level price
+// dataset (SSB publishes national monthly averages only), and the community
+// alternatives are all gated in ways we will not circumvent — see the note
+// above fetch() for the evidence.
+//
 // Endpoints used:
 //   GET /stations?countryId=1       → all Norwegian stations with prices
 //   GET /brands                      → brand name/logo lookup
@@ -160,12 +179,6 @@ async function deriveApiKey(token: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// SSR page URL (fallback)
-// ---------------------------------------------------------------------------
-
-const SSR_URL = "https://drivstoffappen.no/drivstoffpriser";
-
-// ---------------------------------------------------------------------------
 // Scraper
 // ---------------------------------------------------------------------------
 
@@ -173,16 +186,30 @@ export class NorwayScraper extends BaseScraper {
   readonly country = "NO";
   readonly source = "drivstoffappen";
 
+  /**
+   * Fetch Norwegian stations + prices.
+   *
+   * There is no fallback. The former SSR fallback scraped
+   * https://drivstoffappen.no/drivstoffpriser, which carries only per-brand
+   * averages — re-checked live on 2026-09-21, the 181 KB page contains no
+   * latitude, longitude or per-station price at all — so it could never
+   * produce a usable station. It returned an empty result, which base.ts's
+   * empty-fetch guard turned into a silent no-op and hid the fact that the
+   * country was dead. Failing loudly instead costs one wasted request less per
+   * scrape and puts the real reason in the run's errors[].
+   *
+   * Legitimate replacements were evaluated on 2026-09-21 and all rejected:
+   *   - drivstoffprisene.no /api/stasjoner — gated behind a per-deploy
+   *     X-Build-Token plus an X-Uaa shared secret and a navigator.webdriver
+   *     bot signal; reusing them would mean impersonating their client.
+   *   - drivstoffapp.no — robots.txt disallows /api/.
+   *   - prisjaktfuel.no — synthetic data (33 records, invented addresses,
+   *     a "Statoil" brand retired in Norway in 2016).
+   *   - fuelfinder.dk — serves HTTP 403 with an explicit no-scraping notice.
+   *   - SSB table 09654 — national monthly averages, not station level.
+   */
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    try {
-      return await this.fetchFromAPI();
-    } catch (apiErr) {
-      const msg = apiErr instanceof Error ? apiErr.message : String(apiErr);
-      console.warn(
-        `[${this.source}] API failed (${msg}), falling back to SSR scrape...`,
-      );
-      return this.fetchFromSSR();
-    }
+    return this.fetchFromAPI();
   }
 
   // ---------------------------------------------------------------------------
@@ -292,49 +319,6 @@ export class NorwayScraper extends BaseScraper {
       `[${this.source}] API: ${stations.length} stations, ${prices.length} prices`,
     );
     return { stations, prices };
-  }
-
-  // ---------------------------------------------------------------------------
-  // Fallback: SSR scrape from drivstoffappen.no/drivstoffpriser
-  // ---------------------------------------------------------------------------
-  // The SSR page only exposes per-brand AVERAGE prices with no per-station
-  // coordinates. Earlier this path fabricated one synthetic station per brand
-  // placed at Oslo center, which polluted the map with fake stations and could
-  // overwrite the country's last-known-good data on a transient API outage.
-  //
-  // We now return NO stations from SSR. base.ts's empty-fetch guard then
-  // aborts the destructive price-replace and preserves the previous run's
-  // data — strictly better than fabricating fake stations. The HTTP fetch is
-  // kept so a hard SSR failure still surfaces as an error (and so the API +
-  // SSR both-down case throws as before).
-  // ---------------------------------------------------------------------------
-
-  private async fetchFromSSR(): Promise<{
-    stations: RawStation[];
-    prices: RawFuelPrice[];
-  }> {
-    console.log(`[${this.source}] Fetching SSR page: ${SSR_URL}`);
-
-    const res = await fetch(SSR_URL, {
-      headers: {
-        Accept: "text/html",
-        "User-Agent": "Pumperly/1.0",
-      },
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!res.ok) {
-      throw new Error(`SSR page returned HTTP ${res.status}`);
-    }
-
-    // SSR only has brand averages (no per-station coordinates). Returning
-    // empty lets base.ts preserve last-known-good data instead of wiping the
-    // country or fabricating synthetic Oslo-center stations.
-    console.log(
-      `[${this.source}] SSR fallback: no per-station data available — ` +
-        `returning empty so last-known-good data is preserved`,
-    );
-    return { stations: [], prices: [] };
   }
 }
 

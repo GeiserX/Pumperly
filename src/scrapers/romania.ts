@@ -7,6 +7,12 @@ import type { FuelType } from "../types/station";
 // Parse API with publicly known keys. Returns ~1,400 stations with prices.
 // Prices in RON (Romanian Leu). Paginated (limit 1000).
 // 999999 = no data sentinel value.
+//
+// `Id` is NOT unique upstream: a station is occasionally listed twice under
+// one Id, and a handful of genuinely different stations share an Id. Feeding
+// those straight through makes the station upsert batch fail with
+// "ON CONFLICT DO UPDATE command cannot affect row a second time", so the
+// whole batch (500 stations) is lost on every run. See `externalIdFor()`.
 // ---------------------------------------------------------------------------
 
 const API_URL = "https://pg-app-hnf14cfy2xb2v9x9eueuchcd2xyetd.scalabl.cloud/1/classes/farapret3";
@@ -50,13 +56,41 @@ interface ParseResponse {
   count?: number;
 }
 
+/** Stable per-station coordinate key, used to disambiguate reused `Id`s. */
+function coordKey(s: PecoStation): string {
+  return `${s.lat},${s.lng}`;
+}
+
+/**
+ * Build the external id for every row.
+ *
+ * `Id` alone when it maps to a single location — so existing rows keep their
+ * id — and `Id@lat,lng` when upstream reuses one Id for several locations.
+ * Duplicate listings of the same station collapse onto the same id either way.
+ */
+function externalIdFor(rows: PecoStation[]): (s: PecoStation) => string {
+  const locationsById = new Map<string, Set<string>>();
+  for (const s of rows) {
+    const id = s.Id || s.objectId;
+    let locations = locationsById.get(id);
+    if (!locations) {
+      locations = new Set<string>();
+      locationsById.set(id, locations);
+    }
+    locations.add(coordKey(s));
+  }
+  return (s) => {
+    const id = s.Id || s.objectId;
+    return (locationsById.get(id)?.size ?? 0) > 1 ? `${id}@${coordKey(s)}` : id;
+  };
+}
+
 export class RomaniaScraper extends BaseScraper {
   readonly country = "RO";
   readonly source = "peco_online";
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    const stations: RawStation[] = [];
-    const prices: RawFuelPrice[] = [];
+    const rows: PecoStation[] = [];
     const LIMIT = 1000;
     let skip = 0;
     let total = 0;
@@ -85,10 +119,27 @@ export class RomaniaScraper extends BaseScraper {
         if (!s.lat || !s.lng) continue;
         // Romania bounding box
         if (s.lat < 43.5 || s.lat > 48.3 || s.lng < 20.2 || s.lng > 30.0) continue;
+        rows.push(s);
+      }
 
-        const externalId = s.Id || s.objectId;
+      skip += data.results.length;
+      if (data.results.length < LIMIT) break;
 
-        stations.push({
+      // Small delay between pages
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    // External ids are assigned once, over the full result set, so a reused
+    // `Id` is resolved the same way no matter which page each row arrived on.
+    const idFor = externalIdFor(rows);
+    const stationMap = new Map<string, RawStation>();
+    const priceMap = new Map<string, RawFuelPrice>();
+
+    for (const s of rows) {
+      const externalId = idFor(s);
+
+      if (!stationMap.has(externalId)) {
+        stationMap.set(externalId, {
           externalId,
           name: s.Statie?.trim() || `${s.Retea ?? ""} ${s.Oras ?? ""}`.trim(),
           brand: s.Retea?.trim() || null,
@@ -99,11 +150,14 @@ export class RomaniaScraper extends BaseScraper {
           longitude: s.lng,
           stationType: "fuel",
         });
+      }
 
-        for (const [field, fuelType] of FUEL_FIELD_MAP) {
-          const price = s[field as keyof PecoStation] as number;
-          if (price != null && price > 0 && price < 999999) {
-            prices.push({
+      for (const [field, fuelType] of FUEL_FIELD_MAP) {
+        const price = s[field as keyof PecoStation] as number;
+        if (price != null && price > 0 && price < 999999) {
+          const key = `${externalId}:${fuelType}`;
+          if (!priceMap.has(key)) {
+            priceMap.set(key, {
               stationExternalId: externalId,
               fuelType,
               price,
@@ -112,15 +166,15 @@ export class RomaniaScraper extends BaseScraper {
           }
         }
       }
-
-      skip += data.results.length;
-      if (data.results.length < LIMIT) break;
-
-      // Small delay between pages
-      await new Promise((r) => setTimeout(r, 200));
     }
 
-    console.log(`[${this.source}] Fetched ${stations.length} stations, ${prices.length} prices`);
+    const stations = Array.from(stationMap.values());
+    const prices = Array.from(priceMap.values());
+    const duplicateRows = rows.length - stations.length;
+    console.log(
+      `[${this.source}] Fetched ${stations.length} stations, ${prices.length} prices` +
+        (duplicateRows > 0 ? ` (collapsed ${duplicateRows} duplicate rows)` : ""),
+    );
     return { stations, prices };
   }
 }
