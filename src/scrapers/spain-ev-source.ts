@@ -9,7 +9,7 @@
 // once REVE has retired those rows (see scrapers/reve.ts), a single stray run of
 // the OpenChargeMap scraper would put all ~19k of them straight back.
 //
-// This rule is needed by both the scheduler (instrumentation.ts) and the manual
+// This rule is needed by both the scheduler (instrumentation-node.ts) and the manual
 // CLI (scrapers/cli.ts), so it lives here rather than in either of them. Two
 // copies would drift, and the way it drifts is silent: the map just quietly
 // fills up with duplicates again.
