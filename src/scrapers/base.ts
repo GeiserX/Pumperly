@@ -75,6 +75,7 @@ const PRICE_BANDS: Record<string, PriceBand> = {
   BAM: { min: 1, max: 10 },
   MDL: { min: 10, max: 100 },
   SEK: { min: 6, max: 60 },
+  ISK: { min: 100, max: 700 },
   NOK: { min: 7, max: 70 },
   DKK: { min: 6, max: 60 },
   MXN: { min: 8, max: 100 },

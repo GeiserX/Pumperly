@@ -262,103 +262,59 @@ describe("NorwayScraper", () => {
     expect(prices[0].fuelType).toBe("E5");
   });
 
-  it("returns empty (no synthetic stations) when API fails and SSR succeeds", async () => {
+  it("throws when auth fails, without falling back to the SSR page", async () => {
     const { NorwayScraper } = await import("./norway");
     const scraper = new NorwayScraper();
 
     vi.mocked(fetch).mockImplementation(async (input: string | URL | Request) => {
       const url = typeof input === "string" ? input : input.toString();
 
-      // API auth fails
+      // This is what the live API has returned since the v1 shutdown.
       if (url.includes("authorization-sessions")) {
-        return { ok: false, status: 500 } as Response;
+        return { ok: false, status: 404 } as Response;
       }
 
-      // SSR fallback page responds, but it only carries brand averages
-      // (no per-station coordinates). We must NOT fabricate synthetic stations.
-      if (url.includes("drivstoffappen.no/drivstoffpriser")) {
+      // The SSR page would answer 200 if asked — it must not be asked, because
+      // it carries only per-brand averages and its empty result used to hide
+      // the outage behind base.ts's empty-fetch guard.
+      return { ok: true, text: async () => "<html></html>" } as Response;
+    });
+
+    await expect(scraper.fetch()).rejects.toThrow(
+      "DrivstoffAppen auth failed: HTTP 404",
+    );
+
+    const requested = vi
+      .mocked(fetch)
+      .mock.calls.map((c) => String(c[0]));
+    expect(requested).toHaveLength(1);
+    expect(
+      requested.some((u) => u.includes("drivstoffappen.no/drivstoffpriser")),
+    ).toBe(false);
+  });
+
+  it("throws when the stations endpoint rejects the derived key", async () => {
+    const { NorwayScraper } = await import("./norway");
+    const scraper = new NorwayScraper();
+
+    vi.mocked(fetch).mockImplementation(async (input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("authorization-sessions")) {
         return {
           ok: true,
-          text: async () => `
-            <html>
-            <script id="__NUXT_DATA__" type="application/json">
-            [{"data":1},{"prices":2},["ShallowReactive",3],
-            [4,5],
-            {"brandName":6,"brandLogo":7,"fuelType":8,"price":9,"priceOld":10,"date":11},
-            {"brandName":12,"brandLogo":13,"fuelType":14,"price":15,"priceOld":16,"date":17},
-            "Circle K","logo.png","FT_D",19.89,19.5,"2026-04-20",
-            "Shell","logo2.png","FT_95",21.59,21.0,"2026-04-20"]
-            </script>
-            </html>
-          `,
+          json: async () => ({ token: "abc", expiresAt: "2026-12-31" }),
         } as Response;
       }
 
-      return { ok: false, status: 404 } as Response;
+      return {
+        ok: false,
+        status: 401,
+        text: async () => "You are not authorized",
+      } as Response;
     });
 
-    const { stations, prices } = await scraper.fetch();
-
-    // SSR must not fabricate fake Oslo-center stations: returning empty lets
-    // base.ts's empty-fetch guard preserve last-known-good data.
-    expect(stations).toHaveLength(0);
-    expect(prices).toHaveLength(0);
-  });
-
-  it("returns empty even when SSR page carries a Nuxt 2 brand payload", async () => {
-    const { NorwayScraper } = await import("./norway");
-    const scraper = new NorwayScraper();
-
-    vi.mocked(fetch).mockImplementation(async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input.toString();
-
-      if (url.includes("authorization-sessions")) {
-        return { ok: false, status: 500 } as Response;
-      }
-
-      if (url.includes("drivstoffappen.no/drivstoffpriser")) {
-        return {
-          ok: true,
-          text: async () => `
-            <html>
-            <script>
-            window.__NUXT__ = {data:[{brands:[{brandName:"Circle K",brandLogo:"logo.png",fuelType:"FT_D",price:19.89,priceOld:19.5,date:"2026-04-20"},{brandName:"Shell",brandLogo:"logo2.png",fuelType:"FT_95",price:21.59,priceOld:21.0,date:"2026-04-20"}]}]};
-            </script>
-            </html>
-          `,
-        } as Response;
-      }
-
-      return { ok: false, status: 404 } as Response;
-    });
-
-    const { stations, prices } = await scraper.fetch();
-
-    expect(stations).toHaveLength(0);
-    expect(prices).toHaveLength(0);
-  });
-
-  it("throws when both API and SSR fail", async () => {
-    const { NorwayScraper } = await import("./norway");
-    const scraper = new NorwayScraper();
-
-    vi.mocked(fetch).mockImplementation(async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input.toString();
-
-      // API auth fails
-      if (url.includes("authorization-sessions")) {
-        return { ok: false, status: 500 } as Response;
-      }
-
-      // SSR page also fails
-      if (url.includes("drivstoffappen.no")) {
-        return { ok: false, status: 500 } as Response;
-      }
-
-      return { ok: false, status: 404 } as Response;
-    });
-
-    await expect(scraper.fetch()).rejects.toThrow("HTTP 500");
+    await expect(scraper.fetch()).rejects.toThrow("HTTP 401");
   });
 
   it("skips stations with zero-price fuels", async () => {

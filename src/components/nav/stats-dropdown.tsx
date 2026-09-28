@@ -36,7 +36,7 @@ const FLAG: Record<string, string> = {
   CH: "🇨🇭", PL: "🇵🇱", CZ: "🇨🇿", HU: "🇭🇺", BG: "🇧🇬", SK: "🇸🇰",
   DK: "🇩🇰", SE: "🇸🇪", NO: "🇳🇴", RS: "🇷🇸", FI: "🇫🇮",
   EE: "🇪🇪", LV: "🇱🇻", LT: "🇱🇹", BA: "🇧🇦", MK: "🇲🇰",
-  TR: "🇹🇷", MD: "🇲🇩", AU: "🇦🇺", KR: "🇰🇷",
+  TR: "🇹🇷", MD: "🇲🇩", IS: "🇮🇸", AU: "🇦🇺", KR: "🇰🇷",
   AR: "🇦🇷", MX: "🇲🇽",
 };
 

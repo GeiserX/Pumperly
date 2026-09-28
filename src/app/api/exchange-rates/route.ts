@@ -29,6 +29,7 @@ async function fetchRates(): Promise<{ rates: Record<string, number>; date: stri
   if (!rates.RSD) rates.RSD = 117.0;   // Serbia — approximate, managed float
   if (!rates.ARS) rates.ARS = 1200;    // Argentina — approximate, high inflation
   if (!rates.MDL) rates.MDL = 19.5;    // Moldova — approximate
+  if (!rates.ISK) rates.ISK = 140;     // Iceland — ECB publishes ISK; fallback only
 
   return { rates, date };
 }

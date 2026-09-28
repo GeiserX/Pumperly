@@ -78,18 +78,19 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 | Luxembourg | ANWB | Commercial API | Every 12h |
 | Romania | Peco Online | Community | Every 12h |
 | Greece | FuelGR | Community API | Every 12h |
-| Ireland | Pick A Pump | Community API | Every 12h |
+| Ireland | Pick A Pump | Community API | Blocked: the site now rejects scrapers (Cloudflare 403, robots disallow); no open alternative |
 | Croatia | MZOE | Government API | Every 12h |
 | Denmark | FuelPrices.dk | Commercial API | Every 6h |
-| Norway | DrivstoffAppen | Government-mandated | Every 6h |
-| Sweden | Drivstoffappen | Community | Every 12h |
+| Norway | DrivstoffAppen | Government-mandated | Down: the public API was retired in 2026; drivstoffprisene.no needs a client id |
+| Sweden | [bensinpriser.nu](https://bensinpriser.nu) | Community | Every 12h |
 | Serbia | NIS / cenagoriva | Brand-level | Every 12h |
 | Finland | polttoaine.net | Community | Every 12h |
-| Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Every 12h |
-| Turkey | [Fuelo.net](https://fuelo.net) | Community | Every 12h |
+| Iceland | [Gasvaktin](https://github.com/gasvaktin/gasvaktin) | Community (MIT) | Every 6h |
+| Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen and no replacement is confirmed |
+| Turkey | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen and no replacement is confirmed |
 | Moldova | ANRE | Government | Every 12h |
-| Australia (WA + NSW) | FuelWatch / FuelCheck | Government API | Every 12h |
-| Argentina | Secretaria de Energia | Government API | Every 12h |
+| Australia (WA + NSW) | FuelWatch / FuelCheck | Government API | Every 12h (NSW needs `NSW_FUEL_API_KEY`; without it only WA updates) |
+| Argentina | Secretaria de Energia | Government API | Down from Europe: datos.energia.gob.ar drops connections from EU addresses |
 | Mexico | CRE | Government API | Every 12h |
 
 ### EV charging stations
@@ -439,7 +440,7 @@ Most countries work without any API key — they use open government data.
 <details>
 <summary><strong>All 36 supported countries</strong></summary>
 
-**Europe (31):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia)
+**Europe (32):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia), IS (Iceland)
 
 **Other regions (5):** TR (Turkey), MD (Moldova), AU (Australia), AR (Argentina), MX (Mexico)
 

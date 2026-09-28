@@ -7,6 +7,12 @@ import type { FuelType } from "../types/station";
 // Parse API with publicly known keys. Returns ~1,400 stations with prices.
 // Prices in RON (Romanian Leu). Paginated (limit 1000).
 // 999999 = no data sentinel value.
+//
+// `Id` is NOT unique upstream: a station is occasionally listed twice under
+// one Id, and a handful of genuinely different stations share an Id. Feeding
+// those straight through makes the station upsert batch fail with
+// "ON CONFLICT DO UPDATE command cannot affect row a second time", so the
+// whole batch (500 stations) is lost on every run. See `externalIdFor()`.
 // ---------------------------------------------------------------------------
 
 const API_URL = "https://pg-app-hnf14cfy2xb2v9x9eueuchcd2xyetd.scalabl.cloud/1/classes/farapret3";
@@ -50,13 +56,25 @@ interface ParseResponse {
   count?: number;
 }
 
+/**
+ * External id for a row: `Id@lat,lng`.
+ *
+ * Upstream reuses `Id` for different stations, and which ids collide changes
+ * from one fetch to the next, so the coordinates are always part of the id.
+ * A station keeps its id whether or not its twin is in the feed, and duplicate
+ * listings of one station collapse onto the same id.
+ */
+function externalIdFor(s: PecoStation): string {
+  return `${s.Id || s.objectId}@${s.lat},${s.lng}`;
+}
+
 export class RomaniaScraper extends BaseScraper {
   readonly country = "RO";
   readonly source = "peco_online";
 
+  /** Page through the Peco Online export and collapse it onto coordinate-qualified ids. */
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    const stations: RawStation[] = [];
-    const prices: RawFuelPrice[] = [];
+    const rows: PecoStation[] = [];
     const LIMIT = 1000;
     let skip = 0;
     let total = 0;
@@ -85,10 +103,24 @@ export class RomaniaScraper extends BaseScraper {
         if (!s.lat || !s.lng) continue;
         // Romania bounding box
         if (s.lat < 43.5 || s.lat > 48.3 || s.lng < 20.2 || s.lng > 30.0) continue;
+        rows.push(s);
+      }
 
-        const externalId = s.Id || s.objectId;
+      skip += data.results.length;
+      if (data.results.length < LIMIT) break;
 
-        stations.push({
+      // Small delay between pages
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    const stationMap = new Map<string, RawStation>();
+    const priceMap = new Map<string, RawFuelPrice>();
+
+    for (const s of rows) {
+      const externalId = externalIdFor(s);
+
+      if (!stationMap.has(externalId)) {
+        stationMap.set(externalId, {
           externalId,
           name: s.Statie?.trim() || `${s.Retea ?? ""} ${s.Oras ?? ""}`.trim(),
           brand: s.Retea?.trim() || null,
@@ -99,11 +131,14 @@ export class RomaniaScraper extends BaseScraper {
           longitude: s.lng,
           stationType: "fuel",
         });
+      }
 
-        for (const [field, fuelType] of FUEL_FIELD_MAP) {
-          const price = s[field as keyof PecoStation] as number;
-          if (price != null && price > 0 && price < 999999) {
-            prices.push({
+      for (const [field, fuelType] of FUEL_FIELD_MAP) {
+        const price = s[field as keyof PecoStation] as number;
+        if (price != null && price > 0 && price < 999999) {
+          const key = `${externalId}:${fuelType}`;
+          if (!priceMap.has(key)) {
+            priceMap.set(key, {
               stationExternalId: externalId,
               fuelType,
               price,
@@ -112,15 +147,15 @@ export class RomaniaScraper extends BaseScraper {
           }
         }
       }
-
-      skip += data.results.length;
-      if (data.results.length < LIMIT) break;
-
-      // Small delay between pages
-      await new Promise((r) => setTimeout(r, 200));
     }
 
-    console.log(`[${this.source}] Fetched ${stations.length} stations, ${prices.length} prices`);
+    const stations = Array.from(stationMap.values());
+    const prices = Array.from(priceMap.values());
+    const duplicateRows = rows.length - stations.length;
+    console.log(
+      `[${this.source}] Fetched ${stations.length} stations, ${prices.length} prices` +
+        (duplicateRows > 0 ? ` (collapsed ${duplicateRows} duplicate rows)` : ""),
+    );
     return { stations, prices };
   }
 }

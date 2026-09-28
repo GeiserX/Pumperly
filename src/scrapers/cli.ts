@@ -33,6 +33,7 @@ import { BosniasScraper } from "./bosnia";
 import { NorthMacedoniaScraper } from "./north-macedonia";
 import { TurkeyScraper } from "./turkey";
 import { MoldovaScraper } from "./moldova";
+import { IcelandScraper } from "./iceland";
 import { AustraliaScraper } from "./australia";
 import { AustraliaNSWScraper } from "./australia-nsw";
 import { ArgentinaScraper } from "./argentina";
@@ -90,6 +91,7 @@ const SCRAPERS: Record<string, Array<() => BaseScraper>> = {
   MK: [() => new NorthMacedoniaScraper()],
   TR: [() => new TurkeyScraper()],
   MD: [() => new MoldovaScraper()],
+  IS: [() => new IcelandScraper()],
   AU: [() => new AustraliaScraper(), () => new AustraliaNSWScraper()],
   AR: [() => new ArgentinaScraper()],
   MX: [() => new MexicoScraper()],
@@ -127,6 +129,7 @@ const SCRAPERS: Record<string, Array<() => BaseScraper>> = {
   EV_MK: [() => new OCMScraper("MK")],
   EV_TR: [() => new OCMScraper("TR")],
   EV_MD: [() => new OCMScraper("MD")],
+  EV_IS: [() => new OCMScraper("IS")],
   EV_AU: [() => new OCMScraper("AU")],
   EV_AR: [() => new OCMScraper("AR")],
   EV_MX: [() => new OCMScraper("MX")],

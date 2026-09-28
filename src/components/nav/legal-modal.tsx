@@ -143,6 +143,7 @@ function SourcesContent() {
         <li><strong>Moldova</strong> &mdash; ANRE (Agentia Nationala pentru Reglementare in Energetica)</li>
         <li><strong>Serbia</strong> &mdash; NIS Cena Goriva</li>
         <li><strong>Finland</strong> &mdash; Polttoaine.net</li>
+        <li><strong>Iceland</strong> &mdash; Gasvaktin (open data, MIT licence)</li>
         <li><strong>Australia (WA)</strong> &mdash; FuelWatch, Government of Western Australia</li>
         <li><strong>Australia (NSW)</strong> &mdash; FuelCheck, NSW Government (api.onegov.nsw.gov.au)</li>
         <li><strong>Argentina</strong> &mdash; Secretaria de Energia, datos.gob.ar</li>
