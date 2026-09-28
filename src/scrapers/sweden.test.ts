@@ -258,14 +258,15 @@ describe("SwedenScraper handover cleanup", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it("retires only Swedish drivstoffappen prices, then the stations left without a price", async () => {
+  it("retires only Swedish drivstoffappen and bensinpriser_nu prices, then the stations left without a price", async () => {
     const exec = await runWith({ stationsUpserted: 491, errors: [] });
 
     expect(exec).toHaveBeenCalledTimes(2);
     const [pricesSql, source] = exec.mock.calls[0];
     expect(pricesSql).toMatch(/DELETE FROM fuel_prices/);
     expect(pricesSql).toMatch(/country = 'SE'/);
-    expect(source).toBe("drivstoffappen");
+    expect(pricesSql).toMatch(/source = ANY\(\$1::text\[\]\)/);
+    expect(source).toEqual(["drivstoffappen", "bensinpriser_nu"]);
     const [stationsSql] = exec.mock.calls[1];
     expect(stationsSql).toMatch(/DELETE FROM stations/);
     expect(stationsSql).toMatch(/country = 'SE' AND station_type = 'fuel'/);
