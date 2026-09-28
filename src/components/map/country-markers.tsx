@@ -16,7 +16,7 @@ const FLAG: Record<string, string> = {
   CH: "🇨🇭", PL: "🇵🇱", CZ: "🇨🇿", HU: "🇭🇺", BG: "🇧🇬", SK: "🇸🇰",
   DK: "🇩🇰", SE: "🇸🇪", NO: "🇳🇴", RS: "🇷🇸", FI: "🇫🇮",
   EE: "🇪🇪", LV: "🇱🇻", LT: "🇱🇹", BA: "🇧🇦", MK: "🇲🇰",
-  TR: "🇹🇷", MD: "🇲🇩", IS: "🇮🇸", AU: "🇦🇺", AR: "🇦🇷", MX: "🇲🇽",
+  TR: "🇹🇷", MD: "🇲🇩", IS: "🇮🇸", CY: "🇨🇾", TW: "🇹🇼", AU: "🇦🇺", AR: "🇦🇷", MX: "🇲🇽",
 };
 
 function formatCount(n: number): string {

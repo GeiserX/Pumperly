@@ -86,6 +86,8 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 | Serbia | NIS / cenagoriva | Brand-level | Every 12h |
 | Finland | polttoaine.net | Community | Every 12h |
 | Iceland | [Gasvaktin](https://github.com/gasvaktin/gasvaktin) | Community (MIT) | Every 6h |
+| Cyprus | [Consumer Protection Service observatory](https://eforms.eservices.cyprus.gov.cy/MCIT/MCIT/PetroleumPrices) | Government (CC BY-SA 4.0) | Every 6h |
+| Taiwan | [CPC Corporation open data](https://data.gov.tw/dataset/6339) | Government list price (OGDL v1.0) | Every 12h |
 | Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen and no replacement is confirmed |
 | Turkey | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen and no replacement is confirmed |
 | Moldova | ANRE | Government | Every 12h |
@@ -440,9 +442,9 @@ Most countries work without any API key — they use open government data.
 <details>
 <summary><strong>All 36 supported countries</strong></summary>
 
-**Europe (32):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia), IS (Iceland)
+**Europe (33):** ES (Spain), FR (France), DE (Germany), IT (Italy), GB (United Kingdom), AT (Austria), PT (Portugal), SI (Slovenia), NL (Netherlands), BE (Belgium), LU (Luxembourg), RO (Romania), GR (Greece), IE (Ireland), HR (Croatia), CH (Switzerland), PL (Poland), CZ (Czech Republic), HU (Hungary), BG (Bulgaria), SK (Slovakia), DK (Denmark), SE (Sweden), NO (Norway), RS (Serbia), FI (Finland), EE (Estonia), LV (Latvia), LT (Lithuania), BA (Bosnia and Herzegovina), MK (North Macedonia), IS (Iceland), CY (Cyprus)
 
-**Other regions (5):** TR (Turkey), MD (Moldova), AU (Australia), AR (Argentina), MX (Mexico)
+**Other regions (6):** TR (Turkey), MD (Moldova), AU (Australia), AR (Argentina), MX (Mexico), TW (Taiwan)
 
 </details>
 
