@@ -78,18 +78,18 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 | Luxembourg | ANWB | Commercial API | Every 12h |
 | Romania | Peco Online | Community | Every 12h |
 | Greece | FuelGR | Community API | Every 12h |
-| Ireland | Pick A Pump | Community API | Every 12h |
+| Ireland | Pick A Pump | Community API | Blocked: the site now rejects scrapers (Cloudflare 403, robots disallow); no open alternative |
 | Croatia | MZOE | Government API | Every 12h |
 | Denmark | FuelPrices.dk | Commercial API | Every 6h |
-| Norway | DrivstoffAppen | Government-mandated | Every 6h |
-| Sweden | Drivstoffappen | Community | Every 12h |
+| Norway | DrivstoffAppen | Government-mandated | Down: the public API was retired in 2026; drivstoffprisene.no needs a client id |
+| Sweden | [bensinpriser.nu](https://bensinpriser.nu) | Community | Every 12h |
 | Serbia | NIS / cenagoriva | Brand-level | Every 12h |
 | Finland | polttoaine.net | Community | Every 12h |
-| Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Every 12h |
-| Turkey | [Fuelo.net](https://fuelo.net) | Community | Every 12h |
+| Switzerland, Poland, Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia, North Macedonia | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026: Fuelo blocks the map endpoint; prices are frozen until we get API access |
+| Turkey | [Fuelo.net](https://fuelo.net) | Community | Paused since June 2026 (same Fuelo block) |
 | Moldova | ANRE | Government | Every 12h |
-| Australia (WA + NSW) | FuelWatch / FuelCheck | Government API | Every 12h |
-| Argentina | Secretaria de Energia | Government API | Every 12h |
+| Australia (WA + NSW) | FuelWatch / FuelCheck | Government API | Every 12h (NSW needs `NSW_FUEL_API_KEY`; without it only WA updates) |
+| Argentina | Secretaria de Energia | Government API | Down from Europe: datos.energia.gob.ar drops connections from EU addresses |
 | Mexico | CRE | Government API | Every 12h |
 
 ### EV charging stations

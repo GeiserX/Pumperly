@@ -110,36 +110,38 @@ Mix of Fuelo.net scrapers (`src/scrapers/fuelo.ts`), dedicated scrapers (ANWB, P
 | Netherlands | ANWB | EUR | ~4,154 | ✅ Running |
 | Belgium | ANWB | EUR | ~3,000+ | ✅ Running |
 | Luxembourg | ANWB | EUR | ~200+ | ✅ Running |
-| Romania | Peco Online | RON | ~3,000+ | ✅ Running |
+| Romania | Peco Online | RON | ~1,400 | ✅ Running (upstream reuses ids; duplicates get a coordinate suffix) |
 | Greece | FuelGR | EUR | ~6,000+ | ✅ Running |
-| Ireland | Pick A Pump | EUR | ~1,500+ | ✅ Running |
+| Ireland | Pick A Pump | EUR | 0 | ❌ Blocked: Cloudflare 403 + robots disallow since 2026; fuelwatch.ie is licence-only |
 | Croatia | MZOE | EUR | ~800+ | ✅ Running |
-| Switzerland | Fuelo.net | CHF | ~3,000+ | ✅ Running |
-| Poland | Fuelo.net | PLN | ~7,000+ | ✅ Running |
-| Czech Republic | Fuelo.net | CZK | ~4,000+ | ✅ Running |
-| Hungary | Fuelo.net | HUF | ~2,000+ | ✅ Running |
-| Bulgaria | Fuelo.net | BGN | ~3,000+ | ✅ Running |
-| Slovakia | Fuelo.net | EUR | ~1,500+ | ✅ Running |
-| Sweden | bensinpriser.nu | SEK | ~3,000+ | ✅ Running |
-| Norway | DrivstoffAppen | NOK | ~2,000+ | ✅ Running |
+| Switzerland | Fuelo.net | CHF | ~3,000+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Poland | Fuelo.net | PLN | ~7,000+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Czech Republic | Fuelo.net | CZK | ~4,000+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Hungary | Fuelo.net | HUF | ~2,000+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Bulgaria | Fuelo.net | BGN | ~3,000+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Slovakia | Fuelo.net | EUR | ~1,500+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Sweden | bensinpriser.nu | SEK | ~500 | ✅ Running (replaced DrivstoffAppen, whose API died in May 2026) |
+| Norway | DrivstoffAppen | NOK | ~2,000+ | ❌ Down: API v1 returns 404, v3 needs auth; drivstoffprisene.no needs a client id |
 | Serbia | NIS / cenagoriva | RSD | ~2,000+ | ✅ Running |
 | Finland | polttoaine.net | EUR | ~2,000+ | ✅ Running |
-| Estonia | Fuelo.net | EUR | ~522 | ✅ Running |
-| Latvia | Fuelo.net | EUR | ~809 | ✅ Running |
-| Lithuania | Fuelo.net | EUR | ~854 | ✅ Running |
-| Bosnia & Herzegovina | Fuelo.net | BAM | ~436 | ✅ Running |
-| North Macedonia | Fuelo.net | MKD | ~353 | ✅ Running |
+| Estonia | Fuelo.net | EUR | ~522 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Latvia | Fuelo.net | EUR | ~809 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Lithuania | Fuelo.net | EUR | ~854 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| Bosnia & Herzegovina | Fuelo.net | BAM | ~436 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
+| North Macedonia | Fuelo.net | MKD | ~353 | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
 
 **Non-European (5 countries):**
 | Country | Source | Currency | Stations | Scraper Status |
 |---|---|---|---|---|
-| Turkey | Fuelo.net | TRY | ~5,000+ | ✅ Running |
+| Turkey | Fuelo.net | TRY | ~5,000+ | ⚠️ Paused since 2026-06-26 (Fuelo block, see note) |
 | Moldova | ANRE | MDL | ~300+ | ✅ Running |
-| Australia (WA + NSW) | FuelWatch / FuelCheck | AUD | ~4,000+ | ✅ Running |
-| Argentina | Secretaría de Energía | ARS | ~4,600+ | ✅ Running |
+| Australia (WA + NSW) | FuelWatch / FuelCheck | AUD | ~4,000+ | ⚠️ WA running; NSW frozen since March 2026 (no `NSW_FUEL_API_KEY` configured) |
+| Argentina | Secretaría de Energía | ARS | ~4,600+ | ❌ Down from the EU: datos.energia.gob.ar geo-blocks; reachable only from the Americas |
 | Mexico | CRE | MXN | ~13,500+ | ✅ Running |
 
 **Total: 36 countries, ~145K+ stations**
+
+**Fuelo block (June 2026)**: Fuelo's map endpoint (`/ajax/get_gasstations_within_bounds_mysql_clustering`) returns 403 to our User-Agent and `robots.txt` disallows `/ajax/*`, so the 12 Fuelo scrapers stopped writing on 2026-06-26 and their prices are frozen. We do not spoof the UA. The way back is the official API (`https://fuelo.net/api`, free key, 5,000 requests/day, request at `https://fuelo.net/about/api_key_request`); note it exposes stations and national averages, not per-station prices, so check what the key actually unlocks before rewriting `fuelo.ts`.
 
 **Fuelo Dependency Note**: Research (Mar 2026) confirmed no viable government API alternatives exist for most Fuelo countries. Only DE, ES, AT, FR, DK, IT, GB, PT, SI have true government/official APIs. The EU AFIR Delegated Regulation 2024/1557 should eventually require station-level price data from EU member states, but implementation is incomplete as of 2026. Bosnia's FMT EOPC API (`fmteopc.azurewebsites.net`) has full station-level data but requires authentication.
 
