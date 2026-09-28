@@ -182,7 +182,7 @@ export function RefuelPlanner({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-100">{f.properties.brand ?? f.properties.name}</p>
                         <p className="truncate text-[11px] text-gray-500 dark:text-gray-400">
-                          km {Math.round(stop.km)} · {Math.round(stop.arrivePct)}% → {Math.round(stop.departPct)}% · +{Math.round(stop.detourMin)} min
+                          {t("route.distance")} {Math.round(stop.km)} · {Math.round(stop.arrivePct)}% → {Math.round(stop.departPct)}% · +{Math.round(stop.detourMin)} {t("route.duration")}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
