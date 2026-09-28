@@ -39,7 +39,9 @@ const DATA_URL = "https://bensinpriser.nu/karta/data";
 // Source name of the retired DrivstoffAppen scraper. base.run() only replaces
 // prices of its own source, so those rows would otherwise stay forever next to
 // the new ones: the same forecourt twice, once with a frozen May 2026 price.
-const RETIRED_SOURCE = "drivstoffappen";
+// Sources whose rows can never refresh again: DrivstoffAppen (API gone) and
+// the pre-May-2026 bensinpriser_nu scraper (slug ids, prices frozen at March).
+const RETIRED_SOURCES = ["drivstoffappen", "bensinpriser_nu"];
 
 // Floor gating the handover in run(): a degraded feed must not be able to
 // retire the previous source's stations.
@@ -128,9 +130,9 @@ export class SwedenScraper extends BaseScraper {
     try {
       const retired = await prisma.$executeRawUnsafe(
         `DELETE FROM fuel_prices
-         WHERE source = $1
+         WHERE source = ANY($1::text[])
            AND station_id IN (SELECT id FROM stations WHERE country = 'SE')`,
-        RETIRED_SOURCE,
+        RETIRED_SOURCES,
       );
       if (retired > 0) {
         const orphans = await prisma.$executeRawUnsafe(
@@ -139,7 +141,7 @@ export class SwedenScraper extends BaseScraper {
              AND NOT EXISTS (SELECT 1 FROM fuel_prices fp WHERE fp.station_id = stations.id)`,
         );
         console.log(
-          `[${this.source}] Retired ${retired} ${RETIRED_SOURCE} prices and ${orphans} stations`,
+          `[${this.source}] Retired ${retired} ${RETIRED_SOURCES.join("/")} prices and ${orphans} stations`,
         );
       }
     } catch (err) {
