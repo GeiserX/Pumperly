@@ -54,9 +54,6 @@ Then create the database schema and start the app:
 ```bash
 npx prisma generate        # writes the client to src/generated/prisma
 npx prisma migrate deploy  # applies prisma/migrations
-docker compose -f docker/docker-compose.yml exec db \
-  psql -U pumperly -d pumperly \
-  -c 'ALTER TABLE fuel_prices ALTER COLUMN price TYPE DECIMAL(10,3);'
 npm run dev
 ```
 

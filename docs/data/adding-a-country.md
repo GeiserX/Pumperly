@@ -308,13 +308,9 @@ until docker exec pumperly-scratch-db pg_isready -h 127.0.0.1 -U pumperly -d pum
 for f in prisma/migrations/*/migration.sql; do
   docker exec -i pumperly-scratch-db psql -U pumperly -d pumperly -v ON_ERROR_STOP=1 < "$f"
 done
-
-# The migrations create a narrower price column than schema.prisma declares
-docker exec pumperly-scratch-db psql -U pumperly -d pumperly \
-  -c 'ALTER TABLE fuel_prices ALTER COLUMN price TYPE DECIMAL(10,3)'
 ```
 
-[Data model](../reference/data-model.md) explains why the migrations are applied directly here, and the price column step.
+[Data model](../reference/data-model.md) explains why the migrations are applied directly here.
 
 Run the scraper against it from a checkout set up as in [Local development](../getting-started/development.md). Export `DATABASE_URL` in the shell. The CLI also reads `.env`, but a variable already set in the shell wins.
 

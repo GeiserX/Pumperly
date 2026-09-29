@@ -51,9 +51,6 @@ This starts only the database. See [What the shipped compose file runs](docker-c
 ```bash
 npx prisma generate
 npx prisma migrate deploy
-docker compose -f docker/docker-compose.yml exec db \
-  psql -U pumperly -d pumperly \
-  -c 'ALTER TABLE fuel_prices ALTER COLUMN price TYPE DECIMAL(10,3);'
 ```
 
 - `prisma generate` writes the typed database client to `src/generated/prisma`. Git ignores that directory, so every fresh checkout needs this step. The tests and the build need it too.

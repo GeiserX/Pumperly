@@ -118,17 +118,6 @@ The app does not create its own tables. The repository ships the schema as SQL m
 
 The migrations enable the PostGIS extension and create two tables, `stations` and `fuel_prices`. The `stations` table has a `geom` column that holds each station's position, with two spatial indexes on it. See [Data model](../reference/data-model.md).
 
-Then widen the price column:
-
-```bash
-docker compose -f docker/docker-compose.yml exec db \
-  psql -U pumperly -d pumperly \
-  -c 'ALTER TABLE fuel_prices ALTER COLUMN price TYPE DECIMAL(10,3);'
-```
-
-!!! warning "Why the extra ALTER TABLE"
-    The first migration creates `fuel_prices.price` as `DECIMAL(6,3)`, which holds at most 999.999. [`prisma/schema.prisma`](https://github.com/GeiserX/Pumperly/blob/main/prisma/schema.prisma) declares `DECIMAL(10,3)`, and no migration widens it. The scrapers accept Argentine peso prices up to 20,000 per litre, and a price of 1,000 or more does not fit. One such price fails the whole price update for that country. Running the statement on a column that is already `DECIMAL(10,3)` changes nothing.
-
 !!! danger "Do not use `prisma db push` to create the schema"
     `prisma db push` builds tables from `prisma/schema.prisma`. That file does not declare the `geom` column, because Prisma has no type for it. Every scraper writes `geom` and the map's queries read it, so on a schema made by `db push` every station insert fails.
 

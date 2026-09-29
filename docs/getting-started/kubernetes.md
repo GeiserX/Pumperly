@@ -81,12 +81,9 @@ for f in prisma/migrations/*/migration.sql; do
   kubectl exec -i pumperly-postgis-0 -- \
     psql -v ON_ERROR_STOP=1 -U pumperly -d pumperly < "$f"
 done
-kubectl exec pumperly-postgis-0 -- \
-  psql -U pumperly -d pumperly \
-  -c 'ALTER TABLE fuel_prices ALTER COLUMN price TYPE DECIMAL(10,3);'
 ```
 
-Run it from a checkout of the repository, which holds the migration files. The last statement widens the price column. [Run with Docker Compose](docker-compose.md#4-create-the-database-schema) explains why it is needed.
+Run it from a checkout of the repository, which holds the migration files.
 
 Then restart the app, so its first scrapes run against the new tables:
 

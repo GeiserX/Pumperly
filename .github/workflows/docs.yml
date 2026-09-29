@@ -12,6 +12,11 @@ on:
       - 'mkdocs.yml'
       - 'docker/docker-compose.yml'
       - '.env.example'
+      # Files the pages include word for word with pymdownx.snippets. A
+      # change to one must rebuild the site, and a rename must fail the build.
+      - 'charts/pumperly/values.yaml'
+      - 'prisma/**'
+      - '.github/workflows/reve-key-renewal.yml'
       - '.github/workflows/docs.yml'
   pull_request:
     paths:
@@ -19,6 +24,11 @@ on:
       - 'mkdocs.yml'
       - 'docker/docker-compose.yml'
       - '.env.example'
+      # Files the pages include word for word with pymdownx.snippets. A
+      # change to one must rebuild the site, and a rename must fail the build.
+      - 'charts/pumperly/values.yaml'
+      - 'prisma/**'
+      - '.github/workflows/reve-key-renewal.yml'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 

@@ -49,12 +49,11 @@ Two places in the repository describe these tables, and they are not identical.
 | `stations.geom` | Not declared | `geometry(Point, 4326)` |
 | The two GiST indexes on `geom` | Not declared | Created |
 | Default for `stations.id` | `@default(uuid())`, filled in by the Prisma client | `DEFAULT gen_random_uuid()`, filled in by the database |
-| `fuel_prices.price` | `Decimal(10, 3)` | `DECIMAL(6,3)` |
+| `fuel_prices.price` | `Decimal(10, 3)` | `DECIMAL(6,3)` in the first migration, widened to `DECIMAL(10,3)` by a later one |
 
 !!! warning "Scrapers write with raw SQL"
     Scrapers insert stations and prices with SQL, not through the Prisma client. Their station insert sets `geom` and leaves `id` to the database default. A database therefore needs the `geom` column and the `id` default from the migrations, or every scraper insert fails. The map and route queries also rely on the GiST indexes to stay fast. Tools that build the tables from `schema.prisma` alone, such as `prisma db push`, create none of these.
 
-    The price column also matters. `DECIMAL(6,3)` holds at most 999.999. Some currencies go past that per litre. The price bands allow up to 2,000 for HUF and 20,000 for ARS. A price that does not fit makes the insert fail, and because all of a source's prices are written in one transaction, the whole replace for that country rolls back. `schema.prisma` declares `DECIMAL(10,3)`, and no migration widens the column.
 
 The shipped files, included here word for word:
 
