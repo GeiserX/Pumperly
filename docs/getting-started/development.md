@@ -193,3 +193,36 @@ Run the same commands before you open a pull request. [Contributing](../contribu
 | `docker/` | The Dockerfile and the PostGIS compose file |
 | `charts/pumperly/` | The Helm chart. See [Run on Kubernetes with Helm](kubernetes.md). |
 | `scripts/` | The MapLibre worker copy step |
+
+## The short version
+
+The whole setup above, as one block:
+
+```bash
+git clone https://github.com/GeiserX/pumperly.git
+cd pumperly
+npm install
+cp .env.example .env
+# Start PostGIS:
+docker compose -f docker/docker-compose.yml up -d
+# Generate Prisma client + push schema:
+npx prisma generate && npx prisma db push
+# Seed data for one country:
+npm run scraper:run -- --country=ES
+# Start dev server:
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+### Available scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Start Next.js dev server |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run scraper:run -- --country=XX` | Run scraper for a country (or `--country=all`) |
+
+The tech stack is listed in [Features at a glance](../features.md#tech-stack).
