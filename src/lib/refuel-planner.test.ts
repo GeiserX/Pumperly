@@ -78,6 +78,22 @@ describe("planRefuel", () => {
     expect(r.reason).toBe("range");
   });
 
+  it("counts the way back from a station's detour when measuring reach", () => {
+    // A 60 min detour is 50 km: 25 km back to the route before a full tank's 450 km
+    // (down to the 10 % reserve) starts counting, so the car gets to km 525 of 540.
+    const r = planRefuel({
+      ...base,
+      startPct: 50,
+      arrivalPct: 0,
+      reservePct: 10,
+      routeKm: 540,
+      stations: [st("A", 100, 1.5, 60)],
+    });
+    expect(r.status).toBe("infeasible");
+    expect(r.reason).toBe("range");
+    expect(r.gapKm).toBeCloseTo(525);
+  });
+
   it("says there are no candidates when no station is usable", () => {
     const r = planRefuel({ ...base, routeKm: 600, stations: [] });
     expect(r.status).toBe("infeasible");

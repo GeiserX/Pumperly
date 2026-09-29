@@ -251,7 +251,8 @@ export function planRefuel(input: PlannerInput): PlanResult {
         for (let j = 0; j < n; j++) {
           for (let g = L - 1; g >= 0; g--) {
             if (dp[j * L + g] < Infinity) {
-              reach = Math.max(reach, stations[j].km + Math.max(0, (g - reservePct) / pctPerKm));
+              // Leaving j drives the other half of its detour first (as legPct charges it).
+              reach = Math.max(reach, stations[j].km + Math.max(0, (g - reservePct) / pctPerKm - detourKm[j] / 2));
               break;
             }
           }
