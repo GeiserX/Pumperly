@@ -8,8 +8,15 @@ vi.mock("@/lib/i18n", () => ({
   useI18n: () => ({ t: (k: string) => k }),
 }));
 
-// Display currency and its rate per EUR; tests may switch to HUF.
-const currencyState = { currency: "EUR", symbol: "€", decimals: 3, rate: 1 };
+// Display currency and its rate per EUR; tests may switch to HUF. `rates` is the
+// ECB table the context exposes (null until fetched).
+const currencyState: {
+  currency: string;
+  symbol: string;
+  decimals: number;
+  rate: number;
+  rates: { base: "EUR"; rates: Record<string, number>; date: string } | null;
+} = { currency: "EUR", symbol: "€", decimals: 3, rate: 1, rates: null };
 vi.mock("@/lib/currency", () => ({
   useCurrency: () => ({
     ...currencyState,
@@ -74,7 +81,7 @@ function renderPlanner(props: Partial<React.ComponentProps<typeof Harness>> = {}
 describe("RefuelPlanner", () => {
   beforeEach(() => {
     localStorage.clear();
-    Object.assign(currencyState, { currency: "EUR", symbol: "€", decimals: 3, rate: 1 });
+    Object.assign(currencyState, { currency: "EUR", symbol: "€", decimals: 3, rate: 1, rates: null });
   });
 
   it("is collapsed by default and reports no stops", () => {
@@ -108,7 +115,10 @@ describe("RefuelPlanner", () => {
   });
 
   it("keeps the time value in EUR and converts it to the display currency", async () => {
-    Object.assign(currencyState, { currency: "HUF", symbol: "Ft", decimals: 0, rate: 390 });
+    Object.assign(currencyState, {
+      currency: "HUF", symbol: "Ft", decimals: 0, rate: 390,
+      rates: { base: "EUR", rates: { HUF: 390 }, date: "2026-09-28" },
+    });
     // Cheap but 60 min away vs. dearer at 1 min: at €15/h (5850 Ft/h) the detour isn't worth it.
     const { onPlanChange } = renderPlanner({
       stations: [
@@ -119,6 +129,22 @@ describe("RefuelPlanner", () => {
     await userEvent.click(screen.getByText("planner.title"));
     expect(screen.getByDisplayValue("5850")).toBeInTheDocument();
     expect(onPlanChange).toHaveBeenLastCalledWith([{ id: "near", coordinates: [-3.7, 40.4] }]);
+  });
+
+  it("does not plan or take a time value when the display currency has no rate", async () => {
+    Object.assign(currencyState, { currency: "HUF", symbol: "Ft", decimals: 0, rate: 390, rates: null });
+    const { onPlanChange } = renderPlanner({
+      stations: [makeStation("near", { brand: "Near", price: 632, currency: "HUF", routeFraction: 0.25, detourMin: 1 })],
+    });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("planner.noRates")).toBeInTheDocument();
+    expect(screen.getByLabelText("planner.timeValue")).toBeDisabled();
+    expect(screen.queryByText("Near")).not.toBeInTheDocument();
+    expect(onPlanChange).toHaveBeenLastCalledWith([]);
+    // A rate table without this currency is no better.
+    Object.assign(currencyState, { rates: { base: "EUR", rates: { USD: 1.1 }, date: "2026-09-28" } });
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "40" } });
+    expect(screen.getByText("planner.noRates")).toBeInTheDocument();
   });
 
   it("only recommends stations that pass the map's price and detour filters", async () => {

@@ -61,7 +61,7 @@ export function RefuelPlanner({
   onSettingsChange,
 }: RefuelPlannerProps) {
   const { t } = useI18n();
-  const { currency, symbol, decimals, formatPrice, convert } = useCurrency();
+  const { currency, symbol, decimals, formatPrice, convert, rates } = useCurrency();
   const [profile, setProfile] = useVehicleProfile();
   const { open, startPct, arrivalPct, reservePct, timeValueEur } = settings;
   const update = (patch: Partial<PlannerSettings>) => onSettingsChange({ ...settings, ...patch });
@@ -69,13 +69,16 @@ export function RefuelPlanner({
   const [tankDraft, setTankDraft] = useState(String(profile.tankL));
   const [consDraft, setConsDraft] = useState(String(profile.consumptionL100));
 
+  // The time value is stored in EUR: without a rate for the display currency it
+  // can't be converted, and `convert` would silently treat it as 1:1.
+  const ratesMissing = currency !== "EUR" && !rates?.rates[currency];
   const eurRate = convert(1, "EUR");
   const timeValue = Number((timeValueEur * eurRate).toFixed(Math.min(decimals, 2)));
 
   const byId = useMemo(() => new Map(stations.map((s) => [s.properties.id, s])), [stations]);
 
   const plan: PlanResult | null = useMemo(() => {
-    if (!open || detoursLoading || routeKm <= 0) return null;
+    if (!open || ratesMissing || detoursLoading || routeKm <= 0) return null;
     const candidates = stations.flatMap((s) => {
       const p = s.properties;
       // Mixed currencies can't be compared; only use prices in the display currency.
@@ -94,7 +97,7 @@ export function RefuelPlanner({
       timeValuePerHour: timeValue,
       maxStops: maxStopsFor(routeKm, profile.tankL, profile.consumptionL100, reservePct),
     });
-  }, [open, detoursLoading, routeKm, stations, maxPrice, maxDetour, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
+  }, [open, ratesMissing, detoursLoading, routeKm, stations, maxPrice, maxDetour, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"
@@ -180,18 +183,22 @@ export function RefuelPlanner({
                 inputMode="decimal"
                 min={0}
                 value={timeValue}
+                disabled={ratesMissing}
                 onChange={(e) => {
+                  if (ratesMissing) return;
                   const v = parseFloat(e.target.value);
                   update({ timeValueEur: Number.isFinite(v) && v >= 0 ? v / eurRate : 0 });
                 }}
-                className="w-16 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-right text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                className="w-16 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-right text-xs font-semibold text-gray-800 disabled:opacity-50 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
               />
             </label>
           </div>
 
           {/* Result */}
           <div className="border-t border-black/[0.05] dark:border-white/[0.06]">
-            {detoursLoading ? (
+            {ratesMissing ? (
+              <p className="px-4 py-3 text-center text-xs font-medium text-amber-700 dark:text-amber-300">{t("planner.noRates")}</p>
+            ) : detoursLoading ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">{t("planner.calculating")}</p>
             ) : plan?.status === "no-stop-needed" ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-emerald-700 dark:text-emerald-300">
