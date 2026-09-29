@@ -1,0 +1,105 @@
+name: Documentation
+
+# Pull requests that touch the docs run the strict build, so a broken link or a
+# nav entry for a missing page fails the check instead of reaching the site.
+# A push to main deploys, and only after the same build has passed.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'docker/docker-compose.yml'
+      - '.env.example'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'docker/docker-compose.yml'
+      - '.env.example'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements-docs.txt
+
+      # --strict turns every warning into a failure.
+      - name: Build
+        run: mkdocs build --strict
+
+  deploy:
+    # Runs on push to main only, after the build job has passed.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # gh-pages is shared with the Helm chart repository: release-chart.yml
+    # commits index.yaml there. Both workflows take this lock so they never
+    # push to the branch at the same time.
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements-docs.txt
+
+      - name: Build
+        run: mkdocs build --strict --site-dir "$RUNNER_TEMP/site"
+
+      - name: Check out gh-pages
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      # Never `mkdocs gh-deploy`: it replaces the whole branch, which would
+      # delete the Helm repository's index.yaml and ArtifactHub's
+      # artifacthub-repo.yml, breaking `helm repo add` and the ArtifactHub
+      # listing. rsync --delete leaves excluded paths untouched.
+      - name: Sync the site into gh-pages, keeping the Helm repository
+        run: |
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude 'index.yaml' \
+            --exclude 'artifacthub-repo.yml' \
+            --exclude '*.tgz' \
+            "$RUNNER_TEMP/site/" gh-pages/
+          touch gh-pages/.nojekyll
+          test -f gh-pages/index.yaml
+          test -f gh-pages/artifacthub-repo.yml
+
+      - name: Commit and push
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No site changes."
+            exit 0
+          fi
+          git commit -m "docs: deploy ${GITHUB_SHA::7}"
+          git push origin gh-pages
