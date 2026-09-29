@@ -31,36 +31,36 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 ## Features
 
 - **Route planning** — geocoding via [Photon](https://github.com/komoot/photon), routing via [Valhalla](https://github.com/valhalla/valhalla), with alternative routes
-- **Real-time fuel prices** — 36 fuel-price countries across Europe, Latin America, and Oceania, from government open data and community sources
+- **Real-time fuel prices** — 39 fuel-price countries across Europe, Latin America, Asia and Oceania, from government open data and community sources
 - **EV charging stations** — official registries in Spain ([Mapa REVE](https://www.mapareve.es)) and Germany (BNetzA Ladesäulenregister), [Open Charge Map](https://openchargemap.org) everywhere else, plus US chargers
 - **"Cheapest within N min"** — each station shows its detour time; a slider filters by maximum detour and highlights the best deal
 - **Corridor station list** — sorted by position along the route, with price deltas vs average and a green-to-red price scale
-- **16 languages and 16 currencies**, with GPU-accelerated station clustering and one-tap geolocation
+- **17 languages and 37 currencies**, with GPU-accelerated station clustering and one-tap geolocation
 - **Privacy-first** — no cookies, no analytics, no accounts, no personal data collection
 - **Self-hostable** — Docker Compose or a Helm chart; Valhalla and Photon are optional
 
 ## Quick start
 
 ```bash
-git clone https://github.com/GeiserX/pumperly.git && cd pumperly && cp .env.example .env
+git clone https://github.com/GeiserX/Pumperly.git && cd Pumperly && cp .env.example .env
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Open `http://localhost:3000` once all services are healthy. [Run with Docker Compose](https://geiserx.github.io/Pumperly/getting-started/docker-compose/) walks through the setup. Routing tiles and the geocoding index take hours to build on first start; the [full stack page](https://geiserx.github.io/Pumperly/getting-started/full-stack/) has the details.
+This starts PostGIS, applies the database schema and starts the app; then open `http://localhost:3000`. [Run with Docker Compose](https://geiserx.github.io/Pumperly/getting-started/docker-compose/) walks through the setup and the settings in `.env`. Routing tiles and the geocoding index take hours to build on first start; the [full stack page](https://geiserx.github.io/Pumperly/getting-started/full-stack/) has the details.
 
 ## Documentation
 
 The full documentation lives at **[geiserx.github.io/Pumperly](https://geiserx.github.io/Pumperly/)**.
 
 - [Features at a glance](https://geiserx.github.io/Pumperly/features/) · [Sources at a glance](https://geiserx.github.io/Pumperly/data/sources-at-a-glance/)
-- [Run with Docker Compose](https://geiserx.github.io/Pumperly/getting-started/docker-compose/) · [Full stack with routing and geocoding](https://geiserx.github.io/Pumperly/getting-started/full-stack/) · [What happens on first start](https://geiserx.github.io/Pumperly/getting-started/first-start/) · [Kubernetes with Helm](https://geiserx.github.io/Pumperly/getting-started/kubernetes/) · [Local development](https://geiserx.github.io/Pumperly/getting-started/development/)
+- [Run with Docker Compose](https://geiserx.github.io/Pumperly/getting-started/docker-compose/) · [Full stack with routing and geocoding](https://geiserx.github.io/Pumperly/getting-started/full-stack/) · [What happens on first start](https://geiserx.github.io/Pumperly/getting-started/first-start/) · [Kubernetes with Helm](https://geiserx.github.io/Pumperly/getting-started/kubernetes/)
 - [Coverage and status](https://geiserx.github.io/Pumperly/data/coverage/) · [Fuel price sources](https://geiserx.github.io/Pumperly/data/fuel-sources/) · [EV charging sources](https://geiserx.github.io/Pumperly/data/ev-sources/)
 - [Routing with Valhalla](https://geiserx.github.io/Pumperly/configuration/routing-valhalla/) · [Geocoding with Photon](https://geiserx.github.io/Pumperly/configuration/geocoding-photon/) · [API keys](https://geiserx.github.io/Pumperly/configuration/api-keys/)
-- [Environment variables](https://geiserx.github.io/Pumperly/reference/environment-variables/) · [HTTP API](https://geiserx.github.io/Pumperly/reference/api/) · [Roadmap](https://geiserx.github.io/Pumperly/roadmap/) · [Contributing](https://geiserx.github.io/Pumperly/contributing/)
+- [Environment variables](https://geiserx.github.io/Pumperly/reference/environment-variables/) · [HTTP API](https://geiserx.github.io/Pumperly/reference/api/) · [Roadmap](https://geiserx.github.io/Pumperly/roadmap/) · [Development](https://geiserx.github.io/Pumperly/development/)
 
-## Ecosystem
+## Related projects
 
-[pumperly-mcp](https://github.com/GeiserX/pumperly-mcp) (MCP server), [pumperly-ha](https://github.com/GeiserX/pumperly-ha) (Home Assistant), [n8n-nodes-pumperly](https://github.com/GeiserX/n8n-nodes-pumperly) (n8n node). Also listed on [awesome-europe](https://github.com/GeiserX/awesome-europe#readme) and [ArtifactHub](https://artifacthub.io/packages/helm/pumperly/pumperly).
+[pumperly-mcp](https://github.com/GeiserX/pumperly-mcp) (MCP server), [pumperly-ha](https://github.com/GeiserX/pumperly-ha) (Home Assistant), [n8n-nodes-pumperly](https://github.com/GeiserX/n8n-nodes-pumperly) (n8n node, archived). Also listed on [awesome-europe](https://github.com/GeiserX/awesome-europe#readme) and [ArtifactHub](https://artifacthub.io/packages/helm/pumperly/pumperly).
 
 ## License
 

@@ -202,7 +202,7 @@ The CLI differs from the scheduler in five ways:
 - It has no `AU_NSW` key and does not run `STATIC_` datasets.
 - `all` keeps one EV source each for Spain and Germany, as the scheduler does. Naming `EV_ES` or `EV_DE` directly runs it anyway.
 
-The Docker image ships the built app only, not the scraper CLI. See [Local development](../getting-started/development.md).
+The Docker image ships the built app only, not the scraper CLI. See [Run from source](../development.md#run-from-source).
 
 ## Default country and fuel {#default-country-and-fuel}
 

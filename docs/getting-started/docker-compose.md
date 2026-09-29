@@ -26,19 +26,15 @@ You can start without Valhalla and Photon and add them later. See [Run without r
 
 ## What the shipped compose file runs
 
-The repository ships one compose file, [`docker/docker-compose.yml`](https://github.com/GeiserX/Pumperly/blob/main/docker/docker-compose.yml). It runs the database only:
+The repository ships one compose file, [`docker/docker-compose.yml`](https://github.com/GeiserX/Pumperly/blob/main/docker/docker-compose.yml). It runs the database, the schema migrations and the app:
 
 ```yaml
 --8<-- "docker/docker-compose.yml"
 ```
 
-- The service is `db` and the container is `pumperly-db`. It runs the `postgis/postgis:17-3.4` image.
-- The user, password and database are all `pumperly`.
-- It publishes PostgreSQL on port 5433 of the host, so tools on the host can reach it at `localhost:5433`. Inside the compose network it stays on port 5432.
-- Data lives in the named volume `pumperly-pgdata`.
-- The healthcheck runs `pg_isready` every 5 seconds.
-
-It does not run the app. You add the app as a second compose file in step 5 below.
+- `db` is PostGIS: the container is `pumperly-db` and runs the `postgis/postgis:17-3.4` image. The user, password and database are all `pumperly`. It publishes PostgreSQL on port 5433 of the host, so tools on the host can reach it at `localhost:5433`; inside the compose network it stays on port 5432. Data lives in the named volume `pumperly-pgdata`. The healthcheck runs `pg_isready` over TCP every 5 seconds.
+- `migrate` runs once per `up` and exits. It applies the SQL migrations under `prisma/migrations` that the database has not recorded yet. See [step 4](#4-create-the-database-schema).
+- `app` is Pumperly: the container is `pumperly` and runs the `drumsergio/pumperly` image, pinned to a release. It starts only after `migrate` has finished without an error, reads its settings from `.env` at the repository root, and listens on port 3000.
 
 ## Set it up
 
@@ -75,88 +71,43 @@ Settings worth deciding now:
 
 Every variable is described in [Environment variables](../reference/environment-variables.md).
 
-### 3. Start PostGIS
+### 3. Start Pumperly
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d db
+docker compose -f docker/docker-compose.yml up -d
 ```
 
-Wait until the container reports `healthy`:
+Compose starts PostGIS, waits until it is healthy, runs `migrate`, and starts the app once the schema is in place. Check the three services and follow the app's log:
 
 ```bash
-docker compose -f docker/docker-compose.yml ps
+docker compose -f docker/docker-compose.yml ps -a
+docker compose -f docker/docker-compose.yml logs -f app
 ```
+
+`migrate` shows as exited with code 0; the other two are up. The log shows one line per scraper with its interval, then the first scrapes start about 10 seconds after boot, 5 seconds apart. [What happens on first start](first-start.md) explains each line and how to tell the scrapes worked.
 
 ### 4. Create the database schema
 
-The app does not create its own tables. The repository ships the schema as SQL migrations under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations). Apply them once, before the app's first start. Pick one of the two ways below and keep using it for later upgrades.
+The `migrate` service does this for you, on the first `up` and on every later one. It runs [`docker/migrate.sh`](https://github.com/GeiserX/Pumperly/blob/main/docker/migrate.sh) in a PostGIS container: each folder under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations) is applied once, oldest first, in one transaction per migration, and recorded in Prisma's history table, `_prisma_migrations`, with the checksum Prisma uses. A later `npx prisma migrate deploy` therefore sees the same history and applies nothing twice. Read what it did with:
 
-=== "psql in the database container"
+```bash
+docker compose -f docker/docker-compose.yml logs migrate
+```
 
-    No Node.js needed. This feeds each migration file, in order, to `psql` inside the `pumperly-db` container:
-
-    ```bash
-    for f in prisma/migrations/*/migration.sql; do
-      docker compose -f docker/docker-compose.yml exec -T db \
-        psql -v ON_ERROR_STOP=1 -U pumperly -d pumperly < "$f"
-    done
-    ```
-
-    Prisma does not learn that these migrations ran. If you later switch to `prisma migrate deploy`, it stops with error P3005 because the database is not empty.
-
-=== "Prisma from the host"
-
-    Needs Node.js 22, the version CI and the image use. This installs the project's dependencies and lets Prisma apply the migrations and record them:
-
-    ```bash
-    npm ci
-    DATABASE_URL=postgresql://pumperly:pumperly@localhost:5433/pumperly \
-      npx prisma migrate deploy
-    ```
-
-    The `DATABASE_URL` here points at `localhost:5433`, the port the compose file publishes on the host. The one in `.env` names `pumperly-db`, which only resolves inside the compose network.
+On a database whose schema was built by hand with no history, `migrate` checks that `0_init` is complete (both tables and the `geom` column), records it as applied, the same as `prisma migrate resolve --applied 0_init`, and runs the later migrations, which are written to be safe to run again. It refuses to start, and so does the app, on a partial schema with no history and on a history row Prisma left unfinished; resolve that one with `npx prisma migrate resolve`. If a migration fails, `migrate` exits with an error, prints the failing statement, and the app does not start.
 
 The migrations enable the PostGIS extension and create two tables, `stations` and `fuel_prices`. The `stations` table has a `geom` column that holds each station's position, with two spatial indexes on it. See [Data model](../reference/data-model.md).
 
 !!! danger "Do not use `prisma db push` to create the schema"
     `prisma db push` builds tables from `prisma/schema.prisma`. That file does not declare the `geom` column, because Prisma has no type for it. Every scraper writes `geom` and the map's queries read it, so on a schema made by `db push` every station insert fails.
 
-### 5. Add the app
-
-Create `docker/app.yml` with this content:
-
-```yaml
-services:
-  app:
-    image: drumsergio/pumperly:1.14.0
-    container_name: pumperly
-    restart: unless-stopped
-    env_file: ../.env
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "3000:3000"
-```
-
-- Pin the image to a release, never `latest`. Replace `1.14.0` with the newest version on the [releases page](https://github.com/GeiserX/Pumperly/releases). Docker Hub carries each release as `1.14.0` and as `v1.14.0`.
-- `env_file` is resolved from the `docker/` directory, so `../.env` is the file you wrote in step 2.
-- The image listens on port 3000 and runs as user id 1001. It needs no volume: all its state is in PostGIS.
-
-### 6. Start the app
-
-```bash
-docker compose -f docker/docker-compose.yml -f docker/app.yml up -d
-docker compose -f docker/docker-compose.yml -f docker/app.yml logs -f app
-```
-
-The log shows one line per scraper with its interval, then the first scrapes start about 10 seconds after boot, 5 seconds apart. [What happens on first start](first-start.md) explains each line and how to tell the scrapes worked.
-
-### 7. Open the map
+### 5. Open the map
 
 Open [http://localhost:3000](http://localhost:3000). The app redirects to a language path such as `/en`, chosen from your browser's language, and opens on `PUMPERLY_DEFAULT_COUNTRY`. If you allow location access, the map then moves to where you are.
 
 Stations appear once their country's first scrape finishes. Until then the map is empty. That is expected.
+
+The image is pinned to a release, never `latest`. Docker Hub carries each release as `1.15.1` and as `v1.15.1`; the compose file on `main` names the newest one. The image listens on port 3000 and runs as user id 1001. It needs no volume: all its state is in PostGIS.
 
 ### Next
 
@@ -175,11 +126,11 @@ Valhalla and Photon are optional. `.env.example` leaves `VALHALLA_URL` and `PHOT
 | Route planning | off. The route API answers 502 `Routing service unavailable` | works, if Valhalla is set |
 | Address search box | works, if Photon is set | returns no results |
 
-To turn a feature on, run the service, set its URL in `.env` and run the `up -d` command from step 6 again. When the service runs in the same compose project, use its container name, for example `VALHALLA_URL=http://pumperly-valhalla:8002` and `PHOTON_URL=http://pumperly-photon:2322`. The setup of each service is in [Routing with Valhalla](../configuration/routing-valhalla.md) and [Geocoding with Photon](../configuration/geocoding-photon.md).
+To turn a feature on, run the service, set its URL in `.env` and run the `up -d` command from step 3 again. When the service runs in the same compose project, use its container name, for example `VALHALLA_URL=http://pumperly-valhalla:8002` and `PHOTON_URL=http://pumperly-photon:2322`. The setup of each service is in [Routing with Valhalla](../configuration/routing-valhalla.md) and [Geocoding with Photon](../configuration/geocoding-photon.md).
 
 ## Change a setting
 
-Edit `.env`, then run the `up -d` command from step 6 again. Compose recreates the app container because its environment changed.
+Edit `.env`, then run the `up -d` command from step 3 again. Compose recreates the app container because its environment changed.
 
 The scrape schedule is read once, when the app starts. A change to `PUMPERLY_ENABLED_COUNTRIES` or to any `PUMPERLY_SCRAPE_INTERVAL_*` variable takes effect on that restart.
 
@@ -205,7 +156,7 @@ The app has no login. Anyone who can reach it can read the map and call the [HTT
 | Replace the pumperly.com identity | The app names pumperly.com in its search-engine metadata, its legal dialogs and some scraper requests. No setting changes this. | The source files. See [The app still calls itself pumperly.com](#the-app-still-calls-itself-pumperlycom). |
 | Respect the data licences | Some sources forbid commercial use, and most require credit. | See [Data licences on a public instance](#data-licences-on-a-public-instance). |
 
-When the proxy runs on the same host, publish the app on the loopback interface only, so that nothing reaches port 3000 around the proxy. In `docker/app.yml`, change the port line to `"127.0.0.1:3000:3000"`.
+When the proxy runs on the same host, publish the app on the loopback interface only, so that nothing reaches port 3000 around the proxy. In `docker/docker-compose.yml`, change the app's port line to `"127.0.0.1:3000:3000"`.
 
 ### Security headers
 

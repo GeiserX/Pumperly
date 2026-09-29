@@ -48,7 +48,7 @@ What works today is described in [The map](using/map.md), [Planning a route](usi
 ## Community and developers
 
 - **Crowdsourced price reports.** Anyone can report a price at a station, without an account, to correct stale official data.
-- **Price alerts.** A notification when a fuel drops below a price you set in your area. Today the [Home Assistant integration](integrations.md#pumperly-ha) can do this with an automation.
+- **Price alerts.** A notification when a fuel drops below a price you set in your area. Today the [Home Assistant integration](related.md#pumperly-ha) can do this with an automation.
 - **A versioned public API.** A stable `/api/v1` with an OpenAPI description. Today the [HTTP API](reference/api.md) is unversioned and serves the web app first.
 
 ## Operations
@@ -58,7 +58,7 @@ What works today is described in [The map](using/map.md), [Planning a route](usi
 
 ## Suggest a feature
 
-Search the [open issues](https://github.com/GeiserX/Pumperly/issues) first, then open one if your idea is not there. To build it yourself, read [Contributing](contributing.md).
+Search the [open issues](https://github.com/GeiserX/Pumperly/issues) first, then open one if your idea is not there. To build it yourself, read [Development](development.md).
 
 ## Recently shipped
 

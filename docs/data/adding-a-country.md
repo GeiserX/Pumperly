@@ -312,7 +312,7 @@ done
 
 [Data model](../reference/data-model.md) explains why the migrations are applied directly here.
 
-Run the scraper against it from a checkout set up as in [Local development](../getting-started/development.md). Export `DATABASE_URL` in the shell. The CLI also reads `.env`, but a variable already set in the shell wins.
+Run the scraper against it from a checkout set up as in [Run from source](../development.md#run-from-source). Export `DATABASE_URL` in the shell. The CLI also reads `.env`, but a variable already set in the shell wins.
 
 ```bash
 export DATABASE_URL=postgresql://pumperly:not-a-secret@127.0.0.1:55432/pumperly
@@ -388,4 +388,4 @@ Before you open it, check:
 - [ ] `config.ts`, both flag tables, the attribution list, `.env.example`, `README.md` and the docs are updated.
 - [ ] A new currency has a band, a display entry and, if the ECB lacks it, a fallback rate.
 
-Describe the source in the pull request: the endpoint, the licence, what `robots.txt` allows, and how you checked the numbers against the source. [Contributing](../contributing.md) covers the rest of the process.
+Describe the source in the pull request: the endpoint, the licence, what `robots.txt` allows, and how you checked the numbers against the source. [Development](../development.md) covers the rest of the process.

@@ -77,9 +77,14 @@ jobs:
           CURRENT=$(node -p "require('./package.json').version")
           if [ "$CURRENT" != "$VERSION" ]; then
             npm version "$VERSION" --no-git-tag-version
+            # The shipped compose file pins the app image; move it to this
+            # release so a fresh checkout of main runs the newest image.
+            sed -i -E "s#(image: drumsergio/pumperly:)[0-9][0-9.]*#\1${VERSION}#" docker/docker-compose.yml
+            grep -q "image: drumsergio/pumperly:${VERSION}$" docker/docker-compose.yml \
+              || echo "::warning::docker/docker-compose.yml has no drumsergio/pumperly pin to move to ${VERSION}"
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package.json package-lock.json
+            git add package.json package-lock.json docker/docker-compose.yml
             git commit -m "chore: bump version to $NEW_TAG [skip ci]"
             git push origin main
           fi

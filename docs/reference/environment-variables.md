@@ -154,7 +154,7 @@ The values come from [`docker/Dockerfile`](https://github.com/GeiserX/Pumperly/b
 
 | Variable | Default | Read by | Notes |
 |---|---|---|---|
-| <span id="skip_integration"></span>`SKIP_INTEGRATION` | unset | `src/app/api/route-stations/route-stations.integration.test.ts` | `1` skips the integration suite, which starts a PostGIS container through Docker. See [Contributing](../contributing.md). |
+| <span id="skip_integration"></span>`SKIP_INTEGRATION` | unset | `src/app/api/route-stations/route-stations.integration.test.ts` | `1` skips the integration suite, which starts a PostGIS container through Docker. See [Development](../development.md). |
 
 ## Helm values {#helm-values}
 
