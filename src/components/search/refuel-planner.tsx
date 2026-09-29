@@ -28,6 +28,8 @@ interface RefuelPlannerProps {
   /** Owned by the parent so they survive the planner unmounting while the corridor refetches. */
   settings: PlannerSettings;
   onSettingsChange: (settings: PlannerSettings) => void;
+  /** Hide without unmounting (collapsed desktop panel), so the map markers stay. */
+  hidden?: boolean;
 }
 
 export interface PlannerSettings {
@@ -59,6 +61,7 @@ export function RefuelPlanner({
   onPlanChange,
   settings,
   onSettingsChange,
+  hidden = false,
 }: RefuelPlannerProps) {
   const { t } = useI18n();
   const { currency, symbol, decimals, formatPrice, convert, rates } = useCurrency();
@@ -111,7 +114,7 @@ export function RefuelPlanner({
     onPlanChange?.(stops);
   }, [plan, byId, onPlanChange]);
 
-  // Clear map markers when the planner unmounts (route cleared).
+  // Clear map markers when the planner unmounts (route cleared, planner no longer applies).
   useEffect(() => () => onPlanChange?.([]), [onPlanChange]);
 
   // Commit on blur/Enter: saving on every keystroke would store "8" and "80"
@@ -134,7 +137,7 @@ export function RefuelPlanner({
   const money = (v: number) => `${v.toFixed(Math.min(decimals, 2))} ${symbol}`;
 
   return (
-    <div className="mt-2 shrink-0 overflow-hidden rounded-2xl border border-black/[0.06] bg-white/90 shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]">
+    <div className={`${hidden ? "hidden " : ""}mt-2 shrink-0 overflow-hidden rounded-2xl border border-black/[0.06] bg-white/90 shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]`}>
       <button
         onClick={() => update({ open: !open })}
         aria-expanded={open}
