@@ -543,6 +543,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
           detourMap={detourMap}
           userLocation={userLocation}
           plannedStops={plannedStops}
+          onSelectPlannedStop={handleFlyTo}
           onMapReady={handleMapReady}
         />
         <SearchPanel

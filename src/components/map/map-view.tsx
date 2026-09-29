@@ -59,11 +59,13 @@ interface MapViewProps {
   userLocation?: [number, number] | null;
   /** Refuel planner stops, drawn as numbered markers in route order. */
   plannedStops?: PlannedStopMarker[];
+  /** Planner marker click; carries the coordinates so the leg route re-centres on this stop. */
+  onSelectPlannedStop?: (coords: [number, number], stationId: string) => void;
   onMapReady?: () => void;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, displayRoutes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange, onStationsLoadingChange, onStationsErrorChange, detourMap, userLocation, plannedStops, onMapReady },
+  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, displayRoutes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange, onStationsLoadingChange, onStationsErrorChange, detourMap, userLocation, plannedStops, onSelectPlannedStop, onMapReady },
   ref,
 ) {
   const { mapStyle } = useTheme();
@@ -367,7 +369,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           offset={[0, -6]}
           onClick={(e) => {
             e.originalEvent.stopPropagation();
-            onSelectStation?.(stop.id);
+            onSelectPlannedStop?.(stop.coordinates, stop.id);
           }}
         >
           <div className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-[11px] font-bold text-white shadow-md">

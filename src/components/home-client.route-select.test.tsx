@@ -9,6 +9,7 @@ import type { Route } from "@/components/map/route-layer";
 // the route-highlight bug lived in (home-client → MapView displayRoutes).
 let mapViewProps: Record<string, unknown> = {};
 let searchPanelProps: Record<string, unknown> = {};
+const flyTo = vi.fn();
 
 vi.mock("@/lib/theme", () => ({ ThemeProvider: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock("@/lib/currency", () => ({ CurrencyProvider: ({ children }: { children: React.ReactNode }) => children }));
@@ -25,7 +26,7 @@ vi.mock("@/components/map/map-view", () => ({
     useEffect(() => {
       mapViewProps = props;
       (ref as React.MutableRefObject<MapRef | null>).current = {
-        flyTo: vi.fn(), fitBounds: vi.fn(),
+        flyTo, fitBounds: vi.fn(),
       } as unknown as MapRef;
       (props.onMapReady as (() => void) | undefined)?.();
     }, [props, ref]);
@@ -56,6 +57,7 @@ describe("HomeClient — route selection wiring to the map", () => {
   beforeEach(() => {
     mapViewProps = {};
     searchPanelProps = {};
+    flyTo.mockClear();
     // /api/route returns our 3 alternatives.
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
       if (String(url).includes("/api/route")) {
@@ -92,5 +94,25 @@ describe("HomeClient — route selection wiring to the map", () => {
     // Still not pinned, still clickable.
     expect(mapViewProps.displayRoutes).toBeNull();
     expect(typeof mapViewProps.onSelectRoute).toBe("function");
+  });
+
+  it("re-centres a station leg on the planner stop clicked on the map, not the previous selection", async () => {
+    renderHome();
+    const onRoute = searchPanelProps.onRoute as (
+      o: [number, number], d: [number, number], w?: [number, number][], opts?: { isStationLeg?: boolean },
+    ) => Promise<void>;
+    onRoute([-3.7, 40.4], [-3.6, 40.5]);
+    await waitFor(() => expect((mapViewProps.routes as Route[] | null)?.length).toBe(3));
+
+    // Stop 1 picked from the planner list, then stop 2 via its numbered map marker.
+    (searchPanelProps.onFlyTo as (c: [number, number], id: string) => void)([-3.68, 40.42], "a");
+    await waitFor(() => expect(typeof mapViewProps.onSelectPlannedStop).toBe("function"));
+    (mapViewProps.onSelectPlannedStop as (c: [number, number], id: string) => void)([-3.62, 40.48], "b");
+    await waitFor(() => expect(mapViewProps.selectedStationId).toBe("b"));
+
+    flyTo.mockClear();
+    await onRoute([-3.7, 40.4], [-3.6, 40.5], [[-3.62, 40.48]], { isStationLeg: true });
+    await waitFor(() => expect(flyTo).toHaveBeenCalled());
+    expect(flyTo).toHaveBeenLastCalledWith(expect.objectContaining({ center: [-3.62, 40.48] }));
   });
 });
