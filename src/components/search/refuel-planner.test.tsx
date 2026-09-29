@@ -136,6 +136,29 @@ describe("RefuelPlanner", () => {
     const tank = screen.getByLabelText("planner.tank");
     await userEvent.clear(tank);
     await userEvent.type(tank, "70");
+    // Nothing is saved mid-edit ("7" would be rejected, but "70" isn't committed yet either).
+    expect(localStorage.getItem("pumperly-vehicle")).toBe(JSON.stringify({ tankL: 50, consumptionL100: 6.5 }));
+    await userEvent.tab();
     expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 70, consumptionL100: 6.5 });
+  });
+
+  it("commits on Enter", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    const cons = screen.getByLabelText("planner.consumption");
+    await userEvent.clear(cons);
+    await userEvent.type(cons, "7.5{Enter}");
+    expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 7.5 });
+  });
+
+  it("reverts an out-of-range value instead of saving a prefix of it", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    const tank = screen.getByLabelText("planner.tank");
+    await userEvent.clear(tank);
+    await userEvent.type(tank, "800");
+    await userEvent.tab();
+    expect(tank).toHaveValue(50);
+    expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 6.5 });
   });
 });

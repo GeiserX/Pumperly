@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import type { StationGeoJSON } from "@/types/station";
 import { useI18n } from "@/lib/i18n";
 import { useCurrency } from "@/lib/currency";
 import { planRefuel, type PlanResult } from "@/lib/refuel-planner";
-import { useVehicleProfile, vehicleProfileSchema } from "@/lib/vehicle-profile";
+import { useVehicleProfile, vehicleProfileSchema, type VehicleProfile } from "@/lib/vehicle-profile";
 
 export interface PlannedStopMarker {
   id: string;
@@ -94,9 +94,16 @@ export function RefuelPlanner({
   // Clear map markers when the planner unmounts (route cleared).
   useEffect(() => () => onPlanChange?.([]), [onPlanChange]);
 
-  const commitProfile = (tankRaw: string, consRaw: string) => {
-    const next = { tankL: parseFloat(tankRaw), consumptionL100: parseFloat(consRaw.replace(",", ".")) };
+  // Commit on blur/Enter: saving on every keystroke would store "8" and "80"
+  // on the way to an invalid "800". Invalid input reverts to the saved value.
+  const commitField = (key: keyof VehicleProfile, raw: string) => {
+    const next = { ...profile, [key]: parseFloat(raw.replace(",", ".")) };
     if (vehicleProfileSchema.safeParse(next).success) setProfile(next);
+    else if (key === "tankL") setTankDraft(String(profile.tankL));
+    else setConsDraft(String(profile.consumptionL100));
+  };
+  const blurOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") e.currentTarget.blur();
   };
 
   const money = (v: number) => `${v.toFixed(Math.min(decimals, 2))} ${symbol}`;
@@ -126,7 +133,9 @@ export function RefuelPlanner({
                   min={5}
                   max={500}
                   value={tankDraft}
-                  onChange={(e) => { setTankDraft(e.target.value); commitProfile(e.target.value, consDraft); }}
+                  onChange={(e) => setTankDraft(e.target.value)}
+                  onBlur={(e) => commitField("tankL", e.target.value)}
+                  onKeyDown={blurOnEnter}
                   className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
                 />
               </label>
@@ -139,7 +148,9 @@ export function RefuelPlanner({
                   max={50}
                   step={0.1}
                   value={consDraft}
-                  onChange={(e) => { setConsDraft(e.target.value); commitProfile(tankDraft, e.target.value); }}
+                  onChange={(e) => setConsDraft(e.target.value)}
+                  onBlur={(e) => commitField("consumptionL100", e.target.value)}
+                  onKeyDown={blurOnEnter}
                   className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
                 />
               </label>
