@@ -7,7 +7,7 @@ import type { StationsGeoJSONCollection } from "@/types/station";
 import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 import { RouteAlternatives } from "./route-alternatives";
 import { StationResults } from "./station-results";
-import { RefuelPlanner, type PlannedStopMarker } from "./refuel-planner";
+import { RefuelPlanner, DEFAULT_PLANNER_SETTINGS, type PlannedStopMarker } from "./refuel-planner";
 import { isPlannableFuel } from "@/lib/vehicle-profile";
 import type { FuelType } from "@/types/fuel";
 import { BottomSheet, type SheetSnap } from "./bottom-sheet";
@@ -123,6 +123,8 @@ export function SearchPanel({
   // Transient toast for a "My location" geolocation failure (auto-clears).
   const [geoErrorMsg, setGeoErrorMsg] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"price" | "detour" | "km">("price");
+  // Lives here, not in RefuelPlanner, which unmounts while the corridor refetches.
+  const [plannerSettings, setPlannerSettings] = useState(DEFAULT_PLANNER_SETTINGS);
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
   const [origin, setOrigin] = useState<Location | null>(null);
@@ -793,6 +795,8 @@ export function SearchPanel({
           maxDetour={maxDetour}
           selectedStationId={selectedStationId}
           onPlanChange={onPlannedStopsChange}
+          settings={plannerSettings}
+          onSettingsChange={setPlannerSettings}
           onStopToggleOff={() => {
             setWaypoints((prev) => prev.filter((wp) => !wp.isStationLeg));
             onClearStationLeg?.();

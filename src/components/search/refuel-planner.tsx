@@ -25,7 +25,27 @@ interface RefuelPlannerProps {
   onStopToggleOff: () => void;
   /** Reports recommended stops (in route order) for the map markers; [] when none. */
   onPlanChange?: (stops: PlannedStopMarker[]) => void;
+  /** Owned by the parent so they survive the planner unmounting while the corridor refetches. */
+  settings: PlannerSettings;
+  onSettingsChange: (settings: PlannerSettings) => void;
 }
+
+export interface PlannerSettings {
+  open: boolean;
+  startPct: number;
+  arrivalPct: number;
+  reservePct: number;
+  /** Stored in EUR so the default means the same everywhere; shown and planned in the display currency. */
+  timeValueEur: number;
+}
+
+export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
+  open: false,
+  startPct: 50,
+  arrivalPct: 20,
+  reservePct: 10,
+  timeValueEur: 15,
+};
 
 const MAX_STOPS = 3;
 
@@ -39,17 +59,14 @@ export function RefuelPlanner({
   onStopSelect,
   onStopToggleOff,
   onPlanChange,
+  settings,
+  onSettingsChange,
 }: RefuelPlannerProps) {
   const { t } = useI18n();
   const { currency, symbol, decimals, formatPrice, convert } = useCurrency();
   const [profile, setProfile] = useVehicleProfile();
-  const [open, setOpen] = useState(false);
-  const [startPct, setStartPct] = useState(50);
-  const [arrivalPct, setArrivalPct] = useState(20);
-  const [reservePct, setReservePct] = useState(10);
-  // Stored in EUR so the default means the same everywhere; shown and planned
-  // in the display currency.
-  const [timeValueEur, setTimeValueEur] = useState(15);
+  const { open, startPct, arrivalPct, reservePct, timeValueEur } = settings;
+  const update = (patch: Partial<PlannerSettings>) => onSettingsChange({ ...settings, ...patch });
   // Drafts so a half-typed number ("6.") doesn't get rejected mid-edit.
   const [tankDraft, setTankDraft] = useState(String(profile.tankL));
   const [consDraft, setConsDraft] = useState(String(profile.consumptionL100));
@@ -111,7 +128,7 @@ export function RefuelPlanner({
   return (
     <div className="mt-2 shrink-0 overflow-hidden rounded-2xl border border-black/[0.06] bg-white/90 shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => update({ open: !open })}
         aria-expanded={open}
         className="flex w-full items-center justify-between px-4 py-2.5 text-left"
       >
@@ -155,9 +172,9 @@ export function RefuelPlanner({
                 />
               </label>
             </div>
-            <PctSlider label={t("planner.start")} value={startPct} min={1} onChange={setStartPct} />
-            <PctSlider label={t("planner.arrival")} value={arrivalPct} min={0} onChange={setArrivalPct} />
-            <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={setReservePct} />
+            <PctSlider label={t("planner.start")} value={startPct} min={1} onChange={(v) => update({ startPct: v })} />
+            <PctSlider label={t("planner.arrival")} value={arrivalPct} min={0} onChange={(v) => update({ arrivalPct: v })} />
+            <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={(v) => update({ reservePct: v })} />
             <label className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               {t("planner.timeValue").replace("{cur}", symbol)}
               <input
@@ -167,7 +184,7 @@ export function RefuelPlanner({
                 value={timeValue}
                 onChange={(e) => {
                   const v = parseFloat(e.target.value);
-                  setTimeValueEur(Number.isFinite(v) && v >= 0 ? v / eurRate : 0);
+                  update({ timeValueEur: Number.isFinite(v) && v >= 0 ? v / eurRate : 0 });
                 }}
                 className="w-16 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-right text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
               />

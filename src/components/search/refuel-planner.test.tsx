@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import type { StationGeoJSON } from "@/types/station";
 
 vi.mock("@/lib/i18n", () => ({
@@ -17,7 +18,7 @@ vi.mock("@/lib/currency", () => ({
   }),
 }));
 
-import { RefuelPlanner } from "./refuel-planner";
+import { RefuelPlanner, DEFAULT_PLANNER_SETTINGS } from "./refuel-planner";
 
 function makeStation(id: string, overrides: Partial<StationGeoJSON["properties"]> = {}): StationGeoJSON {
   return {
@@ -46,20 +47,28 @@ const STATIONS = [
   makeStation("b", { brand: "Cepsa", price: 1.6, routeFraction: 0.5 }),
 ];
 
-function renderPlanner(props: Partial<React.ComponentProps<typeof RefuelPlanner>> = {}) {
+type PlannerProps = React.ComponentProps<typeof RefuelPlanner>;
+
+// Owns the settings like SearchPanel does; `mounted` mimics the corridor refetch unmounting the planner.
+function Harness({ mounted = true, ...props }: Omit<PlannerProps, "settings" | "onSettingsChange"> & { mounted?: boolean }) {
+  const [settings, setSettings] = useState(DEFAULT_PLANNER_SETTINGS);
+  return mounted ? <RefuelPlanner {...props} settings={settings} onSettingsChange={setSettings} /> : null;
+}
+
+function renderPlanner(props: Partial<React.ComponentProps<typeof Harness>> = {}) {
   const onPlanChange = vi.fn();
   const onStopSelect = vi.fn();
-  render(
-    <RefuelPlanner
-      stations={STATIONS}
-      routeKm={400}
-      onStopSelect={onStopSelect}
-      onStopToggleOff={vi.fn()}
-      onPlanChange={onPlanChange}
-      {...props}
-    />,
-  );
-  return { onPlanChange, onStopSelect };
+  const all = {
+    stations: STATIONS,
+    routeKm: 400,
+    onStopSelect,
+    onStopToggleOff: vi.fn(),
+    onPlanChange,
+    ...props,
+  };
+  const { rerender } = render(<Harness {...all} />);
+  const setMounted = (mounted: boolean) => rerender(<Harness {...all} mounted={mounted} />);
+  return { onPlanChange, onStopSelect, setMounted };
 }
 
 describe("RefuelPlanner", () => {
@@ -128,6 +137,19 @@ describe("RefuelPlanner", () => {
     await userEvent.click(screen.getByText("planner.title"));
     expect(screen.queryByText("Cepsa")).not.toBeInTheDocument();
     expect(onPlanChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("keeps its settings when it unmounts and comes back", async () => {
+    const { setMounted } = renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "80" } });
+    fireEvent.change(screen.getByLabelText("planner.reserve"), { target: { value: "15" } });
+
+    setMounted(false);
+    setMounted(true);
+
+    expect(screen.getByLabelText("planner.start")).toHaveValue("80");
+    expect(screen.getByLabelText("planner.reserve")).toHaveValue("15");
   });
 
   it("persists the vehicle profile", async () => {
