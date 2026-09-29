@@ -55,7 +55,7 @@ describe("planRefuel", () => {
   it("honours maxStops", () => {
     const stations = Array.from({ length: 11 }, (_, i) => st(`S${i}`, (i + 1) * 100, 1.5));
     const input = { ...base, startPct: 100, routeKm: 1200, stations };
-    expect(planRefuel({ ...input, maxStops: 1 }).status).toBe("infeasible");
+    expect(planRefuel({ ...input, maxStops: 1 })).toMatchObject({ status: "infeasible", reason: "stops" });
     const r = planRefuel({ ...input, maxStops: 3 });
     expect(r.status).toBe("ok");
     expect(r.stops.length).toBeGreaterThanOrEqual(2);
@@ -107,6 +107,23 @@ describe("planRefuel", () => {
     expect(r.reason).toBe("arrival");
     // No stations at all, but the start level alone reaches the destination above the reserve.
     expect(planRefuel({ ...base, routeKm: 200, stations: [] }).reason).toBe("arrival");
+  });
+
+  it("blames the reserve when it, not the arrival level, is what can't be met", () => {
+    // 20 km from 10 % arrives with 6 %: above the 0 % arrival level, under the 10 % reserve.
+    const r = planRefuel({ ...base, startPct: 10, arrivalPct: 0, reservePct: 10, routeKm: 20, stations: [] });
+    expect(r.status).toBe("infeasible");
+    expect(r.reason).toBe("reserve");
+  });
+
+  it("says the stop cap is the problem when more stops would make it", () => {
+    const stations = Array.from({ length: 11 }, (_, i) => st(`S${i}`, (i + 1) * 100, 1.5));
+    const r = planRefuel({ ...base, startPct: 100, routeKm: 1200, stations, maxStops: 1 });
+    expect(r.status).toBe("infeasible");
+    expect(r.reason).toBe("stops");
+    // A gap no number of stops can bridge is still a range problem.
+    const gap = planRefuel({ ...base, startPct: 100, routeKm: 1200, stations: [st("A", 100, 1.5)], maxStops: 5 });
+    expect(gap.reason).toBe("range");
   });
 
   it("lets the first leg dip into the reserve when starting below it", () => {

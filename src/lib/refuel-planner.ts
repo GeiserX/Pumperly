@@ -61,10 +61,13 @@ export interface PlanResult {
   /**
    * Infeasible only: what to change.
    * - `arrival`: the destination is reachable above the reserve, but not with `arrivalPct` left.
+   * - `reserve`: the destination is reachable with `arrivalPct` left, but only by going
+   *   under the reserve (the reserve, not the arrival level, is the binding target).
+   * - `stops`: reachable with more stops than `maxStops` allows.
    * - `no-candidates`: no usable station (no price/detour, filtered out, other currency).
    * - `range`: stations exist but the tank can't bridge the gap to the next one.
    */
-  reason?: "arrival" | "no-candidates" | "range";
+  reason?: "arrival" | "reserve" | "stops" | "no-candidates" | "range";
   /**
    * Ok only: no plan keeps the reserve on the way to the first stop, so this one
    * lets the first leg use up to half of the start level instead.
@@ -124,7 +127,8 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const { routeKm, tankL, consumptionL100, timeValuePerHour } = input;
   const startPct = clamp(input.startPct, 0, 100);
   const reservePct = clamp(input.reservePct, 0, 100);
-  const targetEnd = Math.max(clamp(input.arrivalPct, 0, 100), reservePct);
+  const arrivalPct = clamp(input.arrivalPct, 0, 100);
+  const targetEnd = Math.max(arrivalPct, reservePct);
   const maxStops = Math.max(0, Math.floor(input.maxStops));
 
   // Fuel level (%) consumed per km.
@@ -175,7 +179,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const relaxed = solve(relaxedFloor);
   return relaxed.status === "ok" ? { ...relaxed, dipsBelowReserve: true } : strict;
 
-  function solve(firstLegFloor: number): PlanResult {
+  function solve(firstLegFloor: number, end = targetEnd): PlanResult {
     // dp[k][j*L + g]: min cost having made k stops, the last at station j,
     // departing with level g. parent stores (prevStation+1)*L + prevLevel, -1 = none.
     const layers: Float64Array[] = [];
@@ -236,7 +240,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
 
       // Close out to the destination from this layer.
       for (let j = 0; j < n; j++) {
-        const need = Math.ceil(targetEnd + legPct(j, n) - 1e-9);
+        const need = Math.ceil(end + legPct(j, n) - 1e-9);
         for (let g = Math.max(0, need); g < L; g++) {
           const c = dp[j * L + g];
           if (c < best.cost) best = { cost: c, k, j, g };
@@ -258,7 +262,15 @@ export function planRefuel(input: PlannerInput): PlanResult {
           }
         }
       }
-      const reason = reach >= routeKm - 1e-9 ? "arrival" : n === 0 ? "no-candidates" : "range";
+      let reason: PlanResult["reason"];
+      if (Number.isFinite(fewestStops(firstLegFloor, end))) reason = "stops";
+      else if (reach >= routeKm - 1e-9) {
+        // The end target is max(arrival, reserve): blame the reserve when the
+        // arrival level alone could be met.
+        const reserveBinds = end > arrivalPct + 1e-9
+          && (startPct - legPct(-1, n) >= arrivalPct - 1e-9 || solve(firstLegFloor, arrivalPct).status === "ok");
+        reason = reserveBinds ? "reserve" : "arrival";
+      } else reason = n === 0 ? "no-candidates" : "range";
       return {
         status: "infeasible",
         stops: [],
@@ -313,6 +325,26 @@ export function planRefuel(input: PlannerInput): PlanResult {
       endPct,
       profile,
     };
+  }
+
+  /**
+   * Fewest stops that reach the destination with `end` left, ignoring cost and
+   * the stop cap; Infinity when no number of stops does. Filling up is always the
+   * furthest-reaching choice, so each station only needs its fewest stops to get there.
+   */
+  function fewestStops(firstLegFloor: number, end: number): number {
+    const stopsTo = new Array<number>(n).fill(Infinity);
+    let fewest = Infinity;
+    for (let j = 0; j < n; j++) {
+      if (startPct - legPct(-1, j) >= firstLegFloor - 1e-9) stopsTo[j] = 1;
+      else {
+        for (let i = 0; i < j; i++) {
+          if (stopsTo[i] + 1 < stopsTo[j] && 100 - legPct(i, j) >= reservePct - 1e-9) stopsTo[j] = stopsTo[i] + 1;
+        }
+      }
+      if (100 - legPct(j, n) >= end - 1e-9) fewest = Math.min(fewest, stopsTo[j]);
+    }
+    return fewest;
   }
 }
 
