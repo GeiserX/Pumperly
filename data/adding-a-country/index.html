@@ -2168,7 +2168,7 @@
 <td>Always</td>
 </tr>
 <tr>
-<td><code>src/instrumentation.ts</code></td>
+<td><code>src/instrumentation-node.ts</code></td>
 <td><code>XX</code> and <code>EV_XX</code> intervals, the import, the <code>XX</code> and <code>EV_XX</code> factories</td>
 <td>Always</td>
 </tr>
@@ -2393,12 +2393,12 @@
 </ul>
 <p>Run your file alone with <code>npx vitest run src/scrapers/exampleland.test.ts</code>, then the whole suite with <code>npm test</code>.</p>
 <h2 id="3-register-it-with-the-scheduler">3. Register it with the scheduler<a class="headerlink" href="#3-register-it-with-the-scheduler" title="Permanent link">&para;</a></h2>
-<p>In <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a>, add four things. The <code>EV_XX</code> key gives the country OpenChargeMap EV chargers. The OpenChargeMap scraper takes any country code, so it needs no other setup.</p>
+<p>In <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts"><code>src/instrumentation-node.ts</code></a>, add four things. The <code>EV_XX</code> key gives the country OpenChargeMap EV chargers. The OpenChargeMap scraper takes any country code, so it needs no other setup.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// In DEFAULT_INTERVALS: hours between runs, with a comment naming the source.</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nx">XX</span><span class="o">:</span><span class="w"> </span><span class="kt">12</span><span class="p">,</span><span class="w">   </span><span class="c1">// Exampleland open data: updated daily</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nx">EV_XX</span><span class="o">:</span><span class="w"> </span><span class="kt">24</span><span class="p">,</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// Inside register(), next to the other imports:</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// Inside registerNode(), next to the other imports:</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ExamplelandScraper</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s2">"./scrapers/exampleland"</span><span class="p">);</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">// In scraperFactories:</span>
@@ -2418,7 +2418,7 @@
 <p>A second source for an existing country goes into that country's array, as <code>AU</code> does, so <code>--country=XX</code> runs both.</p>
 <div class="admonition note">
 <p class="admonition-title">The registry test checks EV keys only</p>
-<p><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/cli.test.ts"><code>src/scrapers/cli.test.ts</code></a> fails when an <code>EV_</code> key is in <code>DEFAULT_INTERVALS</code> but missing from the factories in <code>instrumentation.ts</code> or from <code>cli.ts</code>, or when those two files list different <code>EV_</code> keys. Nothing checks the fuel keys. Check by hand that <code>XX</code> is in all three places.</p>
+<p><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/cli.test.ts"><code>src/scrapers/cli.test.ts</code></a> fails when an <code>EV_</code> key is in <code>DEFAULT_INTERVALS</code> but missing from the factories in <code>instrumentation-node.ts</code> or from <code>cli.ts</code>, or when those two files list different <code>EV_</code> keys. Nothing checks the fuel keys. Check by hand that <code>XX</code> is in all three places.</p>
 </div>
 <h2 id="5-add-the-country-to-the-map">5. Add the country to the map<a class="headerlink" href="#5-add-the-country-to-the-map" title="Permanent link">&para;</a></h2>
 <p>In <a href="https://github.com/GeiserX/Pumperly/blob/main/src/lib/config.ts"><code>src/lib/config.ts</code></a>, add a <code>COUNTRIES</code> entry:</p>
@@ -2539,7 +2539,7 @@
 <li>[ ] <code>npm test</code> and <code>npm run lint</code> pass.</li>
 <li>[ ] The scraper ran once against a throwaway PostGIS, and a second run added no stations.</li>
 <li>[ ] Each guard has a test that you watched fail with the guard removed.</li>
-<li>[ ] <code>XX</code> and <code>EV_XX</code> are in <code>instrumentation.ts</code> (intervals and factories) and in <code>cli.ts</code>.</li>
+<li>[ ] <code>XX</code> and <code>EV_XX</code> are in <code>instrumentation-node.ts</code> (intervals and factories) and in <code>cli.ts</code>.</li>
 <li>[ ] <code>config.ts</code>, both flag tables, the attribution list, <code>.env.example</code>, <code>README.md</code> and the docs are updated.</li>
 <li>[ ] A new currency has a band, a display entry and, if the ECB lacks it, a fallback rate.</li>
 </ul>

@@ -2132,7 +2132,7 @@
 <p>If the app starts first, every first scrape fails with <code>relation "stations" does not exist</code>. A failed scraper waits for its next interval before it tries again, which is 12 hours for many countries. Once the schema exists, restart the app to scrape straight away.</p>
 </div>
 <h2 id="the-scheduler">The scheduler<a class="headerlink" href="#the-scheduler" title="Permanent link">&para;</a></h2>
-<p>The scheduler lives in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a>. Next.js runs it once, when the server process starts. It gives each scraper its own timer inside the app process. Nothing runs outside the app.</p>
+<p>The scheduler lives in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts"><code>src/instrumentation-node.ts</code></a>, loaded by <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a>. Next.js runs it once, when the server process starts. It gives each scraper its own timer inside the app process. Nothing runs outside the app.</p>
 <h3 id="which-scrapers-run">Which scrapers run<a class="headerlink" href="#which-scrapers-run" title="Permanent link">&para;</a></h3>
 <p>The scheduler builds its list from four settings:</p>
 <table>

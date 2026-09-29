@@ -2464,7 +2464,7 @@
 </table>
 <p>When a source is down or blocks Pumperly, its prices therefore stay at their last good values rather than vanishing. <code>reported_at</code> records when Pumperly wrote each price, so the statistics menu, which shows the newest <code>reported_at</code> per country, makes a stalled country visible. <a href="../coverage/">Coverage and status</a> lists the sources that are currently down.</p>
 <h2 id="the-scheduler">The scheduler<a class="headerlink" href="#the-scheduler" title="Permanent link">&para;</a></h2>
-<p>Scrapers run inside the web app. There is no separate worker. Next.js calls <code>register()</code> in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a> once when the server starts, and only in the Node.js runtime. <code>register()</code> builds the list of scrapers to run and starts a timer for each.</p>
+<p>Scrapers run inside the web app. There is no separate worker. Next.js calls <code>register()</code> in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a> once when the server starts. In the Node.js runtime it loads <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts"><code>src/instrumentation-node.ts</code></a> and calls <code>registerNode()</code>, which builds the list of scrapers to run and starts a timer for each. Keeping the scheduler in its own module keeps the scrapers out of the Edge bundle.</p>
 <h3 id="scraper-keys">Scraper keys<a class="headerlink" href="#scraper-keys" title="Permanent link">&para;</a></h3>
 <p>Every scraper has a <strong>key</strong> in the scheduler. The key is what you use in environment variables.</p>
 <table>
@@ -2520,7 +2520,7 @@
 <ol>
 <li><code>PUMPERLY_SCRAPE_INTERVAL_&lt;KEY&gt;</code>, for example <code>PUMPERLY_SCRAPE_INTERVAL_FR=0.5</code> or <code>PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE=2</code>.</li>
 <li><code>PUMPERLY_SCRAPE_INTERVAL_HOURS</code>, when it is greater than zero. It then applies to every key, EV keys included.</li>
-<li>The key's default in <code>DEFAULT_INTERVALS</code> in <code>instrumentation.ts</code>.</li>
+<li>The key's default in <code>DEFAULT_INTERVALS</code> in <code>instrumentation-node.ts</code>.</li>
 <li>12 hours.</li>
 </ol>
 <p>An interval of zero or less disables that one key. Fuel sources default to between 1 and 12 hours, depending on how often the upstream changes. OpenChargeMap keys default to 24 hours. <code>EV_ES_REVE</code> defaults to 1 hour because the Mapa REVE API allows only a few requests per hour, so the scraper fetches a few pages each hour. <a href="../../configuration/countries-and-schedule/">Countries and scrape schedule</a> lists every default.</p>
