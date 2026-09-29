@@ -110,12 +110,13 @@ describe("OCMScraper", () => {
         at(2, [{ PowerKW: "fast" }]),
         at(3, "not an array"),
         at(4, [{ PowerKW: 5000 }]),
+        at(5, [{ PowerKW: 150 }, { PowerKW: 1200 }]),
       ],
     } as Response);
 
     const { stations } = await scraper.fetch();
     const kw = Object.fromEntries(stations.map((s) => [s.externalId, s.maxPowerKw]));
-    expect(kw).toEqual({ "ocm-1": 150, "ocm-2": null, "ocm-3": null, "ocm-4": null });
+    expect(kw).toEqual({ "ocm-1": 150, "ocm-2": null, "ocm-3": null, "ocm-4": null, "ocm-5": 150 });
   });
 
   it("returns empty when API key is not set", async () => {

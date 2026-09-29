@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import { BaseScraper, sanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
+import { BaseScraper, maxSanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
 
 // ---------------------------------------------------------------------------
 // Mapa REVE — official Spanish EV charging point registry
@@ -194,14 +194,10 @@ export function shouldRetireOcmRows(
 
 /** Highest connector power at a location, in kW (rounded). */
 function maxPowerKw(loc: REVELocation): number | null {
-  let maxW = 0;
-  for (const evse of loc.evses ?? []) {
-    for (const connector of evse.connectors ?? []) {
-      const w = connector.max_electric_power;
-      if (typeof w === "number" && Number.isFinite(w) && w > maxW) maxW = w;
-    }
-  }
-  return maxW > 0 ? sanePowerKw(maxW / 1000) : null;
+  const kws = (loc.evses ?? []).flatMap((evse) =>
+    (evse.connectors ?? []).map((c) => (typeof c.max_electric_power === "number" ? c.max_electric_power / 1000 : null)),
+  );
+  return maxSanePowerKw(kws);
 }
 
 export class REVEScraper extends BaseScraper {

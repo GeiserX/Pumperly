@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseScraper, sanePowerKw, type RawFuelPrice, type RawStation } from "./base";
+import { BaseScraper, maxSanePowerKw, type RawFuelPrice, type RawStation } from "./base";
 
 // ---------------------------------------------------------------------------
 // OpenChargeMap (OCM) — EV charging station scraper
@@ -309,7 +309,7 @@ export class OCMScraper extends BaseScraper {
         latitude: addr.Latitude,
         longitude: addr.Longitude,
         stationType: "ev_charger",
-        maxPowerKw: sanePowerKw(Math.max(0, ...(poi.Connections ?? []).map((c) => c.PowerKW ?? 0))),
+        maxPowerKw: maxSanePowerKw((poi.Connections ?? []).map((c) => c.PowerKW)),
       });
     }
 

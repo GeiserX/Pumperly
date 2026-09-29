@@ -49,6 +49,19 @@ export function sanePowerKw(kw: number | null | undefined): number | null {
   return rounded > 0 ? rounded : null;
 }
 
+/**
+ * The highest plausible power among a charger's connectors, kW. Each value is
+ * checked before comparing, so one bogus reading can't hide a valid one.
+ */
+export function maxSanePowerKw(kws: Iterable<number | null | undefined>): number | null {
+  let max: number | null = null;
+  for (const kw of kws) {
+    const sane = sanePowerKw(kw);
+    if (sane != null && (max == null || sane > max)) max = sane;
+  }
+  return max;
+}
+
 export interface RawFuelPrice {
   /** Must match a RawStation.externalId in the same batch */
   stationExternalId: string;

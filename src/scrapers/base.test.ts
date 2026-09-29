@@ -22,7 +22,7 @@ vi.mock("../generated/prisma/client", () => ({
 }));
 
 // Concrete test scraper
-import { BaseScraper, bandFor, sanePowerKw, type RawStation, type RawFuelPrice } from "./base";
+import { BaseScraper, bandFor, maxSanePowerKw, sanePowerKw, type RawStation, type RawFuelPrice } from "./base";
 
 describe("bandFor (per-currency price bands)", () => {
   it("accepts a plausible HUF price (595)", () => {
@@ -425,5 +425,17 @@ describe("sanePowerKw", () => {
     expect(sanePowerKw(-5)).toBeNull();
     expect(sanePowerKw(0.3)).toBeNull();
     expect(sanePowerKw(1001)).toBeNull();
+  });
+});
+
+describe("maxSanePowerKw", () => {
+  it("keeps the highest valid value when a larger one is implausible", () => {
+    expect(maxSanePowerKw([150, 1200])).toBe(150);
+    expect(maxSanePowerKw([22, null, Number.NaN, 49.6])).toBe(50);
+  });
+
+  it("returns null when no value is valid", () => {
+    expect(maxSanePowerKw([])).toBeNull();
+    expect(maxSanePowerKw([null, undefined, 0, 5000])).toBeNull();
   });
 });

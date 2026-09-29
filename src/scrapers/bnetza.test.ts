@@ -92,6 +92,12 @@ describe("parseBnetzaTsv", () => {
     expect(single.stations[0].maxPowerKw).toBe(23);
   });
 
+  it("keeps a valid plug power when another plug on the row is implausible", async () => {
+    const { parseBnetzaTsv } = await import("./bnetza");
+    const { stations } = parseBnetzaTsv(tsv(row({ "Nennleistung Stecker1": "150", "Nennleistung Stecker2": "1200" })));
+    expect(stations[0].maxPowerKw).toBe(150);
+  });
+
   it("still imports when the plug power columns are renamed", async () => {
     const { parseBnetzaTsv } = await import("./bnetza");
     const text = tsv(row()).replace(/Nennleistung Stecker/g, "Leistung Stecker");

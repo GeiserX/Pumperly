@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import { BaseScraper, sanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
+import { BaseScraper, maxSanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
 
 // ---------------------------------------------------------------------------
 // BNetzA Ladesäulenregister — official German EV charging point registry
@@ -199,12 +199,7 @@ function resolvePlugPowerColumns(headerLine: string): number[] {
 
 /** Highest plug power on a row, kW. Values are "22" or German-style "22,5". */
 function rowPowerKw(fields: string[], plugCols: number[]): number | null {
-  let max = 0;
-  for (const i of plugCols) {
-    const kw = Number(unquote(fields[i]).replace(",", "."));
-    if (Number.isFinite(kw) && kw > max) max = kw;
-  }
-  return sanePowerKw(max);
+  return maxSanePowerKw(plugCols.map((i) => Number(unquote(fields[i]).replace(",", "."))));
 }
 
 /**
