@@ -121,6 +121,23 @@ describe("RefuelPlanner", () => {
     expect(onStopSelect).toHaveBeenCalledWith([-3.7, 40.4], "a");
   });
 
+  it("announces the result and exposes slider and stop state to assistive tech", async () => {
+    renderPlanner({ selectedStationId: "a" });
+    await userEvent.click(screen.getByText("planner.title"));
+    const status = screen.getByRole("status");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveTextContent("Repsol");
+    expect(screen.getByLabelText("planner.start")).toHaveAttribute("aria-valuetext", "50%");
+    expect(screen.getByLabelText("planner.reserve")).toHaveAttribute("aria-valuetext", "10%");
+    expect(screen.getByRole("button", { name: /Repsol/, pressed: true })).toBeInTheDocument();
+  });
+
+  it("marks a stop that is not selected as not pressed", async () => {
+    renderPlanner({ selectedStationId: null });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByRole("button", { name: /Repsol/, pressed: false })).toBeInTheDocument();
+  });
+
   it("says no stop is needed when the start level covers the trip", async () => {
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));

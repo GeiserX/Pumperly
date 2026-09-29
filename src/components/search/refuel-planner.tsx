@@ -228,7 +228,7 @@ export function RefuelPlanner({
           </div>
 
           {/* Result */}
-          <div className="border-t border-black/[0.05] dark:border-white/[0.06]">
+          <div role="status" aria-live="polite" className="border-t border-black/[0.05] dark:border-white/[0.06]">
             {ratesMissing ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-amber-700 dark:text-amber-300">{t("planner.noRates")}</p>
             ) : detoursPending ? (
@@ -248,6 +248,7 @@ export function RefuelPlanner({
                   return (
                     <button
                       key={stop.id}
+                      aria-pressed={active}
                       onClick={() => (active ? onStopToggleOff() : onStopSelect(f.geometry.coordinates, stop.id))}
                       className={`flex w-full items-center gap-2.5 border-b border-black/[0.04] px-4 py-2 text-left transition-colors dark:border-white/[0.05] ${
                         active ? "bg-blue-100/80 dark:bg-blue-500/20" : "hover:bg-gray-100/70 dark:hover:bg-white/[0.04]"
@@ -304,6 +305,7 @@ function PctSlider({ label, value, min, max = 100, onChange }: { label: string; 
         step={1}
         value={value}
         aria-label={label}
+        aria-valuetext={`${value}%`}
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="mt-1.5 h-1.5 w-full cursor-pointer touch-none rounded-full bg-gray-200 accent-emerald-500 dark:bg-white/10"
       />
