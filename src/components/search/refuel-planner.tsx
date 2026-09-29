@@ -17,6 +17,9 @@ interface RefuelPlannerProps {
   stations: StationGeoJSON[];
   routeKm: number;
   detoursLoading?: boolean;
+  /** Map/list filters: stops outside them would have no dot, row or popup. */
+  maxPrice?: number | null;
+  maxDetour?: number | null;
   selectedStationId?: string | null;
   onStopSelect: (coords: [number, number], stationId: string) => void;
   onStopToggleOff: () => void;
@@ -30,6 +33,8 @@ export function RefuelPlanner({
   stations,
   routeKm,
   detoursLoading,
+  maxPrice,
+  maxDetour,
   selectedStationId,
   onStopSelect,
   onStopToggleOff,
@@ -60,6 +65,7 @@ export function RefuelPlanner({
       const p = s.properties;
       // Mixed currencies can't be compared; only use prices in the display currency.
       if (p.price == null || p.detourMin == null || p.detourMin < 0 || p.currency !== currency) return [];
+      if ((maxPrice != null && p.price > maxPrice) || (maxDetour != null && p.detourMin > maxDetour)) return [];
       return [{ id: p.id, km: (p.routeFraction ?? 0) * routeKm, price: p.price, detourMin: p.detourMin }];
     });
     return planRefuel({
@@ -73,7 +79,7 @@ export function RefuelPlanner({
       timeValuePerHour: timeValue,
       maxStops: MAX_STOPS,
     });
-  }, [open, detoursLoading, routeKm, stations, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
+  }, [open, detoursLoading, routeKm, stations, maxPrice, maxDetour, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"

@@ -789,6 +789,8 @@ export function SearchPanel({
           stations={allCorridorStations}
           routeKm={primaryRoute.distance}
           detoursLoading={detoursLoading}
+          maxPrice={maxPrice}
+          maxDetour={maxDetour}
           selectedStationId={selectedStationId}
           onPlanChange={onPlannedStopsChange}
           onStopToggleOff={() => {

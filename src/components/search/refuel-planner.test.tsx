@@ -112,6 +112,24 @@ describe("RefuelPlanner", () => {
     expect(onPlanChange).toHaveBeenLastCalledWith([{ id: "near", coordinates: [-3.7, 40.4] }]);
   });
 
+  it("only recommends stations that pass the map's price and detour filters", async () => {
+    const stations = [
+      makeStation("near", { brand: "Near", price: 1.6, routeFraction: 0.25, detourMin: 1 }),
+      makeStation("far", { brand: "Far", price: 1.2, routeFraction: 0.25, detourMin: 12 }),
+    ];
+    const { onPlanChange } = renderPlanner({ stations, maxDetour: 5 });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(onPlanChange).toHaveBeenLastCalledWith([{ id: "near", coordinates: [-3.7, 40.4] }]);
+  });
+
+  it("drops stations above the price filter", async () => {
+    const stations = [makeStation("b", { brand: "Cepsa", price: 1.6, routeFraction: 0.5 })];
+    const { onPlanChange } = renderPlanner({ stations, maxPrice: 1.5 });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.queryByText("Cepsa")).not.toBeInTheDocument();
+    expect(onPlanChange).toHaveBeenLastCalledWith([]);
+  });
+
   it("persists the vehicle profile", async () => {
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));
