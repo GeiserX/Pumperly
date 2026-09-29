@@ -1,8 +1,19 @@
-name: Documentation
+name: Docs
 
-# Pull requests that touch the docs run the strict build, so a broken link or a
-# nav entry for a missing page fails the check instead of reaching the site.
-# A push to main deploys, and only after the same build has passed.
+# The docs workflow for a repo whose gh-pages branch is ALSO its Helm chart
+# repository: index.yaml and artifacthub-repo.yml live there (the .tgz packages
+# are release assets that index.yaml points at), and `helm repo add
+# https://geiserx.github.io/<repo>` reads them from the Pages URL. Pumperly,
+# LynxPrompt, genieacs-container and duplicacy-container are in this case.
+#
+# The site therefore stays on the branch flow: build strictly, rsync the site
+# into a checkout of gh-pages with the Helm files excluded, commit, push. Never
+# `mkdocs gh-deploy` (it replaces the whole branch and deletes the chart index)
+# and never the artifact flow of docs-pages.yml (Pages then stops serving the
+# branch, so a chart release would publish an index nobody can fetch until the
+# next docs deploy). The `gh-pages` concurrency group is shared with the chart
+# release workflow (helm/chart-releaser-action) so the two never push at once:
+# release-chart.yml carries the same `concurrency` block.
 on:
   push:
     branches:
@@ -18,18 +29,8 @@ on:
       - 'prisma/**'
       - '.github/workflows/reve-key-renewal.yml'
       - '.github/workflows/docs.yml'
+  # No paths filter on pull requests: a filtered-out required check blocks the merge.
   pull_request:
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'docker/docker-compose.yml'
-      - '.env.example'
-      # Files the pages include word for word with pymdownx.snippets. A
-      # change to one must rebuild the site, and a rename must fail the build.
-      - 'charts/pumperly/values.yaml'
-      - 'prisma/**'
-      - '.github/workflows/reve-key-renewal.yml'
-      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -44,7 +45,9 @@ jobs:
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: docs/requirements-docs.txt
 
       - name: Install dependencies
         run: pip install -r docs/requirements-docs.txt
@@ -71,7 +74,7 @@ jobs:
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: pip install -r docs/requirements-docs.txt
