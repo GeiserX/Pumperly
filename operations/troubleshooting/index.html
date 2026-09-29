@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -688,34 +688,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1974,14 +1946,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -2028,14 +2000,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2361,9 +2333,9 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Docker Compose</label><label for="__tabbed_1_2">Helm</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>app
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>app
 </code></pre></div>
-<p>This follows the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, where the Pumperly service is <code>app</code> in <code>docker/app.yml</code>.</p>
+<p>This follows the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, where the Pumperly service is <code>app</code> in <code>docker/docker-compose.yml</code>. The schema migrations run in the <code>migrate</code> service; read them with <code>logs migrate</code>.</p>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>kubectl<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>deployment/pumperly

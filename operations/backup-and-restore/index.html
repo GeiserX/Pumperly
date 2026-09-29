@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -688,34 +688,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1814,14 +1786,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -1868,14 +1840,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2116,7 +2088,7 @@
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 1. Stop the app. The database keeps running.</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>stop<span class="w"> </span>app
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>stop<span class="w"> </span>app
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># 2. Replace the database with an empty one.</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span>dropdb<span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>pumperly
@@ -2127,9 +2099,9 @@
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span>pg_restore<span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>--no-owner<span class="w"> </span>&lt;<span class="w"> </span>pumperly-2026-01-01.dump
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
 <a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># 4. Start the app again.</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>start<span class="w"> </span>app
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>start<span class="w"> </span>app
 </code></pre></div>
-<p>These commands follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, where the Pumperly service is <code>app</code> in <code>docker/app.yml</code>. Adjust the file names and the service name if your setup differs.</p>
+<p>These commands follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, where the Pumperly service is <code>app</code> in <code>docker/docker-compose.yml</code>. Adjust the file name and the service name if your setup differs. <code>start app</code> does not rerun <code>migrate</code>: the dump already carries the schema of the release it was taken from.</p>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># 1. Stop the app.</span>

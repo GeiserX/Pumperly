@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -688,34 +688,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1903,14 +1875,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -1957,14 +1929,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2241,11 +2213,11 @@
 </thead>
 <tbody>
 <tr>
-<td><code>1.14.0</code>, <code>v1.14.0</code></td>
+<td><code>1.15.1</code>, <code>v1.15.1</code></td>
 <td>A release. Both names point at the same image, for <code>linux/amd64</code> and <code>linux/arm64</code>.</td>
 </tr>
 <tr>
-<td><code>1.14.0-amd64</code>, <code>1.14.0-arm64</code></td>
+<td><code>1.15.1-amd64</code>, <code>1.15.1-arm64</code></td>
 <td>The single-architecture images the multi-architecture tag is made of. You do not need them.</td>
 </tr>
 <tr>
@@ -2275,7 +2247,7 @@
 <p>No output means there is nothing to apply.</p>
 <h3 id="apply-new-migrations">Apply new migrations<a class="headerlink" href="#apply-new-migrations" title="Permanent link">&para;</a></h3>
 <p>Apply migrations before you start the new image. The new code may rely on them.</p>
-<p>The Docker Compose commands below follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>: the shipped <code>docker/docker-compose.yml</code> plus your <code>docker/app.yml</code>, run from the repository root. The database service is <code>db</code> and the Pumperly service is <code>app</code>.</p>
+<p>With the shipped <code>docker/docker-compose.yml</code> there is nothing to do here: its <code>migrate</code> service applies new migrations on every <code>up</code>, before the app starts, and records them in <code>_prisma_migrations</code>. See <a href="#upgrade-a-docker-compose-install">Upgrade a Docker Compose install</a>. The rest of this section is for other setups, and for a compose file of your own. The commands follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, run from the repository root: the database service is <code>db</code> and the Pumperly service is <code>app</code>.</p>
 <p>First check whether your database keeps a migration history. Prisma records applied migrations in a table called <code>_prisma_migrations</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>psql<span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>-c<span class="w"> </span><span class="s1">'SELECT migration_name FROM _prisma_migrations ORDER BY finished_at'</span>
@@ -2287,7 +2259,7 @@
 <p>Run <code>prisma migrate deploy</code> from a checkout of the new release tag. It applies every migration the history does not list yet, in order:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GeiserX/Pumperly.git
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>Pumperly
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>v1.14.0
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>v1.15.1
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>npm<span class="w"> </span>ci
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://pumperly:pumperly@localhost:5433/pumperly<span class="w"> </span>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
 </code></pre></div>
@@ -2316,26 +2288,24 @@
 <ol>
 <li>Read the <a href="https://github.com/GeiserX/Pumperly/releases">release notes</a> for every release between yours and the new one.</li>
 <li>Back up the database. See <a href="../backup-and-restore/">Backing up the database</a>.</li>
-<li>Check for new migrations and apply them, as <a href="#migrations">above</a>.</li>
 <li>
-<p>Move the image pin of the Pumperly service to the new release, in <code>docker/app.yml</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">app</span><span class="p">:</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.14.0</span>
+<p>Update the checkout. The compose file on <code>main</code> pins the newest release, and the checkout brings that release's migrations:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>git<span class="w"> </span>pull
 </code></pre></div>
+<p>To move to a release other than the newest, check out its tag (for example <code>git checkout v1.15.0</code>) and set the <code>app</code> image in <code>docker/docker-compose.yml</code> to the same version.</p>
 </li>
 <li>
-<p>Pull and recreate the container:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>pull<span class="w"> </span>app
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>app
+<p>Pull the new image and recreate the stack:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>pull<span class="w"> </span>app
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div>
+<p><code>migrate</code> runs first and applies any new migration; the app restarts on the new image only if that succeeds. <code>docker compose -f docker/docker-compose.yml logs migrate</code> shows what it applied.</p>
 </li>
 <li>
 <p>Run the <a href="#after-an-upgrade">checks after an upgrade</a>.</p>
 </li>
 </ol>
-<p><code>docker compose pull</code> on its own only pulls the tag you already pinned. Moving the pin is the upgrade.</p>
-<p>These commands follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, where the Pumperly service is <code>app</code> in <code>docker/app.yml</code>. Adjust the file names and the service name if your setup differs.</p>
+<p>If you changed <code>docker/docker-compose.yml</code> yourself, <code>git pull</code> may stop on a conflict. Keep your changes in a second compose file passed with another <code>-f</code>, so the shipped file stays as released.</p>
 <h2 id="helm">Upgrade a Helm install<a class="headerlink" href="#helm" title="Permanent link">&para;</a></h2>
 <p>The chart installs from the Helm repository published with this project:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>helm<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>pumperly<span class="w"> </span>https://geiserx.github.io/Pumperly
@@ -2344,7 +2314,7 @@
 </code></pre></div>
 <p>Set <code>image.tag</code> in your values file to the release you want, then upgrade:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">image</span><span class="p">:</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="s">"1.14.0"</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="s">"1.15.1"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>pumperly<span class="w"> </span>pumperly/pumperly<span class="w"> </span>-f<span class="w"> </span>my-values.yaml
 </code></pre></div>

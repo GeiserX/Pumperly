@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -904,34 +904,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1908,14 +1880,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -1962,14 +1934,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2204,7 +2176,7 @@
 <h2 id="the-short-version">The short version<a class="headerlink" href="#the-short-version" title="Permanent link">&para;</a></h2>
 <ol>
 <li>PostGIS creates its data directory, user and database.</li>
-<li>You apply the schema. The app never creates tables itself. See <a href="../docker-compose/#4-create-the-database-schema">step 4 of Run with Docker Compose</a>.</li>
+<li>The schema is applied: by the <code>migrate</code> service of the shipped compose file, before the app starts, or by you on other setups. The app never creates tables itself. See <a href="../docker-compose/#4-create-the-database-schema">step 4 of Run with Docker Compose</a>.</li>
 <li>The app starts its web server on port 3000 and its scheduler in the same process.</li>
 <li>The scheduler starts each enabled scraper in turn, 5 seconds apart, beginning 10 seconds after boot.</li>
 <li>As each first scrape finishes, that country's stations appear on the map.</li>
@@ -2228,10 +2200,10 @@
     App--&gt;&gt;V: routing and search work once they answer</code></pre>
 <h2 id="the-database">The database<a class="headerlink" href="#the-database" title="Permanent link">&para;</a></h2>
 <p>The <code>postgis/postgis</code> image initialises its volume on the first start only. It creates the <code>pumperly</code> user and database from <code>POSTGRES_USER</code>, <code>POSTGRES_PASSWORD</code> and <code>POSTGRES_DB</code>. Later starts reuse the volume and ignore those variables.</p>
-<p>The app's image runs <code>node server.js</code> and nothing else. It does not run migrations. The tables come from the SQL files under <a href="https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations"><code>prisma/migrations</code></a>, which you apply once. <a href="../docker-compose/#4-create-the-database-schema">Run with Docker Compose</a> shows how.</p>
+<p>The app's image runs <code>node server.js</code> and nothing else. It does not run migrations. The tables come from the SQL files under <a href="https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations"><code>prisma/migrations</code></a>. The shipped compose file applies them with its <code>migrate</code> service before the app starts; on other setups you apply them yourself. <a href="../docker-compose/#4-create-the-database-schema">Run with Docker Compose</a> shows how.</p>
 <div class="admonition tip">
 <p class="admonition-title">Create the schema before the app's first start</p>
-<p>If the app starts first, every first scrape fails with <code>relation "stations" does not exist</code>. A failed scraper waits for its next interval before it tries again, which is 12 hours for many countries. Once the schema exists, restart the app to scrape straight away.</p>
+<p>The shipped compose file already does. On other setups, if the app starts first, every first scrape fails with <code>relation "stations" does not exist</code>. A failed scraper waits for its next interval before it tries again, which is 12 hours for many countries. Once the schema exists, restart the app to scrape straight away.</p>
 </div>
 <h2 id="the-scheduler">The scheduler<a class="headerlink" href="#the-scheduler" title="Permanent link">&para;</a></h2>
 <p>The scheduler lives in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts"><code>src/instrumentation-node.ts</code></a>, loaded by <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a>. Next.js runs it once, when the server process starts. It gives each scraper its own timer inside the app process. Nothing runs outside the app.</p>

@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -732,10 +732,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-start-postgis" class="md-nav__link">
+  <a href="#3-start-pumperly" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Start PostGIS
+        3. Start Pumperly
       
     </span>
   </a>
@@ -754,32 +754,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#5-add-the-app" class="md-nav__link">
+  <a href="#5-open-the-map" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Add the app
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#6-start-the-app" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        6. Start the app
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-open-the-map" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Open the map
+        5. Open the map
       
     </span>
   </a>
@@ -987,34 +965,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1991,14 +1941,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -2045,14 +1995,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2165,10 +2115,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-start-postgis" class="md-nav__link">
+  <a href="#3-start-pumperly" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Start PostGIS
+        3. Start Pumperly
       
     </span>
   </a>
@@ -2187,32 +2137,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#5-add-the-app" class="md-nav__link">
+  <a href="#5-open-the-map" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Add the app
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#6-start-the-app" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        6. Start the app
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-open-the-map" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Open the map
+        5. Open the map
       
     </span>
   </a>
@@ -2405,7 +2333,7 @@
 </table>
 <p>You can start without Valhalla and Photon and add them later. See <a href="#run-without-routing-and-address-search">Run without routing and address search</a>.</p>
 <h2 id="what-the-shipped-compose-file-runs">What the shipped compose file runs<a class="headerlink" href="#what-the-shipped-compose-file-runs" title="Permanent link">&para;</a></h2>
-<p>The repository ships one compose file, <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/docker-compose.yml"><code>docker/docker-compose.yml</code></a>. It runs the database only:</p>
+<p>The repository ships one compose file, <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/docker-compose.yml"><code>docker/docker-compose.yml</code></a>. It runs the database, the schema migrations and the app:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">services</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">db</span><span class="p">:</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgis/postgis:17-3.4</span>
@@ -2420,22 +2348,46 @@
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pumperly-pgdata:/var/lib/postgresql/data</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="nt">healthcheck</span><span class="p">:</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"CMD-SHELL"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"pg_isready</span><span class="nv"> </span><span class="s">-U</span><span class="nv"> </span><span class="s">pumperly</span><span class="nv"> </span><span class="s">-d</span><span class="nv"> </span><span class="s">pumperly"</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5s</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">      </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5s</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">      </span><span class="nt">retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="nt">pumperly-pgdata</span><span class="p">:</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="c1"># Over TCP: during the first start the image runs its init scripts on a</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">      </span><span class="c1"># socket-only server, and a socket check would pass too early.</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"CMD-SHELL"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"pg_isready</span><span class="nv"> </span><span class="s">-h</span><span class="nv"> </span><span class="s">127.0.0.1</span><span class="nv"> </span><span class="s">-U</span><span class="nv"> </span><span class="s">pumperly</span><span class="nv"> </span><span class="s">-d</span><span class="nv"> </span><span class="s">pumperly"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5s</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">      </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5s</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">      </span><span class="nt">retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="c1"># One-shot: applies the SQL migrations under prisma/migrations that the</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="c1"># database has not recorded yet, then exits. See docker/migrate.sh.</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span><span class="nt">migrate</span><span class="p">:</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgis/postgis:17-3.4</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="nt">env_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../.env</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">      </span><span class="nt">db</span><span class="p">:</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_healthy</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../prisma/migrations:/migrations:ro</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./migrate.sh:/usr/local/bin/pumperly-migrate:ro</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"pumperly-migrate"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">  </span><span class="nt">app</span><span class="p">:</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.15.1</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pumperly</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">    </span><span class="nt">env_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../.env</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="w">      </span><span class="nt">migrate</span><span class="p">:</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_completed_successfully</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"3000:3000"</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="w">  </span><span class="nt">pumperly-pgdata</span><span class="p">:</span>
 </code></pre></div>
 <ul>
-<li>The service is <code>db</code> and the container is <code>pumperly-db</code>. It runs the <code>postgis/postgis:17-3.4</code> image.</li>
-<li>The user, password and database are all <code>pumperly</code>.</li>
-<li>It publishes PostgreSQL on port 5433 of the host, so tools on the host can reach it at <code>localhost:5433</code>. Inside the compose network it stays on port 5432.</li>
-<li>Data lives in the named volume <code>pumperly-pgdata</code>.</li>
-<li>The healthcheck runs <code>pg_isready</code> every 5 seconds.</li>
+<li><code>db</code> is PostGIS: the container is <code>pumperly-db</code> and runs the <code>postgis/postgis:17-3.4</code> image. The user, password and database are all <code>pumperly</code>. It publishes PostgreSQL on port 5433 of the host, so tools on the host can reach it at <code>localhost:5433</code>; inside the compose network it stays on port 5432. Data lives in the named volume <code>pumperly-pgdata</code>. The healthcheck runs <code>pg_isready</code> over TCP every 5 seconds.</li>
+<li><code>migrate</code> runs once per <code>up</code> and exits. It applies the SQL migrations under <code>prisma/migrations</code> that the database has not recorded yet. See <a href="#4-create-the-database-schema">step 4</a>.</li>
+<li><code>app</code> is Pumperly: the container is <code>pumperly</code> and runs the <code>drumsergio/pumperly</code> image, pinned to a release. It starts only after <code>migrate</code> has finished without an error, reads its settings from <code>.env</code> at the repository root, and listens on port 3000.</li>
 </ul>
-<p>It does not run the app. You add the app as a second compose file in step 5 below.</p>
 <h2 id="set-it-up">Set it up<a class="headerlink" href="#set-it-up" title="Permanent link">&para;</a></h2>
 <h3 id="1-get-the-files">1. Get the files<a class="headerlink" href="#1-get-the-files" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GeiserX/Pumperly.git
@@ -2470,8 +2422,8 @@
 <a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="na">PUMPERLY_DEFAULT_COUNTRY</span><span class="o">=</span><span class="s">ES</span>
 <a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>
 <a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="c1"># Comma-separated ISO codes to enable (default: all countries with scrapers)</span>
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="c1"># Supported: ES,FR,DE,IT,GB,AT,PT,SI,NL,BE,LU,RO,GR,IE,HR,CH,PL,CZ,HU,BG,SK,DK,SE,NO,RS,FI,EE,LV,LT,BA,MK,TR,MD,AU,AR,MX</span>
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="c1"># PUMPERLY_ENABLED_COUNTRIES=ES,FR,PT,IT,AT,DE,GB,SI,NL,BE,LU,RO,GR,IE,HR,CH,PL,CZ,HU,BG,SK,DK,SE,NO,RS,FI,EE,LV,LT,BA,MK,TR,MD,AU,AR,MX,US</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="c1"># Supported: ES,FR,DE,IT,GB,AT,PT,SI,NL,BE,LU,RO,GR,IE,HR,CH,PL,CZ,HU,BG,SK,DK,SE,NO,RS,FI,EE,LV,LT,BA,MK,TR,MD,IS,CY,TW,AU,AR,MX</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="c1"># PUMPERLY_ENABLED_COUNTRIES=ES,FR,PT,IT,AT,DE,GB,SI,NL,BE,LU,RO,GR,IE,HR,CH,PL,CZ,HU,BG,SK,DK,SE,NO,RS,FI,EE,LV,LT,BA,MK,TR,MD,IS,CY,TW,AU,AR,MX,US</span>
 <a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="c1"># US is EV-charger-only (no national fuel-price API): "US" enables the EV_US scraper</span>
 <a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>
 <a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="c1"># Override default fuel type (default: per-country, e.g. B7 for Spain)</span>
@@ -2562,67 +2514,28 @@
 <li>API keys. Most fuel sources need none. Germany's fuel prices need <code>TANKERKOENIG_API_KEY</code>. EV chargers from Open Charge Map need <code>PUMPERLY_OCM_API_KEY</code>; Germany's official charger registry needs no key and is the default there. See <a href="../../configuration/api-keys/">API keys</a>.</li>
 </ul>
 <p>Every variable is described in <a href="../../reference/environment-variables/">Environment variables</a>.</p>
-<h3 id="3-start-postgis">3. Start PostGIS<a class="headerlink" href="#3-start-postgis" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>db
+<h3 id="3-start-pumperly">3. Start Pumperly<a class="headerlink" href="#3-start-pumperly" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div>
-<p>Wait until the container reports <code>healthy</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>ps
+<p>Compose starts PostGIS, waits until it is healthy, runs <code>migrate</code>, and starts the app once the schema is in place. Check the three services and follow the app's log:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>ps<span class="w"> </span>-a
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>app
 </code></pre></div>
+<p><code>migrate</code> shows as exited with code 0; the other two are up. The log shows one line per scraper with its interval, then the first scrapes start about 10 seconds after boot, 5 seconds apart. <a href="../first-start/">What happens on first start</a> explains each line and how to tell the scrapes worked.</p>
 <h3 id="4-create-the-database-schema">4. Create the database schema<a class="headerlink" href="#4-create-the-database-schema" title="Permanent link">&para;</a></h3>
-<p>The app does not create its own tables. The repository ships the schema as SQL migrations under <a href="https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations"><code>prisma/migrations</code></a>. Apply them once, before the app's first start. Pick one of the two ways below and keep using it for later upgrades.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">psql in the database container</label><label for="__tabbed_1_2">Prisma from the host</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p>No Node.js needed. This feeds each migration file, in order, to <code>psql</code> inside the <code>pumperly-db</code> container:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>prisma/migrations/*/migration.sql<span class="p">;</span><span class="w"> </span><span class="k">do</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span>psql<span class="w"> </span>-v<span class="w"> </span><span class="nv">ON_ERROR_STOP</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>&lt;<span class="w"> </span><span class="s2">"</span><span class="nv">$f</span><span class="s2">"</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">done</span>
+<p>The <code>migrate</code> service does this for you, on the first <code>up</code> and on every later one. It runs <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/migrate.sh"><code>docker/migrate.sh</code></a> in a PostGIS container: each folder under <a href="https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations"><code>prisma/migrations</code></a> is applied once, oldest first, in one transaction per migration, and recorded in Prisma's history table, <code>_prisma_migrations</code>, with the checksum Prisma uses. A later <code>npx prisma migrate deploy</code> therefore sees the same history and applies nothing twice. Read what it did with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>logs<span class="w"> </span>migrate
 </code></pre></div>
-<p>Prisma does not learn that these migrations ran. If you later switch to <code>prisma migrate deploy</code>, it stops with error P3005 because the database is not empty.</p>
-</div>
-<div class="tabbed-block">
-<p>Needs Node.js 22, the version CI and the image use. This installs the project's dependencies and lets Prisma apply the migrations and record them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>npm<span class="w"> </span>ci
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://pumperly:pumperly@localhost:5433/pumperly<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
-</code></pre></div>
-<p>The <code>DATABASE_URL</code> here points at <code>localhost:5433</code>, the port the compose file publishes on the host. The one in <code>.env</code> names <code>pumperly-db</code>, which only resolves inside the compose network.</p>
-</div>
-</div>
-</div>
+<p>On a database whose schema was built by hand with no history, <code>migrate</code> checks that <code>0_init</code> is complete (both tables and the <code>geom</code> column), records it as applied, the same as <code>prisma migrate resolve --applied 0_init</code>, and runs the later migrations, which are written to be safe to run again. It refuses to start, and so does the app, on a partial schema with no history and on a history row Prisma left unfinished; resolve that one with <code>npx prisma migrate resolve</code>. If a migration fails, <code>migrate</code> exits with an error, prints the failing statement, and the app does not start.</p>
 <p>The migrations enable the PostGIS extension and create two tables, <code>stations</code> and <code>fuel_prices</code>. The <code>stations</code> table has a <code>geom</code> column that holds each station's position, with two spatial indexes on it. See <a href="../../reference/data-model/">Data model</a>.</p>
 <div class="admonition danger">
 <p class="admonition-title">Do not use <code>prisma db push</code> to create the schema</p>
 <p><code>prisma db push</code> builds tables from <code>prisma/schema.prisma</code>. That file does not declare the <code>geom</code> column, because Prisma has no type for it. Every scraper writes <code>geom</code> and the map's queries read it, so on a schema made by <code>db push</code> every station insert fails.</p>
 </div>
-<h3 id="5-add-the-app">5. Add the app<a class="headerlink" href="#5-add-the-app" title="Permanent link">&para;</a></h3>
-<p>Create <code>docker/app.yml</code> with this content:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">app</span><span class="p">:</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.14.0</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pumperly</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">env_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../.env</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">      </span><span class="nt">db</span><span class="p">:</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_healthy</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"3000:3000"</span>
-</code></pre></div>
-<ul>
-<li>Pin the image to a release, never <code>latest</code>. Replace <code>1.14.0</code> with the newest version on the <a href="https://github.com/GeiserX/Pumperly/releases">releases page</a>. Docker Hub carries each release as <code>1.14.0</code> and as <code>v1.14.0</code>.</li>
-<li><code>env_file</code> is resolved from the <code>docker/</code> directory, so <code>../.env</code> is the file you wrote in step 2.</li>
-<li>The image listens on port 3000 and runs as user id 1001. It needs no volume: all its state is in PostGIS.</li>
-</ul>
-<h3 id="6-start-the-app">6. Start the app<a class="headerlink" href="#6-start-the-app" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>up<span class="w"> </span>-d
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker/app.yml<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>app
-</code></pre></div>
-<p>The log shows one line per scraper with its interval, then the first scrapes start about 10 seconds after boot, 5 seconds apart. <a href="../first-start/">What happens on first start</a> explains each line and how to tell the scrapes worked.</p>
-<h3 id="7-open-the-map">7. Open the map<a class="headerlink" href="#7-open-the-map" title="Permanent link">&para;</a></h3>
+<h3 id="5-open-the-map">5. Open the map<a class="headerlink" href="#5-open-the-map" title="Permanent link">&para;</a></h3>
 <p>Open <a href="http://localhost:3000">http://localhost:3000</a>. The app redirects to a language path such as <code>/en</code>, chosen from your browser's language, and opens on <code>PUMPERLY_DEFAULT_COUNTRY</code>. If you allow location access, the map then moves to where you are.</p>
 <p>Stations appear once their country's first scrape finishes. Until then the map is empty. That is expected.</p>
+<p>The image is pinned to a release, never <code>latest</code>. Docker Hub carries each release as <code>1.15.1</code> and as <code>v1.15.1</code>; the compose file on <code>main</code> names the newest one. The image listens on port 3000 and runs as user id 1001. It needs no volume: all its state is in PostGIS.</p>
 <h3 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h3>
 <ul>
 <li><a href="../first-start/">What happens on first start</a>: the scrape schedule and how to check it.</li>
@@ -2662,9 +2575,9 @@
 </tr>
 </tbody>
 </table>
-<p>To turn a feature on, run the service, set its URL in <code>.env</code> and run the <code>up -d</code> command from step 6 again. When the service runs in the same compose project, use its container name, for example <code>VALHALLA_URL=http://pumperly-valhalla:8002</code> and <code>PHOTON_URL=http://pumperly-photon:2322</code>. The setup of each service is in <a href="../../configuration/routing-valhalla/">Routing with Valhalla</a> and <a href="../../configuration/geocoding-photon/">Geocoding with Photon</a>.</p>
+<p>To turn a feature on, run the service, set its URL in <code>.env</code> and run the <code>up -d</code> command from step 3 again. When the service runs in the same compose project, use its container name, for example <code>VALHALLA_URL=http://pumperly-valhalla:8002</code> and <code>PHOTON_URL=http://pumperly-photon:2322</code>. The setup of each service is in <a href="../../configuration/routing-valhalla/">Routing with Valhalla</a> and <a href="../../configuration/geocoding-photon/">Geocoding with Photon</a>.</p>
 <h2 id="change-a-setting">Change a setting<a class="headerlink" href="#change-a-setting" title="Permanent link">&para;</a></h2>
-<p>Edit <code>.env</code>, then run the <code>up -d</code> command from step 6 again. Compose recreates the app container because its environment changed.</p>
+<p>Edit <code>.env</code>, then run the <code>up -d</code> command from step 3 again. Compose recreates the app container because its environment changed.</p>
 <p>The scrape schedule is read once, when the app starts. A change to <code>PUMPERLY_ENABLED_COUNTRIES</code> or to any <code>PUMPERLY_SCRAPE_INTERVAL_*</code> variable takes effect on that restart.</p>
 <h2 id="before-you-expose-it">Before you expose it<a class="headerlink" href="#before-you-expose-it" title="Permanent link">&para;</a></h2>
 <p>This section is for an instance other people will reach. Work through it before the app leaves your own machine. A private instance on your laptop needs none of it.</p>
@@ -2725,7 +2638,7 @@
 </tr>
 </tbody>
 </table>
-<p>When the proxy runs on the same host, publish the app on the loopback interface only, so that nothing reaches port 3000 around the proxy. In <code>docker/app.yml</code>, change the port line to <code>"127.0.0.1:3000:3000"</code>.</p>
+<p>When the proxy runs on the same host, publish the app on the loopback interface only, so that nothing reaches port 3000 around the proxy. In <code>docker/docker-compose.yml</code>, change the app's port line to <code>"127.0.0.1:3000:3000"</code>.</p>
 <h3 id="security-headers">Security headers<a class="headerlink" href="#security-headers" title="Permanent link">&para;</a></h3>
 <p>A Content Security Policy (CSP) is a response header that tells the browser which origins a page may load code and data from. The app needs these origins:</p>
 <table>
@@ -2766,7 +2679,7 @@
 </table>
 <p>The map styles are set in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/lib/theme.tsx"><code>src/lib/theme.tsx</code></a>. The inline scripts are in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/app/layout.tsx"><code>src/app/layout.tsx</code></a>. The MapLibre worker is served from <code>/maplibre/</code> on the app's own origin, so it needs no <code>blob:</code> worker source.</p>
 <p>This policy follows from that list:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Test the policy before you enforce it</p>
@@ -2828,76 +2741,76 @@
 <p>The rates in the examples below are starting points. They allow a person panning the map and typing, and stop a script that loops. Watch your proxy's log for rejected requests from real visitors, and raise the rate if you see them.</p>
 <h3 id="example-proxy-configurations">Example proxy configurations<a class="headerlink" href="#example-proxy-configurations" title="Permanent link">&para;</a></h3>
 <p>Both examples serve <code>pumperly.example.com</code> and reach the app on <code>127.0.0.1:3000</code>. They set the headers above, replace <code>X-Forwarded-For</code>, compress everything except the detour stream, and never buffer it.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">nginx</label><label for="__tabbed_2_2">Caddy</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">nginx</label><label for="__tabbed_1_2">Caddy</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p>nginx has a built-in rate limiter, <code>limit_req</code>. Put the two <code>limit_req_zone</code> lines in the <code>http</code> block.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">limit_req_zone</span><span class="w"> </span><span class="nv">$binary_remote_addr</span><span class="w"> </span><span class="s">zone=pumperly_api:10m</span><span class="w"> </span><span class="s">rate=10r/s</span><span class="p">;</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">limit_req_zone</span><span class="w"> </span><span class="nv">$binary_remote_addr</span><span class="w"> </span><span class="s">zone=pumperly_geocode:10m</span><span class="w"> </span><span class="s">rate=5r/s</span><span class="p">;</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">pumperly.example.com</span><span class="p">;</span>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="kn">ssl_certificate</span><span class="w">     </span><span class="s">/etc/ssl/pumperly.example.com.crt</span><span class="p">;</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="kn">ssl_certificate_key</span><span class="w"> </span><span class="s">/etc/ssl/pumperly.example.com.key</span><span class="p">;</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Content-Security-Policy</span><span class="w"> </span><span class="s">"default-src</span><span class="w"> </span><span class="s">'self'</span><span class="p">;</span><span class="w"> </span><span class="kn">script-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">'unsafe-inline'</span><span class="p">;</span><span class="w"> </span><span class="kn">style-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">'unsafe-inline'</span><span class="p">;</span><span class="w"> </span><span class="kn">img-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">data:</span><span class="w"> </span><span class="s">blob:</span><span class="p">;</span><span class="w"> </span><span class="kn">connect-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">https://tiles.openfreemap.org</span><span class="p">;</span><span class="w"> </span><span class="kn">worker-src</span><span class="w"> </span><span class="s">'self'</span><span class="p">;</span><span class="w"> </span><span class="kn">object-src</span><span class="w"> </span><span class="s">'none'</span><span class="p">;</span><span class="w"> </span><span class="kn">base-uri</span><span class="w"> </span><span class="s">'self'</span><span class="p">;</span><span class="w"> </span><span class="kn">frame-ancestors</span><span class="w"> </span><span class="s">'none'"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Strict-Transport-Security</span><span class="w"> </span><span class="s">"max-age=31536000"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">X-Content-Type-Options</span><span class="w"> </span><span class="s">"nosniff"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Referrer-Policy</span><span class="w"> </span><span class="s">"strict-origin-when-cross-origin"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">    </span><span class="kn">gzip</span><span class="w"> </span><span class="no">on</span><span class="p">;</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">    </span><span class="kn">gzip_types</span><span class="w"> </span><span class="s">text/css</span><span class="w"> </span><span class="s">application/javascript</span><span class="w"> </span><span class="s">application/json</span><span class="w"> </span><span class="s">image/svg+xml</span><span class="p">;</span>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="w">    </span><span class="c1"># Replace, never append: the app trusts the first entry.</span>
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>
-<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="w">    </span><span class="kn">limit_req_status</span><span class="w"> </span><span class="mi">429</span><span class="p">;</span>
-<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>
-<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
-<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>
-<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/api/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a><span class="w">        </span><span class="kn">limit_req</span><span class="w"> </span><span class="s">zone=pumperly_api</span><span class="w"> </span><span class="s">burst=40</span><span class="w"> </span><span class="s">nodelay</span><span class="p">;</span>
-<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
-<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>
-<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/api/geocode</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a><span class="w">        </span><span class="kn">limit_req</span><span class="w"> </span><span class="s">zone=pumperly_geocode</span><span class="w"> </span><span class="s">burst=10</span><span class="w"> </span><span class="s">nodelay</span><span class="p">;</span>
-<a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
-<a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a>
-<a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a><span class="w">    </span><span class="c1"># One JSON line per station, sent as soon as it is ready.</span>
-<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/api/route-detour</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a><span class="w">        </span><span class="kn">gzip</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
-<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a><span class="w">        </span><span class="kn">proxy_buffering</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
-<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
-<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-11-46" name="__codelineno-11-46" href="#__codelineno-11-46"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">limit_req_zone</span><span class="w"> </span><span class="nv">$binary_remote_addr</span><span class="w"> </span><span class="s">zone=pumperly_api:10m</span><span class="w"> </span><span class="s">rate=10r/s</span><span class="p">;</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">limit_req_zone</span><span class="w"> </span><span class="nv">$binary_remote_addr</span><span class="w"> </span><span class="s">zone=pumperly_geocode:10m</span><span class="w"> </span><span class="s">rate=5r/s</span><span class="p">;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">pumperly.example.com</span><span class="p">;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="kn">ssl_certificate</span><span class="w">     </span><span class="s">/etc/ssl/pumperly.example.com.crt</span><span class="p">;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="kn">ssl_certificate_key</span><span class="w"> </span><span class="s">/etc/ssl/pumperly.example.com.key</span><span class="p">;</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Content-Security-Policy</span><span class="w"> </span><span class="s">"default-src</span><span class="w"> </span><span class="s">'self'</span><span class="p">;</span><span class="w"> </span><span class="kn">script-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">'unsafe-inline'</span><span class="p">;</span><span class="w"> </span><span class="kn">style-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">'unsafe-inline'</span><span class="p">;</span><span class="w"> </span><span class="kn">img-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">data:</span><span class="w"> </span><span class="s">blob:</span><span class="p">;</span><span class="w"> </span><span class="kn">connect-src</span><span class="w"> </span><span class="s">'self'</span><span class="w"> </span><span class="s">https://tiles.openfreemap.org</span><span class="p">;</span><span class="w"> </span><span class="kn">worker-src</span><span class="w"> </span><span class="s">'self'</span><span class="p">;</span><span class="w"> </span><span class="kn">object-src</span><span class="w"> </span><span class="s">'none'</span><span class="p">;</span><span class="w"> </span><span class="kn">base-uri</span><span class="w"> </span><span class="s">'self'</span><span class="p">;</span><span class="w"> </span><span class="kn">frame-ancestors</span><span class="w"> </span><span class="s">'none'"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Strict-Transport-Security</span><span class="w"> </span><span class="s">"max-age=31536000"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">X-Content-Type-Options</span><span class="w"> </span><span class="s">"nosniff"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Referrer-Policy</span><span class="w"> </span><span class="s">"strict-origin-when-cross-origin"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">    </span><span class="kn">gzip</span><span class="w"> </span><span class="no">on</span><span class="p">;</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">    </span><span class="kn">gzip_types</span><span class="w"> </span><span class="s">text/css</span><span class="w"> </span><span class="s">application/javascript</span><span class="w"> </span><span class="s">application/json</span><span class="w"> </span><span class="s">image/svg+xml</span><span class="p">;</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">    </span><span class="c1"># Replace, never append: the app trusts the first entry.</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">    </span><span class="kn">limit_req_status</span><span class="w"> </span><span class="mi">429</span><span class="p">;</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/api/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="w">        </span><span class="kn">limit_req</span><span class="w"> </span><span class="s">zone=pumperly_api</span><span class="w"> </span><span class="s">burst=40</span><span class="w"> </span><span class="s">nodelay</span><span class="p">;</span>
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a>
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/api/geocode</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="w">        </span><span class="kn">limit_req</span><span class="w"> </span><span class="s">zone=pumperly_geocode</span><span class="w"> </span><span class="s">burst=10</span><span class="w"> </span><span class="s">nodelay</span><span class="p">;</span>
+<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
+<a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a>
+<a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a><span class="w">    </span><span class="c1"># One JSON line per station, sent as soon as it is ready.</span>
+<a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/api/route-detour</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a><span class="w">        </span><span class="kn">gzip</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-8-43" name="__codelineno-8-43" href="#__codelineno-8-43"></a><span class="w">        </span><span class="kn">proxy_buffering</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-8-44" name="__codelineno-8-44" href="#__codelineno-8-44"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span>
+<a id="__codelineno-8-45" name="__codelineno-8-45" href="#__codelineno-8-45"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-46" name="__codelineno-8-46" href="#__codelineno-8-46"></a><span class="p">}</span>
 </code></pre></div>
 <p>nginx applies <code>add_header</code> and <code>proxy_set_header</code> from the <code>server</code> block only to locations that set none of their own. Keep them in the <code>server</code> block, or repeat all of them in any location that adds one.</p>
 </div>
 <div class="tabbed-block">
 <p>Caddy gets and renews the HTTPS certificate itself. Its <code>reverse_proxy</code> replaces <code>X-Forwarded-For</code> with the client's address, unless you list that client in <code>trusted_proxies</code>. Caddy has no built-in rate limiter, so this example sets none. Add a rate-limit module to your Caddy build, or use nginx.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>pumperly.example.com<span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="nd">@compressible</span><span class="w"> </span>not<span class="w"> </span>path<span class="w"> </span>/api/route-detour
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="k">encode</span><span class="w"> </span><span class="nd">@compressible</span><span class="w"> </span>zstd<span class="w"> </span>gzip
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="k">header</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">        </span>Content-Security-Policy<span class="w"> </span><span class="s2">"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">        </span>Strict-Transport-Security<span class="w"> </span><span class="s2">"max-age=31536000"</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">        </span>X-Content-Type-Options<span class="w"> </span><span class="s2">"nosniff"</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">        </span>Referrer-Policy<span class="w"> </span><span class="s2">"strict-origin-when-cross-origin"</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">    </span><span class="k">reverse_proxy</span><span class="w"> </span>127.0.0.1:3000<span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">        </span>flush_interval<span class="w"> </span>-1
-<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>pumperly.example.com<span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="nd">@compressible</span><span class="w"> </span>not<span class="w"> </span>path<span class="w"> </span>/api/route-detour
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="k">encode</span><span class="w"> </span><span class="nd">@compressible</span><span class="w"> </span>zstd<span class="w"> </span>gzip
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="k">header</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span>Content-Security-Policy<span class="w"> </span><span class="s2">"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span>Strict-Transport-Security<span class="w"> </span><span class="s2">"max-age=31536000"</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">        </span>X-Content-Type-Options<span class="w"> </span><span class="s2">"nosniff"</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">        </span>Referrer-Policy<span class="w"> </span><span class="s2">"strict-origin-when-cross-origin"</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="k">reverse_proxy</span><span class="w"> </span>127.0.0.1:3000<span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">        </span>flush_interval<span class="w"> </span>-1
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="p">}</span>
 </code></pre></div>
 <p><code>flush_interval -1</code> sends each chunk of a response to the browser as soon as it arrives, which keeps the detour stream live.</p>
 </div>

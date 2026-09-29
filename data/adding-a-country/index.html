@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -688,34 +688,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1924,14 +1896,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -1978,14 +1950,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2587,7 +2559,7 @@
 <a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="k">done</span>
 </code></pre></div>
 <p><a href="../../reference/data-model/">Data model</a> explains why the migrations are applied directly here.</p>
-<p>Run the scraper against it from a checkout set up as in <a href="../../getting-started/development/">Local development</a>. Export <code>DATABASE_URL</code> in the shell. The CLI also reads <code>.env</code>, but a variable already set in the shell wins.</p>
+<p>Run the scraper against it from a checkout set up as in <a href="../../development/#run-from-source">Run from source</a>. Export <code>DATABASE_URL</code> in the shell. The CLI also reads <code>.env</code>, but a variable already set in the shell wins.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://pumperly:not-a-secret@127.0.0.1:55432/pumperly
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>npx<span class="w"> </span>prisma<span class="w"> </span>generate
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>npm<span class="w"> </span>run<span class="w"> </span>scraper:run<span class="w"> </span>--<span class="w"> </span>--country<span class="o">=</span>XX
@@ -2645,7 +2617,7 @@
 <li>[ ] <code>config.ts</code>, both flag tables, the attribution list, <code>.env.example</code>, <code>README.md</code> and the docs are updated.</li>
 <li>[ ] A new currency has a band, a display entry and, if the ECB lacks it, a fallback rate.</li>
 </ul>
-<p>Describe the source in the pull request: the endpoint, the licence, what <code>robots.txt</code> allows, and how you checked the numbers against the source. <a href="../../contributing/">Contributing</a> covers the rest of the process.</p>
+<p>Describe the source in the pull request: the endpoint, the licence, what <code>robots.txt</code> allows, and how you checked the numbers against the source. <a href="../../development/">Development</a> covers the rest of the process.</p>
 
 
 

@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../../icon.svg">
+      <link rel="icon" href="../../images/icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
@@ -96,7 +96,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -386,13 +386,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../integrations/" class="md-tabs__link">
+      <a href="../../related/" class="md-tabs__link">
         
   
   
     
   
-  Integrations
+  Related projects
 
       </a>
     </li>
@@ -424,13 +424,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../contributing/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
     
   
-  Contributing
+  Development
 
       </a>
     </li>
@@ -461,7 +461,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
       
-  <img src="../../logo.svg" alt="logo">
+  <img src="../../images/logo.svg" alt="logo">
 
     </a>
     Pumperly
@@ -688,34 +688,6 @@
     
   
     Run on Kubernetes with Helm
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Local development
   
 
     
@@ -1941,14 +1913,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/" class="md-nav__link">
+      <a href="../../related/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Integrations
+    Related projects
   
 
     
@@ -1995,14 +1967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Development
   
 
     
@@ -2658,7 +2630,7 @@
 <li>It does not run <code>STATIC_</code> datasets.</li>
 <li>It prints a summary per scraper and exits with status 1 if any scraper recorded an error.</li>
 </ul>
-<p><a href="../../getting-started/development/">Local development</a> shows how to point it at a local database.</p>
+<p><a href="../../development/#run-from-source">Run from source</a> shows how to point it at a local database.</p>
 <h2 id="handing-a-country-over-to-a-new-source">Handing a country over to a new source<a class="headerlink" href="#handing-a-country-over-to-a-new-source" title="Permanent link">&para;</a></h2>
 <p>Sometimes a country's source dies and a new one replaces it. The new scraper gets a new <code>source</code> name and new <code>externalId</code>s, because they are different data. That creates a problem: <code>run()</code> only replaces prices of its own source. The dead source's prices are never refreshed and never deleted. Its stations keep their frozen prices, so the orphan cleanup never removes them either. The map would show the same forecourt twice, once with a current price and once with a stale one.</p>
 <p>The Swedish scraper, <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/sweden.ts"><code>src/scrapers/sweden.ts</code></a>, shows the pattern that fixes this. It overrides <code>run()</code>:</p>
