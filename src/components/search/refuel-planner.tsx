@@ -80,10 +80,14 @@ export function RefuelPlanner({
   const eurRate = convert(1, "EUR");
   const timeValue = Number((timeValueEur * eurRate).toFixed(Math.min(decimals, 2)));
 
+  // Detours stream in after the corridor: until the first one lands (all still
+  // null), it is loading, not "no usable station".
+  const detoursPending = detoursLoading || (stations.length > 0 && stations.every((s) => s.properties.detourMin == null));
+
   const byId = useMemo(() => new Map(stations.map((s) => [s.properties.id, s])), [stations]);
 
   const plan: PlanResult | null = useMemo(() => {
-    if (!open || ratesMissing || detoursLoading || routeKm <= 0) return null;
+    if (!open || ratesMissing || detoursPending || routeKm <= 0) return null;
     const candidates = stations.flatMap((s) => {
       const p = s.properties;
       // Mixed currencies can't be compared; only use prices in the display currency.
@@ -102,7 +106,7 @@ export function RefuelPlanner({
       timeValuePerHour: timeValue,
       maxStops: maxStopsFor(routeKm, profile.tankL, profile.consumptionL100, reservePct),
     });
-  }, [open, ratesMissing, detoursLoading, routeKm, stations, maxPrice, maxDetour, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
+  }, [open, ratesMissing, detoursPending, routeKm, stations, maxPrice, maxDetour, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"
@@ -206,7 +210,7 @@ export function RefuelPlanner({
           <div className="border-t border-black/[0.05] dark:border-white/[0.06]">
             {ratesMissing ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-amber-700 dark:text-amber-300">{t("planner.noRates")}</p>
-            ) : detoursLoading ? (
+            ) : detoursPending ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">{t("planner.calculating")}</p>
             ) : plan?.status === "no-stop-needed" ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-emerald-700 dark:text-emerald-300">

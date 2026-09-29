@@ -128,6 +128,14 @@ describe("RefuelPlanner", () => {
     expect(screen.getByText("planner.calculating")).toBeInTheDocument();
   });
 
+  it("treats a corridor with no detour yet as loading, not as no candidates", async () => {
+    const { onPlanChange } = renderPlanner({ stations: STATIONS.map((s) => ({ ...s, properties: { ...s.properties, detourMin: null } })) });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("planner.calculating")).toBeInTheDocument();
+    expect(screen.queryByText("planner.infeasibleNoCandidates")).not.toBeInTheDocument();
+    expect(onPlanChange).toHaveBeenLastCalledWith([]);
+  });
+
   it("keeps the time value in EUR and converts it to the display currency", async () => {
     Object.assign(currencyState, {
       currency: "HUF", symbol: "Ft", decimals: 0, rate: 390,
