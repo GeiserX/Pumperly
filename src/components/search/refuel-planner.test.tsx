@@ -4,6 +4,19 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { StationGeoJSON } from "@/types/station";
 
+// Pass-through spy: records what the component actually plans with.
+const { planSpy } = vi.hoisted(() => ({ planSpy: vi.fn() }));
+vi.mock("@/lib/refuel-planner", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/refuel-planner")>();
+  return {
+    ...mod,
+    planRefuel: (input: Parameters<typeof mod.planRefuel>[0]) => {
+      planSpy(input);
+      return mod.planRefuel(input);
+    },
+  };
+});
+
 vi.mock("@/lib/i18n", () => ({
   useI18n: () => ({ t: (k: string) => k }),
 }));
@@ -81,6 +94,7 @@ function renderPlanner(props: Partial<React.ComponentProps<typeof Harness>> = {}
 describe("RefuelPlanner", () => {
   beforeEach(() => {
     localStorage.clear();
+    planSpy.mockClear();
     Object.assign(currencyState, { currency: "EUR", symbol: "€", decimals: 3, rate: 1, rates: null });
   });
 
@@ -145,6 +159,44 @@ describe("RefuelPlanner", () => {
     Object.assign(currencyState, { rates: { base: "EUR", rates: { USD: 1.1 }, date: "2026-09-28" } });
     fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "40" } });
     expect(screen.getByText("planner.noRates")).toBeInTheDocument();
+  });
+
+  it("edits the value of time like the vehicle fields and plans with what it shows", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    const field = screen.getByLabelText("planner.timeValue");
+    const planned = () => planSpy.mock.lastCall![0].timeValuePerHour;
+    expect(field).toHaveValue(15);
+    expect(planned()).toBe(15);
+
+    // Emptyable mid-edit, and nothing is planned from a half-typed value.
+    await userEvent.clear(field);
+    expect(field).toHaveValue(null);
+    await userEvent.type(field, "2");
+    expect(planned()).toBe(15);
+    await userEvent.type(field, "0{Enter}");
+    expect(field).toHaveValue(20);
+    expect(planned()).toBe(20);
+
+    // Invalid or empty input reverts to the saved value.
+    await userEvent.clear(field);
+    await userEvent.tab();
+    expect(field).toHaveValue(20);
+    expect(planned()).toBe(20);
+  });
+
+  it("shows the same converted value of time it plans with", async () => {
+    Object.assign(currencyState, {
+      currency: "HUF", symbol: "Ft", decimals: 0, rate: 390,
+      rates: { base: "EUR", rates: { HUF: 390 }, date: "2026-09-28" },
+    });
+    renderPlanner({ stations: [makeStation("near", { price: 632, currency: "HUF", routeFraction: 0.25, detourMin: 1 })] });
+    await userEvent.click(screen.getByText("planner.title"));
+    const field = screen.getByLabelText("planner.timeValue");
+    await userEvent.clear(field);
+    await userEvent.type(field, "4321.6{Enter}");
+    expect(field).toHaveValue(4322);
+    expect(planSpy.mock.lastCall![0].timeValuePerHour).toBe(4322);
   });
 
   it("only recommends stations that pass the map's price and detour filters", async () => {

@@ -68,6 +68,8 @@ export function RefuelPlanner({
   // Drafts so a half-typed number ("6.") doesn't get rejected mid-edit.
   const [tankDraft, setTankDraft] = useState(String(profile.tankL));
   const [consDraft, setConsDraft] = useState(String(profile.consumptionL100));
+  // Same for the value of time; null shows the saved (and planned) value.
+  const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
   // The time value is stored in EUR: without a rate for the display currency it
   // can't be converted, and `convert` would silently treat it as 1:1.
@@ -119,6 +121,11 @@ export function RefuelPlanner({
     if (vehicleProfileSchema.safeParse(next).success) setProfile(next);
     else if (key === "tankL") setTankDraft(String(profile.tankL));
     else setConsDraft(String(profile.consumptionL100));
+  };
+  const commitTimeValue = (raw: string) => {
+    const v = parseFloat(raw.replace(",", "."));
+    if (!ratesMissing && Number.isFinite(v) && v >= 0) update({ timeValueEur: v / eurRate });
+    setTimeDraft(null);
   };
   const blurOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") e.currentTarget.blur();
@@ -182,13 +189,11 @@ export function RefuelPlanner({
                 type="number"
                 inputMode="decimal"
                 min={0}
-                value={timeValue}
+                value={timeDraft ?? String(timeValue)}
                 disabled={ratesMissing}
-                onChange={(e) => {
-                  if (ratesMissing) return;
-                  const v = parseFloat(e.target.value);
-                  update({ timeValueEur: Number.isFinite(v) && v >= 0 ? v / eurRate : 0 });
-                }}
+                onChange={(e) => setTimeDraft(e.target.value)}
+                onBlur={(e) => commitTimeValue(e.target.value)}
+                onKeyDown={blurOnEnter}
                 className="w-16 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-right text-xs font-semibold text-gray-800 disabled:opacity-50 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
               />
             </label>
