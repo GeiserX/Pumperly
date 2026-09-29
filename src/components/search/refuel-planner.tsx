@@ -5,7 +5,8 @@ import type { StationGeoJSON } from "@/types/station";
 import { useI18n } from "@/lib/i18n";
 import { useCurrency } from "@/lib/currency";
 import { maxStopsFor, planRefuel, type PlanResult } from "@/lib/refuel-planner";
-import { evProfileSchema, useEvProfile, useVehicleProfile, vehicleProfileSchema } from "@/lib/vehicle-profile";
+import { evProfileSchema, minutesPerPct, useEvProfile, useVehicleProfile, vehicleProfileSchema } from "@/lib/vehicle-profile";
+import { formatDuration } from "@/lib/format";
 
 export interface PlannedStopMarker {
   id: string;
@@ -14,6 +15,8 @@ export interface PlannedStopMarker {
 
 /** Fill-level cap for EV stops: charging slows sharply above ~80 %. */
 const EV_MAX_CHARGE_PCT = 80;
+/** "Min charger power" choices, kW; 0 = any (including chargers with unknown power). */
+const MIN_CHARGER_KW_OPTIONS = [0, 50, 150] as const;
 
 interface RefuelPlannerProps {
   /** `ev` plans by energy only (kWh): chargers have no prices yet. */
@@ -44,6 +47,8 @@ export interface PlannerSettings {
   reservePct: number;
   /** Stored in EUR so the default means the same everywhere; shown and planned in the display currency. */
   timeValueEur: number;
+  /** EV only: skip chargers below this power (kW); 0 = any. */
+  minChargerKw: number;
 }
 
 export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
@@ -52,6 +57,7 @@ export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
   arrivalPct: 20,
   reservePct: 20,
   timeValueEur: 15,
+  minChargerKw: 0,
 };
 
 export function RefuelPlanner({
@@ -78,11 +84,12 @@ export function RefuelPlanner({
   const capacity = ev ? evProfile.batteryKwh : fuelProfile.tankL;
   const consumption = ev ? evProfile.consumptionKwh100 : fuelProfile.consumptionL100;
   const maxChargePct = ev ? EV_MAX_CHARGE_PCT : 100;
-  const { open, startPct, arrivalPct, reservePct, timeValueEur } = settings;
+  const { open, startPct, arrivalPct, reservePct, timeValueEur, minChargerKw } = settings;
   const update = (patch: Partial<PlannerSettings>) => onSettingsChange({ ...settings, ...patch });
   // Drafts so a half-typed number ("6.") doesn't get rejected mid-edit.
   const [tankDraft, setTankDraft] = useState(String(capacity));
   const [consDraft, setConsDraft] = useState(String(consumption));
+  const [maxKwDraft, setMaxKwDraft] = useState(String(evProfile.maxChargeKw));
   // Same for the value of time; null shows the saved (and planned) value.
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
@@ -110,9 +117,17 @@ export function RefuelPlanner({
     const candidates = stations.flatMap((s) => {
       const p = s.properties;
       if (ev) {
-        // Energy only: every charger with a detour is a candidate at no cost per kWh.
+        // No prices yet: chargers compete on detour and charging time only.
         if (p.detourMin == null || p.detourMin < 0 || (maxDetour != null && p.detourMin > maxDetour)) return [];
-        return [{ id: p.id, km: (p.routeFraction ?? 0) * routeKm, price: 0, detourMin: p.detourMin }];
+        // A power filter can't vouch for a charger whose power is unknown.
+        if (minChargerKw > 0 && !((p.powerKw ?? 0) >= minChargerKw)) return [];
+        return [{
+          id: p.id,
+          km: (p.routeFraction ?? 0) * routeKm,
+          price: 0,
+          detourMin: p.detourMin,
+          minutesPerPct: minutesPerPct(evProfile, p.powerKw),
+        }];
       }
       // Mixed currencies can't be compared; only use prices in the display currency.
       if (p.price == null || p.price <= 0 || p.detourMin == null || p.detourMin < 0 || p.currency !== currency) return [];
@@ -127,12 +142,12 @@ export function RefuelPlanner({
       startPct,
       arrivalPct,
       reservePct,
-      // With no price, only detour time is weighed, so any positive value gives the same plan.
+      // With no price the cost is all time, so any positive value gives the same plan.
       timeValuePerHour: ev ? 1 : timeValue,
       maxStops: maxStopsFor(routeKm, capacity, consumption, reservePct, maxChargePct),
       maxChargePct,
     });
-  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, maxPrice, maxDetour, currency, capacity, consumption, maxChargePct, startPct, arrivalPct, reservePct, timeValue]);
+  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evProfile, minChargerKw, maxPrice, maxDetour, currency, capacity, consumption, maxChargePct, startPct, arrivalPct, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"
@@ -157,6 +172,10 @@ export function RefuelPlanner({
     if (!ok && field === "capacity") setTankDraft(String(capacity));
     else if (!ok) setConsDraft(String(consumption));
   };
+  const commitMaxKw = (raw: string) => {
+    const next = { ...evProfile, maxChargeKw: parseFloat(raw.replace(",", ".")) };
+    if (!commitProfile(evProfileSchema, next, setEvProfile)) setMaxKwDraft(String(evProfile.maxChargeKw));
+  };
   const commitTimeValue = (raw: string) => {
     const v = parseFloat(raw.replace(",", "."));
     if (!ratesMissing && Number.isFinite(v) && v >= 0) update({ timeValueEur: v / eurRate });
@@ -167,6 +186,7 @@ export function RefuelPlanner({
   };
 
   const kwh = (v: number) => `${v.toFixed(1)} kWh`;
+  const minutes = (m: number) => formatDuration(m * 60);
   const money = (v: number) => `${v.toFixed(Math.min(decimals, 2))} ${symbol}`;
 
   const infeasibleText = (p: PlanResult) => {
@@ -231,6 +251,36 @@ export function RefuelPlanner({
                 />
               </label>
             </div>
+            {ev && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                  {t("planner.maxChargeKw")}
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={10}
+                    max={500}
+                    value={maxKwDraft}
+                    onChange={(e) => setMaxKwDraft(e.target.value)}
+                    onBlur={(e) => commitMaxKw(e.target.value)}
+                    onKeyDown={blurOnEnter}
+                    className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                  />
+                </label>
+                <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                  {t("planner.minChargerKw")}
+                  <select
+                    value={minChargerKw}
+                    onChange={(e) => update({ minChargerKw: Number(e.target.value) })}
+                    className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                  >
+                    {MIN_CHARGER_KW_OPTIONS.map((kw) => (
+                      <option key={kw} value={kw}>{kw === 0 ? t("planner.anyPower") : `≥ ${kw} kW`}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
             <PctSlider label={t(ev ? "planner.startEv" : "planner.start")} value={startPct} min={1} onChange={(v) => update({ startPct: v })} />
             <PctSlider label={t(ev ? "planner.arrivalEv" : "planner.arrival")} value={arrivalPct} min={0} onChange={(v) => update({ arrivalPct: v })} />
             <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={(v) => update({ reservePct: v })} />
@@ -291,7 +341,12 @@ export function RefuelPlanner({
                       </div>
                       <div className="shrink-0 text-right">
                         {ev ? (
-                          <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">+{kwh(stop.litres)}</p>
+                          <>
+                            <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">+{kwh(stop.litres)}</p>
+                            <p className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
+                              {minutes(stop.chargeMin)} · {f.properties.powerKw != null ? `${f.properties.powerKw} kW` : "? kW"}
+                            </p>
+                          </>
                         ) : (
                           <>
                             <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">{money(stop.cost)}</p>
@@ -309,7 +364,9 @@ export function RefuelPlanner({
                     {t(ev ? "planner.energyTotal" : "planner.total")} · {t("planner.atDestination")} {Math.round(plan.endPct)}%
                   </span>
                   <span className="font-bold tabular-nums text-gray-900 dark:text-gray-50">
-                    {ev ? kwh(plan.stops.reduce((sum, s) => sum + s.litres, 0)) : money(plan.totalFuelCost)}
+                    {ev
+                      ? `${kwh(plan.stops.reduce((sum, s) => sum + s.litres, 0))} · ${minutes(plan.totalChargeMin)}`
+                      : money(plan.totalFuelCost)}
                   </span>
                 </div>
                 <FuelGauge plan={plan} routeKm={routeKm} reservePct={reservePct} />

@@ -394,3 +394,45 @@ describe("planRefuel with maxChargePct (EV)", () => {
     expect(Math.min(...r.stops.map((s) => s.arrivePct))).toBeGreaterThanOrEqual(20 - 1e-9);
   });
 });
+
+describe("planRefuel with charge time (EV)", () => {
+  // 60 kWh at 18 kWh/100 km: 0.3 % per km. Needs one stop around km 100.
+  const ev = { ...base, tankL: 60, consumptionL100: 18, startPct: 50, arrivalPct: 20, reservePct: 20, timeValuePerHour: 1, maxChargePct: 80 };
+  const at = (id: string, km: number, detourMin: number, minutesPerPct: number): PlannerStation => ({ id, km, price: 0, detourMin, minutesPerPct });
+
+  it("prefers a fast charger with a longer detour over a slow one on the route", () => {
+    // Slow: 11 kW ≈ 3.27 min/%; fast: 112.5 kW ≈ 0.32 min/%.
+    // Start at 60 % so the fast one's detour still arrives above the reserve.
+    const r = planRefuel({ ...ev, startPct: 60, routeKm: 280, stations: [at("slow", 100, 0, 3.27), at("fast", 100, 8, 0.32)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["fast"]);
+    // Without charge time, the on-route one wins.
+    const noTime = [at("slow", 100, 0, 0), at("fast", 100, 8, 0)];
+    expect(planRefuel({ ...ev, startPct: 60, routeKm: 280, stations: noTime }).stops.map((s) => s.id)).toEqual(["slow"]);
+  });
+
+  it("reports charge minutes per stop and in total", () => {
+    const r = planRefuel({ ...ev, routeKm: 250, stations: [at("fast", 100, 0, 0.5)] });
+    expect(r.status).toBe("ok");
+    const [s] = r.stops;
+    // Arrive 20 %, need 150 km × 0.3 + 20 = 65 %: 45 % × 0.5 min.
+    expect(s.departPct).toBe(65);
+    expect(s.chargeMin).toBeCloseTo(22.5);
+    expect(r.totalChargeMin).toBeCloseTo(22.5);
+  });
+
+  it("leaves fuel plans unchanged: no charge time without minutesPerPct", () => {
+    const r = planRefuel({ ...base, startPct: 30, routeKm: 400, stations: [st("A", 100, 1.5)] });
+    expect(r.stops[0].chargeMin).toBe(0);
+    expect(r.totalChargeMin).toBe(0);
+  });
+
+  it("ignores a station with an invalid charge rate", () => {
+    const r = planRefuel({ ...ev, routeKm: 250, stations: [at("bad", 100, 0, -1), at("nan", 100, 0, Number.NaN), at("ok", 100, 0, 1)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
+  });
+
+  it("keeps the fastest charger in each bucket when pruning ties on price", () => {
+    const stations = Array.from({ length: 400 }, (_, i) => at(`S${i}`, i * 5, 5, i === 201 ? 0.1 : 3));
+    expect(pruneCandidates(stations, 2000).map((s) => s.id)).toContain("S201");
+  });
+});

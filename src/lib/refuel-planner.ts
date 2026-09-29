@@ -2,7 +2,7 @@
  * Refuel stop planner (liquid fuels).
  *
  * Picks 0..maxStops corridor stations that minimise
- *   fuel bought · price  +  (detour + fixed stop time) · value of time
+ *   fuel bought · price  +  (detour + fixed stop time + charge time) · value of time
  * while the tank never drops below `reservePct` and arrives at the destination
  * with at least `arrivalPct`. The one exception is the first leg: when the start
  * level can't reach any station with the reserve intact, it may use up to half of
@@ -23,6 +23,8 @@ export interface PlannerStation {
   price: number;
   /** Extra driving time to visit the station, minutes (≥ 0). */
   detourMin: number;
+  /** Time to add 1 % of capacity here, minutes (EV charging). Unset = instant (fuel). */
+  minutesPerPct?: number;
 }
 
 export interface PlannerInput {
@@ -45,6 +47,8 @@ export interface PlannedStop {
   litres: number;
   cost: number;
   detourMin: number;
+  /** Time spent charging (0 for fuel), minutes. */
+  chargeMin: number;
   arrivePct: number;
   departPct: number;
 }
@@ -54,6 +58,7 @@ export interface PlanResult {
   stops: PlannedStop[];
   totalFuelCost: number;
   totalDetourMin: number;
+  totalChargeMin: number;
   /** Fuel level (%) at the destination. */
   endPct: number;
   /** Fuel level profile along the route, for the gauge chart. */
@@ -87,7 +92,7 @@ const L = 101; // fuel levels 0..100 %
 
 /**
  * Keep at most `max` candidates: split the route into equal buckets and keep
- * four stations from each: the cheapest, the least-detour, the earliest-reachable
+ * four stations from each: the cheapest (ties to the fastest charger), the least-detour, the earliest-reachable
  * and the one with the furthest onward reach. The earliest-reachable one means a
  * bucket with any station in range keeps one in range, so pruning never drops the
  * only station a low tank can reach; the furthest-reaching one means pruning never
@@ -113,7 +118,9 @@ export function pruneCandidates(stations: PlannerStation[], routeKm: number, max
   // Where a full tank bought here effectively starts from, on the route.
   const onwardKm = (s: PlannerStation) => s.km - halfDetourKm(s);
   for (const list of byBucket.values()) {
-    const cheapest = list.reduce((a, b) => (b.price < a.price ? b : a));
+    // Ties go to the faster charger: EV prices are all 0, so there "cheapest" means "fastest".
+    const cheapest = list.reduce((a, b) =>
+      b.price < a.price || (b.price === a.price && (b.minutesPerPct ?? 0) < (a.minutesPerPct ?? 0)) ? b : a);
     const closest = list.reduce((a, b) => (b.detourMin < a.detourMin ? b : a));
     const earliest = list.reduce((a, b) => (reachKm(b) < reachKm(a) ? b : a));
     const furthest = list.reduce((a, b) => (onwardKm(b) > onwardKm(a) ? b : a));
@@ -152,7 +159,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const { routeKm, tankL, consumptionL100 } = input;
   // A vehicle without a usable tank or consumption can't be planned for.
   if (!(tankL > 0 && tankL < Infinity && consumptionL100 > 0 && consumptionL100 < Infinity)) {
-    return { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, endPct: 0, profile: [], gapKm: 0 };
+    return { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, totalChargeMin: 0, endPct: 0, profile: [], gapKm: 0 };
   }
   const timeValuePerHour = input.timeValuePerHour > 0 && input.timeValuePerHour < Infinity ? input.timeValuePerHour : 0;
   const startPct = clamp(input.startPct, 0, 100);
@@ -173,6 +180,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
     input.stations
       .filter((s) => !seen.has(s.id) && seen.add(s.id))
       .filter((s) => Number.isFinite(s.km) && Number.isFinite(s.price) && Number.isFinite(s.detourMin))
+      .filter((s) => s.minutesPerPct == null || (Number.isFinite(s.minutesPerPct) && s.minutesPerPct >= 0))
       .filter((s) => s.km >= 0 && s.km <= routeKm && s.price >= 0 && s.detourMin >= 0)
       .sort((a, b) => a.km - b.km),
     routeKm,
@@ -180,6 +188,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const n = stations.length;
   const detourKm = stations.map((s) => (s.detourMin / 60) * DETOUR_KMH);
   const stopCost = stations.map((s) => ((s.detourMin + STOP_OVERHEAD_MIN) / 60) * timeValuePerHour);
+  const minPerPct = stations.map((s) => s.minutesPerPct ?? 0);
 
   // Level consumed from stop i (-1 = origin) to stop j (n = destination).
   // Half of each station's detour is charged to the leg in, half to the leg out.
@@ -197,6 +206,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
       stops: [],
       totalFuelCost: 0,
       totalDetourMin: 0,
+      totalChargeMin: 0,
       endPct: endPctNoStop,
       profile: [{ km: 0, pct: startPct }, { km: routeKm, pct: endPctNoStop }],
     };
@@ -228,8 +238,8 @@ export function planRefuel(input: PlannerInput): PlanResult {
       const prev = k === 1 ? null : layers[k - 2];
 
       for (let j = 0; j < n; j++) {
-        const price = stations[j].price;
-        const unit = litresPerPct * price;
+        // Cost of adding 1 %: what it costs to buy, plus the time it takes to charge.
+        const unit = litresPerPct * stations[j].price + (minPerPct[j] / 60) * timeValuePerHour;
         const sources = k === 1 ? [-1] : range(j);
         for (const i of sources) {
           const cons = legPct(i, j);
@@ -312,6 +322,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
         stops: [],
         totalFuelCost: 0,
         totalDetourMin: 0,
+        totalChargeMin: 0,
         endPct: 0,
         profile: [],
         gapKm: Math.min(routeKm, reach),
@@ -343,6 +354,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
         litres,
         cost: litres * s.price,
         detourMin: s.detourMin,
+        chargeMin: (g - arrive) * minPerPct[j],
         arrivePct: arrive,
         departPct: g,
       });
@@ -358,6 +370,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
       stops,
       totalFuelCost: stops.reduce((sum, s) => sum + s.cost, 0),
       totalDetourMin: stops.reduce((sum, s) => sum + s.detourMin, 0),
+      totalChargeMin: stops.reduce((sum, s) => sum + s.chargeMin, 0),
       endPct,
       profile,
     };

@@ -279,15 +279,15 @@ describe("RefuelPlanner", () => {
   });
 
   it("says when the trip needs more stops than the planner suggests", async () => {
-    planOverride.result = { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, endPct: 0, profile: [], gapKm: 300, reason: "stops" };
+    planOverride.result = { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, totalChargeMin: 0, endPct: 0, profile: [], gapKm: 300, reason: "stops" };
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));
     expect(screen.getByText("planner.infeasibleStops")).toBeInTheDocument();
   });
 
   it("notes a plan that reaches the first stop below the reserve, and only that one", async () => {
-    const stop = { id: "a", km: 100, litres: 30, cost: 42, detourMin: 2, arrivePct: 6, departPct: 66 };
-    const ok: PlanResult = { status: "ok", stops: [stop], totalFuelCost: 42, totalDetourMin: 2, endPct: 20, profile: [] };
+    const stop = { id: "a", km: 100, litres: 30, cost: 42, detourMin: 2, chargeMin: 0, arrivePct: 6, departPct: 66 };
+    const ok: PlanResult = { status: "ok", stops: [stop], totalFuelCost: 42, totalDetourMin: 2, totalChargeMin: 0, endPct: 20, profile: [] };
     planOverride.result = ok;
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));
@@ -380,9 +380,40 @@ describe("RefuelPlanner", () => {
       await userEvent.click(screen.getByText("planner.titleEv"));
       expect(screen.getByLabelText("planner.battery")).toHaveValue(60);
       expect(screen.getByLabelText("planner.consumptionEv")).toHaveValue(18);
+      expect(screen.getByLabelText("planner.maxChargeKw")).toHaveValue(150);
       expect(screen.queryByText(/planner.timeValue/)).not.toBeInTheDocument();
       expect(screen.queryByText("planner.noRates")).not.toBeInTheDocument();
       expect(planSpy).toHaveBeenCalled();
+    });
+
+    it("shows charge time and charger power per stop, and ? kW when unknown", async () => {
+      const chargers = [
+        makeStation("f", { brand: "Ionity", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 350 }),
+        makeStation("u", { brand: "Mystery", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const [first, second] = planSpy.mock.lastCall![0].stations;
+      // 0.6 kWh per % at 112.5 kW average vs the 11 kW assumed for unknown power.
+      expect(first.minutesPerPct).toBeCloseTo(0.32);
+      expect(second.minutesPerPct).toBeCloseTo(3.273, 2);
+      expect(screen.getByText(/· 350 kW$/)).toBeInTheDocument();
+      expect(screen.getByText(/· \? kW$/)).toBeInTheDocument();
+      expect(screen.getAllByText(/^\d+ (h \d+ )?min · /).length).toBeGreaterThan(0);
+    });
+
+    it("drops slower and unknown-power chargers under a minimum power", async () => {
+      const chargers = [
+        makeStation("fast", { price: null, fuelType: "EV", routeFraction: 0.3, powerKw: 150 }),
+        makeStation("ac", { price: null, fuelType: "EV", routeFraction: 0.3, powerKw: 22 }),
+        makeStation("unknown", { price: null, fuelType: "EV", routeFraction: 0.3 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const ids = () => planSpy.mock.lastCall![0].stations.map((s: { id: string }) => s.id);
+      expect(ids()).toEqual(["fast", "ac", "unknown"]);
+      await userEvent.selectOptions(screen.getByLabelText("planner.minChargerKw"), "50");
+      expect(ids()).toEqual(["fast"]);
     });
 
     it("persists the EV profile apart from the fuel one", async () => {
@@ -391,7 +422,7 @@ describe("RefuelPlanner", () => {
       const battery = screen.getByLabelText("planner.battery");
       await userEvent.clear(battery);
       await userEvent.type(battery, "77{Enter}");
-      expect(JSON.parse(localStorage.getItem("pumperly-ev")!)).toEqual({ batteryKwh: 77, consumptionKwh100: 18 });
+      expect(JSON.parse(localStorage.getItem("pumperly-ev")!)).toEqual({ batteryKwh: 77, consumptionKwh100: 18, maxChargeKw: 150 });
       expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 6.5 });
     });
   });
