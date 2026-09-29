@@ -2,7 +2,7 @@
 
 This page explains how to send a change to Pumperly: the project rules, local setup, and what a pull request needs before it can merge. Changes arrive as pull requests against `main`, usually from a fork. For anything beyond a small fix, open an issue first to discuss the change.
 
-Pumperly is licensed under the [GNU General Public License v3.0](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) (GPL-3.0-only). Your contribution is distributed under the same licence as the rest of the project.
+Pumperly is licensed under the [GNU Affero General Public License v3.0 or later](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) (AGPL-3.0-or-later). Your contribution is distributed under the same licence as the rest of the project.
 
 ## Rules that come first
 

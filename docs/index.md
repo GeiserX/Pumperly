@@ -14,7 +14,7 @@ hide:
   <a href="https://hub.docker.com/r/drumsergio/pumperly"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/drumsergio/pumperly?style=flat-square&logo=docker"></a>
   <a href="https://github.com/GeiserX/Pumperly/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/GeiserX/Pumperly?style=flat-square&logo=github"></a>
   <a href="https://github.com/GeiserX/Pumperly/releases"><img alt="Release" src="https://img.shields.io/github/v/release/GeiserX/Pumperly?style=flat-square"></a>
-  <a href="https://github.com/GeiserX/Pumperly/blob/main/LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/github/license/GeiserX/Pumperly?style=flat-square"></a>
+  <a href="https://github.com/GeiserX/Pumperly/blob/main/LICENSE"><img alt="License: AGPL-3.0-or-later" src="https://img.shields.io/github/license/GeiserX/Pumperly?style=flat-square"></a>
 </p>
 
 ---
@@ -125,4 +125,4 @@ flowchart LR
 
 ## License
 
-Pumperly is released under the [GPL-3.0](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) license. Price and charger data keep the licence of their source. [Fuel price sources](data/fuel-sources.md) and [EV charging sources](data/ev-sources.md) list them. Some sources allow only non-commercial use, and most require credit. If you run a public instance, read [Data licences on a public instance](getting-started/docker-compose.md#data-licences-on-a-public-instance) first.
+Pumperly is released under the [AGPL-3.0-or-later](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) license. Price and charger data keep the licence of their source. [Fuel price sources](data/fuel-sources.md) and [EV charging sources](data/ev-sources.md) list them. Some sources allow only non-commercial use, and most require credit. If you run a public instance, read [Data licences on a public instance](getting-started/docker-compose.md#data-licences-on-a-public-instance) first.

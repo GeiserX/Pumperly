@@ -19,7 +19,7 @@
     "type": "git",
     "url": "git+https://github.com/GeiserX/pumperly.git"
   },
-  "license": "GPL-3.0-only",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/GeiserX/pumperly/issues"
   },

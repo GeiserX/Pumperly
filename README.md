@@ -43,7 +43,7 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 - Filter by "cheapest within N minutes detour" — the feature no competitor has
 - Covers 36 fuel-price countries across Europe, Latin America, and Oceania, plus US EV-charger coverage (stations only — no national fuel-price API exists)
 - 16 languages, multi-currency, fully self-hostable
-- 100% open source (GPL-3.0), no tracking, no cookies, no accounts
+- 100% open source (AGPL-3.0), no tracking, no cookies, no accounts
 
 ## Features
 
@@ -517,7 +517,7 @@ Contributions are welcome. Please open an issue first to discuss what you'd like
 
 ## License
 
-[GPL-3.0](LICENSE) — free to use, modify, and distribute. If you distribute a modified version, you must also release the source code under GPL-3.0.
+[AGPL-3.0-or-later](LICENSE) — free to use, modify, and distribute. If you distribute a modified version, or run one as a network service, you must also release its source code under AGPL-3.0.
 
 ---
 

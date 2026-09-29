@@ -361,7 +361,7 @@ To run a public instance under your own name, change these files and build your 
 
 ### Data licences on a public instance
 
-Pumperly's code is GPL-3.0. The prices and charger locations it shows are not: each keeps the licence of its source. These terms bind whoever publishes the data, so they bind you when you run a public instance.
+Pumperly's code is AGPL-3.0-or-later. The prices and charger locations it shows are not: each keeps the licence of its source. These terms bind whoever publishes the data, so they bind you when you run a public instance.
 
 | Source | Countries | What the licence asks of you |
 |---|---|---|

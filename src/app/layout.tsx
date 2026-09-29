@@ -46,7 +46,7 @@ export default async function RootLayout({
                 "es", "en", "fr", "de", "it", "pt", "pl", "cs",
                 "hu", "bg", "sk", "da", "sv", "no", "sr", "fi",
               ],
-              license: "https://www.gnu.org/licenses/gpl-3.0.html",
+              license: "https://www.gnu.org/licenses/agpl-3.0.html",
               isAccessibleForFree: true,
             }),
           }}
