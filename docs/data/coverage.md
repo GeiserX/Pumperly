@@ -20,7 +20,7 @@ A run that fails never deletes data. The prices from the last good run stay on t
 
 ## Fuel prices {#fuel-prices}
 
-The **key** column is the name the scheduler and the logs use for the scraper. The **every** column is the default interval between runs, from `DEFAULT_INTERVALS` in [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts). The **default fuel** column is the fuel the map selects when it opens on that country, from [`src/lib/config.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/lib/config.ts).
+The **key** column is the name the scheduler and the logs use for the scraper. The **every** column is the default interval between runs, from `DEFAULT_INTERVALS` in [`src/instrumentation-node.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts). The **default fuel** column is the fuel the map selects when it opens on that country, from [`src/lib/config.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/lib/config.ts).
 
 ### Europe {#europe}
 

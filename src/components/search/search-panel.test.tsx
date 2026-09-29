@@ -6,7 +6,10 @@ import type { PhotonResult } from "@/lib/photon";
 
 vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ t: (k: string) => k }) }));
 vi.mock("@/lib/currency", () => ({
-  useCurrency: () => ({ symbol: "€", formatPrice: (n: number) => n.toFixed(3) }),
+  useCurrency: () => ({
+    currency: "EUR", rates: null, symbol: "€", decimals: 3,
+    formatPrice: (n: number) => n.toFixed(3), convert: (n: number) => n,
+  }),
   CURRENCIES: [{ code: "EUR", symbol: "€", decimals: 3 }],
 }));
 // Dumb children — not under test here.
@@ -172,6 +175,60 @@ describe("SearchPanel — mobile bottom sheet", () => {
     // Give effects a tick; the sheet region must never appear on desktop.
     await waitFor(() => expect(screen.getByText("share.shareRoute")).toBeInTheDocument());
     expect(screen.queryByRole("region", { name: "sheet.routeAndStations" })).not.toBeInTheDocument();
+  });
+});
+
+describe("SearchPanel — refuel planner", () => {
+  const ROUTE = {
+    geometry: { type: "LineString" as const, coordinates: [[-3.7, 40.4], [-0.37, 39.47]] },
+    distance: 400,
+    duration: 14400,
+    bbox: [-3.7, 39.47, -0.37, 40.4] as [number, number, number, number],
+  };
+  const STATIONS = {
+    type: "FeatureCollection" as const,
+    features: [{
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [-2.5, 40.0] as [number, number] },
+      properties: {
+        id: "a", name: "A", brand: "Repsol", address: "", city: "", price: 1.4, reportedAt: null,
+        fuelType: "B7", currency: "EUR", routeFraction: 0.25, detourMin: 2,
+      },
+    }],
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
+    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((q: string) => ({
+      matches: false, media: q,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("keeps the planned stops on the map when the desktop panel is collapsed", async () => {
+    const user = userEvent.setup();
+    const onPlannedStopsChange = vi.fn();
+    renderPanel({
+      routes: [ROUTE],
+      initialRoute: { from: [-3.7, 40.4], to: [-0.37, 39.47], via: [] },
+      primaryStations: STATIONS,
+      selectedFuel: "B7",
+      onPlannedStopsChange,
+    });
+    await user.click(await screen.findByText("planner.title"));
+    await waitFor(() => expect(onPlannedStopsChange).toHaveBeenLastCalledWith([{ id: "a", coordinates: [-2.5, 40.0] }]));
+
+    await user.click(screen.getByText("400.0 km").closest("button")!);
+    expect(screen.queryByText("share.shareRoute")).not.toBeInTheDocument();
+    expect(onPlannedStopsChange).toHaveBeenLastCalledWith([{ id: "a", coordinates: [-2.5, 40.0] }]);
+    expect(screen.getByText("planner.title").closest(".hidden")).not.toBeNull();
+
+    // Expanding shows the same planner again, still open.
+    await user.click(screen.getByText("400.0 km").closest("button")!);
+    expect(screen.getByText("planner.title").closest(".hidden")).toBeNull();
+    expect(screen.getByText("Repsol")).toBeInTheDocument();
   });
 });
 

@@ -7,6 +7,9 @@ import type { StationsGeoJSONCollection } from "@/types/station";
 import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 import { RouteAlternatives } from "./route-alternatives";
 import { StationResults } from "./station-results";
+import { RefuelPlanner, DEFAULT_PLANNER_SETTINGS, type PlannedStopMarker } from "./refuel-planner";
+import { isPlannableFuel } from "@/lib/vehicle-profile";
+import type { FuelType } from "@/types/fuel";
 import { BottomSheet, type SheetSnap } from "./bottom-sheet";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useI18n } from "@/lib/i18n";
@@ -63,6 +66,8 @@ interface SearchPanelProps {
    * destination routes straight from "My location" — no manual origin entry.
    */
   userLocation?: [number, number] | null;
+  /** Refuel planner's recommended stops, for the numbered map markers. */
+  onPlannedStopsChange?: (stops: PlannedStopMarker[]) => void;
 }
 
 interface Location {
@@ -106,6 +111,7 @@ export function SearchPanel({
   initialRoute,
   selectedFuel,
   userLocation,
+  onPlannedStopsChange,
 }: SearchPanelProps) {
   const { t } = useI18n();
   const isMobile = useMediaQuery("(max-width: 639px)");
@@ -117,6 +123,8 @@ export function SearchPanel({
   // Transient toast for a "My location" geolocation failure (auto-clears).
   const [geoErrorMsg, setGeoErrorMsg] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"price" | "detour" | "km">("price");
+  // Lives here, not in RefuelPlanner, which unmounts while the corridor refetches.
+  const [plannerSettings, setPlannerSettings] = useState(DEFAULT_PLANNER_SETTINGS);
   const [originText, setOriginText] = useState("");
   const [destText, setDestText] = useState("");
   const [origin, setOrigin] = useState<Location | null>(null);
@@ -774,6 +782,33 @@ export function SearchPanel({
         <div className="mt-2 rounded-2xl border border-black/[0.06] bg-white/90 px-4 py-4 text-center shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]">
           <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t(stationsError ? "stations.loadError" : "stations.noStations")}</span>
         </div>
+      )}
+
+      {/* Refuel stop planner — liquid fuels only. Collapsing the panel hides it
+          instead of unmounting it: its unmount clears the numbered map markers. */}
+      {phase === "route" && primaryRoute && allCorridorStations.length > 0
+        && selectedFuel && isPlannableFuel(selectedFuel as FuelType) && (
+        <RefuelPlanner
+          hidden={routeCollapsed}
+          stations={allCorridorStations}
+          routeKm={primaryRoute.distance}
+          detoursLoading={detoursLoading}
+          maxPrice={maxPrice}
+          maxDetour={maxDetour}
+          selectedStationId={selectedStationId}
+          onPlanChange={onPlannedStopsChange}
+          settings={plannerSettings}
+          onSettingsChange={setPlannerSettings}
+          onStopToggleOff={() => {
+            setWaypoints((prev) => prev.filter((wp) => !wp.isStationLeg));
+            onClearStationLeg?.();
+            if (isMobile) setSheetSnap("peek");
+          }}
+          onStopSelect={(coords, sid) => {
+            onFlyTo(coords, sid);
+            if (isMobile) setSheetSnap("peek");
+          }}
+        />
       )}
 
       {/* Station list along route — hidden when collapsed */}

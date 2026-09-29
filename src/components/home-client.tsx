@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { Navbar } from "@/components/nav/navbar";
 import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
+import type { PlannedStopMarker } from "@/components/search/refuel-planner";
 import { useDetourStream } from "@/lib/use-detour-stream";
 import { parseStationParams, parseRouteParams, buildStationQuery } from "@/lib/share-url";
 import { fuelTypeEnum } from "@/types/fuel";
@@ -78,6 +79,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
   const [stationLegRoutes, setStationLegRoutes] = useState<Route[] | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [primaryStations, setPrimaryStations] = useState<StationsGeoJSONCollection>({ type: "FeatureCollection", features: [] });
+  const [plannedStops, setPlannedStops] = useState<PlannedStopMarker[]>([]);
   const mapRef = useRef<MapRef | null>(null);
 
   const routeAbortRef = useRef<AbortController | null>(null);
@@ -338,7 +340,11 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
 
   const handleSelectStation = useCallback((id: string | null) => {
     setSelectedStationId(id);
-    if (id == null) selectedStationCoordsRef.current = null;
+    // Map dot clicks only carry the id. Resolve its coordinates so the station
+    // leg re-centres on this station rather than the previous selection.
+    selectedStationCoordsRef.current = id == null
+      ? null
+      : primaryStations.features.find((f) => f.properties.id === id)?.geometry.coordinates ?? null;
     // Deselect clears station-leg preview — search-panel's effect handles waypoint cleanup
     if (id == null) {
       if (stationLegAbortRef.current) { stationLegAbortRef.current.abort(); stationLegAbortRef.current = null; }
@@ -354,7 +360,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
         );
       }
     }
-  }, [routeState]);
+  }, [routeState, primaryStations]);
 
   const handleClearStationLeg = useCallback(() => {
     if (stationLegAbortRef.current) { stationLegAbortRef.current.abort(); stationLegAbortRef.current = null; }
@@ -540,6 +546,8 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
           onStationsErrorChange={setStationsError}
           detourMap={detourMap}
           userLocation={userLocation}
+          plannedStops={plannedStops}
+          onSelectPlannedStop={handleFlyTo}
           onMapReady={handleMapReady}
         />
         <SearchPanel
@@ -569,6 +577,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
           initialRoute={initialRoute}
           selectedFuel={selectedFuel}
           userLocation={userLocation}
+          onPlannedStopsChange={setPlannedStops}
         />
       </div>
     </main>

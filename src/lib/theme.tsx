@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 export type Theme = "light" | "dark";
 
@@ -21,25 +21,48 @@ const ThemeContext = createContext<ThemeContextValue>({
   mapStyle: MAP_STYLES.light,
 });
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
-    const stored = localStorage.getItem("pumperly-theme") as Theme | null;
-    if (stored === "light" || stored === "dark") return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
+// The `dark` class on <html> is the source of truth. The inline script in
+// src/app/layout.tsx sets it from localStorage / system preference before
+// paint. The server snapshot is always "light", so hydration matches the SSR
+// HTML and React re-renders with the real theme right after.
+const themeListeners = new Set<() => void>();
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("pumperly-theme", theme);
-  }, [theme]);
+function subscribeTheme(cb: () => void) {
+  themeListeners.add(cb);
+  return () => {
+    themeListeners.delete(cb);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+function getServerThemeSnapshot(): Theme {
+  return "light";
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
 
   const toggleTheme = useCallback(() => {
-    setTheme((t) => (t === "light" ? "dark" : "light"));
+    const next: Theme = getThemeSnapshot() === "light" ? "dark" : "light";
+    document.documentElement.classList.toggle("dark", next === "dark");
+    try {
+      localStorage.setItem("pumperly-theme", next);
+    } catch {
+      // Storage blocked (private mode): theme still applies for this session.
+    }
+    themeListeners.forEach((l) => l());
   }, []);
 
+  // The map style never reaches the SSR HTML, so it can read the real theme
+  // during hydration. Otherwise the map is created with the light style and
+  // then swapped, flashing light for dark users and loading two styles.
+  const mapTheme = typeof document === "undefined" ? theme : getThemeSnapshot();
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, mapStyle: MAP_STYLES[theme] }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, mapStyle: MAP_STYLES[mapTheme] }}>
       {children}
     </ThemeContext.Provider>
   );

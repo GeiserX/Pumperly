@@ -99,7 +99,7 @@ const SCRAPERS: Record<string, Array<() => BaseScraper>> = {
   AU: [() => new AustraliaScraper(), () => new AustraliaNSWScraper()],
   AR: [() => new ArgentinaScraper()],
   MX: [() => new MexicoScraper()],
-  // EV charger scrapers (OpenChargeMap) — keyed as EV_XX, mirroring instrumentation.ts
+  // EV charger scrapers (OpenChargeMap) — keyed as EV_XX, mirroring instrumentation-node.ts
   EV_ES: [() => new OCMScraper("ES")],
   EV_FR: [() => new OCMScraper("FR")],
   EV_PT: [() => new OCMScraper("PT")],

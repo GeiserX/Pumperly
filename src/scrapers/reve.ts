@@ -48,7 +48,7 @@ const RATE_LIMIT_PER_HOUR = 5;
 
 // Pages fetched per run. The default of 4 leaves one request spare for a manual
 // `scraper:run` or a probe without tripping the limit. Runs are scheduled hourly
-// (see instrumentation.ts).
+// (see instrumentation-node.ts).
 const rawPagesPerRun = Number(process.env.PUMPERLY_REVE_PAGES_PER_RUN ?? "4");
 const PAGES_PER_RUN =
   Number.isFinite(rawPagesPerRun) && rawPagesPerRun >= 1

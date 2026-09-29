@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Source, Layer, useMap } from "react-map-gl/maplibre";
 import type { FeatureCollection, LineString } from "geojson";
 import type { ExpressionSpecification, MapGeoJSONFeature, MapMouseEvent } from "maplibre-gl";
@@ -25,6 +25,24 @@ interface RouteLayerProps {
 
 export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId = "unclustered-point" }: RouteLayerProps) {
   const { current: mapRef } = useMap();
+
+  // Only anchor below the station layer once it exists. When a route activates,
+  // the station layer remounts (clustering turns off), so for a moment
+  // `beforeLayerId` is missing and addLayer would throw on every styledata retry.
+  // react-map-gl calls moveLayer when beforeId changes, so the route drops below
+  // the stations as soon as they appear.
+  const [beforeExists, setBeforeExists] = useState(false);
+  useEffect(() => {
+    const map = mapRef?.getMap();
+    if (!map) return;
+    const check = () => setBeforeExists(map.getLayer(beforeLayerId) != null);
+    check();
+    map.on("styledata", check);
+    return () => {
+      map.off("styledata", check);
+    };
+  }, [mapRef, beforeLayerId]);
+  const beforeId = beforeExists ? beforeLayerId : undefined;
 
   const geojson: FeatureCollection<LineString> = useMemo(() => ({
     type: "FeatureCollection",
@@ -90,7 +108,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
             id="route-alt-outline"
             source="routes"
             type="line"
-            beforeId={beforeLayerId}
+            beforeId={beforeId}
             filter={filterAlt}
             paint={{
               "line-color": "#ffffff",
@@ -103,7 +121,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
             id="route-alt-fill"
             source="routes"
             type="line"
-            beforeId={beforeLayerId}
+            beforeId={beforeId}
             filter={filterAlt}
             paint={{
               "line-color": routeColor,
@@ -119,7 +137,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
         id="route-primary-outline"
         source="routes"
         type="line"
-        beforeId={beforeLayerId}
+        beforeId={beforeId}
         filter={filterPrimary}
         paint={{
           "line-color": "#ffffff",
@@ -132,7 +150,7 @@ export function RouteLayer({ routes, primaryIndex, onSelectRoute, beforeLayerId 
         id="route-primary-fill"
         source="routes"
         type="line"
-        beforeId={beforeLayerId}
+        beforeId={beforeId}
         filter={filterPrimary}
         paint={{
           "line-color": routeColor,

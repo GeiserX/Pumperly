@@ -187,7 +187,7 @@ Run the same commands before you open a pull request. [Contributing](../contribu
 | `src/components/` | The map, the search and route panel, the top bar |
 | `src/lib/` | Shared code: configuration, Valhalla and Photon clients, currencies, translations |
 | `src/scrapers/` | One file per source, plus `base.ts` with the shared write logic and `cli.ts` |
-| `src/instrumentation.ts` | The scheduler |
+| `src/instrumentation-node.ts` | The scheduler, loaded by `src/instrumentation.ts` in the Node.js runtime |
 | `src/middleware.ts` | The language redirect |
 | `prisma/` | `schema.prisma` and the SQL migrations |
 | `docker/` | The Dockerfile and the PostGIS compose file |

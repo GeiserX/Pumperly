@@ -7,12 +7,12 @@ import path from "node:path";
 // ---------------------------------------------------------------------------
 // Regression guard for a bug where DEFAULT_INTERVALS declared EV_* intervals
 // (EV_TR, EV_MD, EV_AU, EV_AR, EV_MX) that had no matching factory in either
-// the scheduler (instrumentation.ts scraperFactories) or the manual CLI
+// the scheduler (instrumentation-node.ts scraperFactories) or the manual CLI
 // (cli.ts SCRAPERS). The factory lookup missed and those countries were
 // silently filtered out, so EV scraping never ran for them.
 //
 // Both maps are module-private (DEFAULT_INTERVALS is a private const,
-// scraperFactories is built inside an async register() with dynamic imports),
+// scraperFactories is built inside an async registerNode() with dynamic imports),
 // so we statically parse the sources rather than importing them. This keeps
 // the production modules' export surface unchanged.
 
@@ -30,7 +30,7 @@ function evKeys(source: string, re: RegExp): Set<string> {
   return keys;
 }
 
-const instrumentation = readSrc("instrumentation.ts");
+const instrumentation = readSrc("instrumentation-node.ts");
 const cli = readSrc("scrapers/cli.ts");
 
 // The optional suffix matters: country-specific official registries are keyed
@@ -50,7 +50,7 @@ describe("scraper registry alignment", () => {
     expect(intervalEvKeys.size).toBeGreaterThan(0);
   });
 
-  it("every EV_* interval has a matching factory in instrumentation.ts", () => {
+  it("every EV_* interval has a matching factory in instrumentation-node.ts", () => {
     const missing = [...intervalEvKeys].filter((k) => !factoryEvKeys.has(k)).sort();
     expect(missing).toEqual([]);
   });

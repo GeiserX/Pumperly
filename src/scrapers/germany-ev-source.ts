@@ -14,7 +14,7 @@
 // BNetzA wins by default: it is official, it needs no key, and it is the more
 // complete of the two. `PUMPERLY_DE_EV_SOURCE=ocm` is the escape hatch.
 //
-// This rule is needed by both the scheduler (instrumentation.ts) and the manual
+// This rule is needed by both the scheduler (instrumentation-node.ts) and the manual
 // CLI (scrapers/cli.ts), so it lives here rather than in either of them — the
 // same reasoning as spain-ev-source.ts, whose shape this mirrors exactly. Two
 // copies would drift, and the way they drift is silent: the map just quietly

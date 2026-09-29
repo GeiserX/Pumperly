@@ -124,7 +124,7 @@ Each scraper key gets an interval in hours. The first rule that applies wins:
 
 1. [`PUMPERLY_SCRAPE_INTERVAL_<KEY>`](../reference/environment-variables.md#pumperly_scrape_interval_key) for that key, for example `PUMPERLY_SCRAPE_INTERVAL_FR`.
 2. [`PUMPERLY_SCRAPE_INTERVAL_HOURS`](../reference/environment-variables.md#pumperly_scrape_interval_hours), if it is above 0.
-3. The key's default, from `DEFAULT_INTERVALS` in [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts).
+3. The key's default, from `DEFAULT_INTERVALS` in [`src/instrumentation-node.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts).
 4. 12 hours, for a key with no default, such as a static dataset.
 
 The defaults follow how often each source changes:

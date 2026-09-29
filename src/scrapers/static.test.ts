@@ -90,7 +90,7 @@ describe("StaticScraper", () => {
 
 // Guard rail for future contributions: every registered dataset must be sane.
 describe("STATIC_DATASETS registry", () => {
-  // Mirror the normalization in instrumentation.ts so a colliding contribution
+  // Mirror the normalization in instrumentation-node.ts so a colliding contribution
   // (sources differing only in punctuation) fails CI instead of silently
   // overwriting another dataset's scraper at runtime.
   it("has no normalized STATIC_<SOURCE> key collisions", () => {

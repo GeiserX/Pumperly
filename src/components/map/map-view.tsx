@@ -15,6 +15,7 @@ import { RouteLayer } from "./route-layer";
 import { CountryMarkers } from "./country-markers";
 import { useConvertedStations } from "@/lib/currency";
 import { useTheme } from "@/lib/theme";
+import type { PlannedStopMarker } from "@/components/search/refuel-planner";
 // Serve MapLibre's module worker ourselves. Left to the bundler, the worker is
 // emitted as a static asset whose relative `./maplibre-gl-shared.mjs` import is
 // NOT rewritten to the content-hashed filename, so it 404s, the worker never
@@ -56,11 +57,15 @@ interface MapViewProps {
   onStationsErrorChange?: (error: boolean) => void;
   detourMap?: Record<string, number>;
   userLocation?: [number, number] | null;
+  /** Refuel planner stops, drawn as numbered markers in route order. */
+  plannedStops?: PlannedStopMarker[];
+  /** Planner marker click; carries the coordinates so the leg route re-centres on this stop. */
+  onSelectPlannedStop?: (coords: [number, number], stationId: string) => void;
   onMapReady?: () => void;
 }
 
 export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
-  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, displayRoutes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange, onStationsLoadingChange, onStationsErrorChange, detourMap, userLocation, onMapReady },
+  { selectedFuel, center, zoom, clusterStations, corridorKm, routes, displayRoutes, primaryRouteIndex, selectedStationId, onSelectStation, maxPrice, onMaxPriceChange, maxDetour, onMapMove, onSelectRoute, onPrimaryStationsChange, onStationsLoadingChange, onStationsErrorChange, detourMap, userLocation, plannedStops, onSelectPlannedStop, onMapReady },
   ref,
 ) {
   const { mapStyle } = useTheme();
@@ -355,6 +360,23 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           </div>
         </Marker>
       )}
+      {routes && plannedStops?.map((stop, i) => (
+        <Marker
+          key={stop.id}
+          longitude={stop.coordinates[0]}
+          latitude={stop.coordinates[1]}
+          anchor="bottom"
+          offset={[0, -6]}
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            onSelectPlannedStop?.(stop.coordinates, stop.id);
+          }}
+        >
+          <div className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-[11px] font-bold text-white shadow-md">
+            {i + 1}
+          </div>
+        </Marker>
+      ))}
       {!showCountryMarkers && (
         <PriceFilter
           stations={displayStations}

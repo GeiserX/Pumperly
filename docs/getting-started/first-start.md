@@ -41,7 +41,7 @@ The app's image runs `node server.js` and nothing else. It does not run migratio
 
 ## The scheduler
 
-The scheduler lives in [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts). Next.js runs it once, when the server process starts. It gives each scraper its own timer inside the app process. Nothing runs outside the app.
+The scheduler lives in [`src/instrumentation-node.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts), loaded by [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts). Next.js runs it once, when the server process starts. It gives each scraper its own timer inside the app process. Nothing runs outside the app.
 
 ### Which scrapers run
 
