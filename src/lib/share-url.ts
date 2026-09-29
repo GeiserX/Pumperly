@@ -18,6 +18,8 @@
  * the charger is never loaded, let alone selected (#129).
  */
 
+import { fuelTypeEnum, type FuelType } from "@/types/fuel";
+
 /** Maximum number of `via` waypoints honoured when parsing a route. */
 export const MAX_VIA = 5;
 
@@ -173,4 +175,20 @@ function parseCoordComponent(raw: string | null, min: number, max: number): numb
   const n = Number(raw);
   if (!Number.isFinite(n) || n < min || n > max) return null;
   return n;
+}
+
+/**
+ * The fuel a route or station link puts the visitor on, or null when the link
+ * is neither or names no known fuel. Only the station branch strictly needs it
+ * (the viewport fetch is fuel-filtered, so an EV charger shared from the EV
+ * layer only loads if the link puts the visitor on that layer, #129), but both
+ * honour it. Shared by the server page and the client, so the first render
+ * matches on both and hydration doesn't flip the fuel.
+ */
+export function deepLinkFuel(sp: URLSearchParams): FuelType | null {
+  const station = parseStationParams(sp);
+  const fuel = parseRouteParams(sp)?.fuel
+    ?? (station && station.lat != null && station.lng != null ? station.fuel : null);
+  const parsed = fuelTypeEnum.safeParse(fuel);
+  return parsed.success ? parsed.data : null;
 }
