@@ -123,6 +123,21 @@ describe("pruneCandidates", () => {
     for (let i = 1; i < out.length; i++) expect(out[i].km).toBeGreaterThanOrEqual(out[i - 1].km);
   });
 
+  it("keeps the only station a low tank can reach", () => {
+    // 1 % start → first leg may drop to 0.5 % → 2.5 km of range. In the first
+    // bucket only "reach" is in range; it is neither the cheapest nor the least detour.
+    const stations = [
+      st("reach", 0.5, 2.0, 2),
+      st("cheap", 2.5, 1.0, 3),
+      st("close", 3.0, 1.9, 0.5),
+      ...Array.from({ length: 300 }, (_, i) => st(`F${i}`, 5 + i, 1.5, 1)),
+    ];
+    expect(pruneCandidates(stations, 310).map((s) => s.id)).toContain("reach");
+    const r = planRefuel({ ...base, startPct: 1, routeKm: 310, stations });
+    expect(r.status).toBe("ok");
+    expect(r.stops[0].id).toBe("reach");
+  });
+
   it("returns the input untouched under the cap", () => {
     const stations = [st("A", 1, 1), st("B", 2, 1)];
     expect(pruneCandidates(stations, 10, 200)).toBe(stations);
