@@ -36,16 +36,21 @@ export function RefuelPlanner({
   onPlanChange,
 }: RefuelPlannerProps) {
   const { t } = useI18n();
-  const { currency, symbol, decimals, formatPrice } = useCurrency();
+  const { currency, symbol, decimals, formatPrice, convert } = useCurrency();
   const [profile, setProfile] = useVehicleProfile();
   const [open, setOpen] = useState(false);
   const [startPct, setStartPct] = useState(50);
   const [arrivalPct, setArrivalPct] = useState(20);
   const [reservePct, setReservePct] = useState(10);
-  const [timeValue, setTimeValue] = useState(15);
+  // Stored in EUR so the default means the same everywhere; shown and planned
+  // in the display currency.
+  const [timeValueEur, setTimeValueEur] = useState(15);
   // Drafts so a half-typed number ("6.") doesn't get rejected mid-edit.
   const [tankDraft, setTankDraft] = useState(String(profile.tankL));
   const [consDraft, setConsDraft] = useState(String(profile.consumptionL100));
+
+  const eurRate = convert(1, "EUR");
+  const timeValue = Number((timeValueEur * eurRate).toFixed(Math.min(decimals, 2)));
 
   const byId = useMemo(() => new Map(stations.map((s) => [s.properties.id, s])), [stations]);
 
@@ -145,7 +150,7 @@ export function RefuelPlanner({
                 value={timeValue}
                 onChange={(e) => {
                   const v = parseFloat(e.target.value);
-                  setTimeValue(Number.isFinite(v) && v >= 0 ? v : 0);
+                  setTimeValueEur(Number.isFinite(v) && v >= 0 ? v / eurRate : 0);
                 }}
                 className="w-16 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-right text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
               />

@@ -7,8 +7,14 @@ vi.mock("@/lib/i18n", () => ({
   useI18n: () => ({ t: (k: string) => k }),
 }));
 
+// Display currency and its rate per EUR; tests may switch to HUF.
+const currencyState = { currency: "EUR", symbol: "€", decimals: 3, rate: 1 };
 vi.mock("@/lib/currency", () => ({
-  useCurrency: () => ({ currency: "EUR", symbol: "€", decimals: 3, formatPrice: (p: number) => p.toFixed(3) }),
+  useCurrency: () => ({
+    ...currencyState,
+    formatPrice: (p: number) => p.toFixed(currencyState.decimals),
+    convert: (p: number, from: string) => (from === currencyState.currency ? p : p * currencyState.rate),
+  }),
 }));
 
 import { RefuelPlanner } from "./refuel-planner";
@@ -57,7 +63,10 @@ function renderPlanner(props: Partial<React.ComponentProps<typeof RefuelPlanner>
 }
 
 describe("RefuelPlanner", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    Object.assign(currencyState, { currency: "EUR", symbol: "€", decimals: 3, rate: 1 });
+  });
 
   it("is collapsed by default and reports no stops", () => {
     const { onPlanChange } = renderPlanner();
@@ -87,6 +96,20 @@ describe("RefuelPlanner", () => {
     renderPlanner({ detoursLoading: true });
     await userEvent.click(screen.getByText("planner.title"));
     expect(screen.getByText("planner.calculating")).toBeInTheDocument();
+  });
+
+  it("keeps the time value in EUR and converts it to the display currency", async () => {
+    Object.assign(currencyState, { currency: "HUF", symbol: "Ft", decimals: 0, rate: 390 });
+    // Cheap but 60 min away vs. dearer at 1 min: at €15/h (5850 Ft/h) the detour isn't worth it.
+    const { onPlanChange } = renderPlanner({
+      stations: [
+        makeStation("near", { brand: "Near", price: 632, currency: "HUF", routeFraction: 0.25, detourMin: 1 }),
+        makeStation("far", { brand: "Far", price: 561, currency: "HUF", routeFraction: 0.25, detourMin: 60 }),
+      ],
+    });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByDisplayValue("5850")).toBeInTheDocument();
+    expect(onPlanChange).toHaveBeenLastCalledWith([{ id: "near", coordinates: [-3.7, 40.4] }]);
   });
 
   it("persists the vehicle profile", async () => {
