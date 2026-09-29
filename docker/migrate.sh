@@ -28,10 +28,19 @@ if [ "$(sql -c "SELECT to_regclass('public._prisma_migrations') IS NULL")" = t ]
     "started_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "applied_steps_count" INTEGER NOT NULL DEFAULT 0
   );'
-  if [ "$(sql -c "SELECT to_regclass('public.stations') IS NOT NULL")" = t ]; then
-    # A schema built by hand, with no history: 0_init already ran. This is
-    # `prisma migrate resolve --applied 0_init`; the later migrations are
-    # written to be safe to run again, so they run below.
+  if [ "$(sql -c "SELECT to_regclass('public.stations') IS NOT NULL OR to_regclass('public.fuel_prices') IS NOT NULL")" = t ]; then
+    # A schema built by hand, with no history. Only a complete 0_init counts
+    # as applied: both tables and the PostGIS column the scrapers write.
+    complete=$(sql -c "SELECT to_regclass('public.stations') IS NOT NULL
+      AND to_regclass('public.fuel_prices') IS NOT NULL
+      AND EXISTS (SELECT 1 FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'stations' AND column_name = 'geom')")
+    if [ "$complete" != t ]; then
+      echo "migrate: the database has part of the schema and no history; repair it or start from an empty volume" >&2
+      exit 1
+    fi
+    # This is `prisma migrate resolve --applied 0_init`; the later migrations
+    # are written to be safe to run again, so they run below.
     echo "migrate: existing schema with no history, recording 0_init as applied"
     sql -1 -c "$create" -c "$(record 0_init "$dir/0_init/migration.sql")"
   else
@@ -43,6 +52,14 @@ ls "$dir"/*/migration.sql >/dev/null 2>&1 || {
   echo "migrate: no migrations found in $dir; is prisma/migrations mounted?" >&2
   exit 1
 }
+
+# A migration Prisma started and never finished needs a person: running its
+# SQL again would leave the failed row behind, and Prisma refuses (P3009).
+failed=$(sql -c "SELECT string_agg(migration_name, ', ') FROM \"_prisma_migrations\" WHERE finished_at IS NULL AND rolled_back_at IS NULL")
+if [ -n "$failed" ]; then
+  echo "migrate: unfinished migration(s) in the history: $failed. Resolve them with \`npx prisma migrate resolve\` first." >&2
+  exit 1
+fi
 
 applied=0
 for path in "$dir"/*/migration.sql; do

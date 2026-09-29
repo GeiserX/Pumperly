@@ -94,7 +94,7 @@ The `migrate` service does this for you, on the first `up` and on every later on
 docker compose -f docker/docker-compose.yml logs migrate
 ```
 
-On a database whose schema was built by hand with no history, `migrate` records `0_init` as applied, the same as `prisma migrate resolve --applied 0_init`, and runs the later migrations, which are written to be safe to run again. If a migration fails, `migrate` exits with an error, prints the failing statement, and the app does not start.
+On a database whose schema was built by hand with no history, `migrate` checks that `0_init` is complete (both tables and the `geom` column), records it as applied, the same as `prisma migrate resolve --applied 0_init`, and runs the later migrations, which are written to be safe to run again. It refuses to start, and so does the app, on a partial schema with no history and on a history row Prisma left unfinished; resolve that one with `npx prisma migrate resolve`. If a migration fails, `migrate` exits with an error, prints the failing statement, and the app does not start.
 
 The migrations enable the PostGIS extension and create two tables, `stations` and `fuel_prices`. The `stations` table has a `geom` column that holds each station's position, with two spatial indexes on it. See [Data model](../reference/data-model.md).
 
