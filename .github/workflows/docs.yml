@@ -21,17 +21,24 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
-      - 'docker/docker-compose.yml'
-      - '.env.example'
+      - '.github/workflows/docs.yml'
       # Files the pages include word for word with pymdownx.snippets. A
       # change to one must rebuild the site, and a rename must fail the build.
+      - 'docker/docker-compose.yml'
+      - '.env.example'
       - 'charts/pumperly/values.yaml'
       - 'prisma/**'
       - '.github/workflows/reve-key-renewal.yml'
-      - '.github/workflows/docs.yml'
   # No paths filter on pull requests: a filtered-out required check blocks the merge.
   pull_request:
   workflow_dispatch:
+
+# One run at a time per ref, in push order, never cancelled, so an older push
+# whose build finishes later cannot deploy last. The deploy job also holds the
+# `gh-pages` group shared with the chart release.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -55,20 +62,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r docs/requirements-docs.txt
 
-      # --strict turns every warning into a failure.
       - name: Build
         run: mkdocs build --strict
 
   deploy:
-    # Runs on push to main only, after the build job has passed.
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    # gh-pages is shared with the Helm chart repository: release-chart.yml
-    # commits index.yaml there. Both workflows take this lock so they never
-    # push to the branch at the same time.
     concurrency:
       group: gh-pages
       cancel-in-progress: false
@@ -94,10 +96,9 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      # Never `mkdocs gh-deploy`: it replaces the whole branch, which would
-      # delete the Helm repository's index.yaml and ArtifactHub's
-      # artifacthub-repo.yml, breaking `helm repo add` and the ArtifactHub
-      # listing. rsync --delete leaves excluded paths untouched.
+      # rsync --delete removes stale site files but leaves the excluded Helm
+      # files alone. The two `test -f` lines are the gate: if either file is
+      # missing after the sync, nothing is pushed.
       - name: Sync the site into gh-pages, keeping the Helm repository
         run: |
           rsync -a --delete \
