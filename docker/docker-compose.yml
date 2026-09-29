@@ -34,7 +34,7 @@ services:
     restart: "no"
 
   app:
-    image: drumsergio/pumperly:1.15.1
+    image: drumsergio/pumperly:1.15.2
     container_name: pumperly
     restart: unless-stopped
     env_file: ../.env
