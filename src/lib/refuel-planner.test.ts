@@ -75,6 +75,22 @@ describe("planRefuel", () => {
     const r = planRefuel({ ...base, routeKm: 600, stations: [st("A", 400, 1.5)] });
     expect(r.status).toBe("infeasible");
     expect(r.gapKm).toBeCloseTo(200);
+    expect(r.reason).toBe("range");
+  });
+
+  it("says there are no candidates when no station is usable", () => {
+    const r = planRefuel({ ...base, routeKm: 600, stations: [] });
+    expect(r.status).toBe("infeasible");
+    expect(r.reason).toBe("no-candidates");
+  });
+
+  it("blames the arrival target when the destination is reachable above the reserve", () => {
+    // Full tank at km 100 still arrives with only 80 %.
+    const r = planRefuel({ ...base, arrivalPct: 100, routeKm: 200, stations: [st("A", 100, 1.5)] });
+    expect(r.status).toBe("infeasible");
+    expect(r.reason).toBe("arrival");
+    // No stations at all, but the start level alone reaches the destination above the reserve.
+    expect(planRefuel({ ...base, routeKm: 200, stations: [] }).reason).toBe("arrival");
   });
 
   it("lets the first leg dip into the reserve when starting below it", () => {

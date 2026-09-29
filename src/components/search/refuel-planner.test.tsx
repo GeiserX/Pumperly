@@ -152,6 +152,22 @@ describe("RefuelPlanner", () => {
     expect(screen.getByLabelText("planner.reserve")).toHaveValue("15");
   });
 
+  it("names the cause when no plan is possible", async () => {
+    // Every station is over the price cap: nothing to plan with.
+    renderPlanner({ maxPrice: 1.0 });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("planner.infeasibleNoCandidates")).toBeInTheDocument();
+
+  });
+
+  it("blames the arrival level when the destination is reachable but not with that much left", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "100" } });
+    fireEvent.change(screen.getByLabelText("planner.arrival"), { target: { value: "100" } });
+    expect(screen.getByText("planner.infeasibleArrival")).toBeInTheDocument();
+  });
+
   it("persists the vehicle profile", async () => {
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));

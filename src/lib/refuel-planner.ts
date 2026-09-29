@@ -56,6 +56,13 @@ export interface PlanResult {
   profile: { km: number; pct: number }[];
   /** Infeasible only: furthest km reachable with the given constraints. */
   gapKm?: number;
+  /**
+   * Infeasible only: what to change.
+   * - `arrival`: the destination is reachable above the reserve, but not with `arrivalPct` left.
+   * - `no-candidates`: no usable station (no price/detour, filtered out, other currency).
+   * - `range`: stations exist but the tank can't bridge the gap to the next one.
+   */
+  reason?: "arrival" | "no-candidates" | "range";
 }
 
 /** Time spent at the pump regardless of detour (paying, filling), minutes. */
@@ -223,6 +230,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
         }
       }
     }
+    const reason = reach >= routeKm - 1e-9 ? "arrival" : n === 0 ? "no-candidates" : "range";
     return {
       status: "infeasible",
       stops: [],
@@ -231,6 +239,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
       endPct: 0,
       profile: [],
       gapKm: Math.min(routeKm, reach),
+      reason,
     };
   }
 

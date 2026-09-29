@@ -201,7 +201,11 @@ export function RefuelPlanner({
               </p>
             ) : plan?.status === "infeasible" ? (
               <p className="px-4 py-3 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
-                {t("planner.infeasible").replace("{km}", String(Math.round(plan.gapKm ?? 0)))}
+                {plan.reason === "arrival"
+                  ? t("planner.infeasibleArrival").replace("{pct}", String(Math.max(arrivalPct, reservePct)))
+                  : plan.reason === "no-candidates"
+                    ? t("planner.infeasibleNoCandidates")
+                    : t("planner.infeasible").replace("{km}", String(Math.round(plan.gapKm ?? 0)))}
               </p>
             ) : plan?.status === "ok" ? (
               <>
