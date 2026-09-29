@@ -19,6 +19,8 @@ model Station {
   city        String
   province    String?
   stationType String   @default("fuel") @map("station_type") @db.VarChar(20)
+  /// Highest single-connector power (kW) for EV chargers; null when unknown or not a charger.
+  maxPowerKw  Int?     @map("max_power_kw") @db.SmallInt
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 

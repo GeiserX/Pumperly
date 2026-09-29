@@ -38,6 +38,15 @@ export interface RawStation {
   latitude: number;
   longitude: number;
   stationType: "fuel" | "ev_charger" | "both";
+  /** EV chargers: highest single-connector power in kW, null/unset when unknown. */
+  maxPowerKw?: number | null;
+}
+
+/** A published charger power as kW, or null when missing or implausible (≤ 0 or > 1000). */
+export function sanePowerKw(kw: number | null | undefined): number | null {
+  if (typeof kw !== "number" || !Number.isFinite(kw) || kw > 1000) return null;
+  const rounded = Math.round(kw);
+  return rounded > 0 ? rounded : null;
 }
 
 export interface RawFuelPrice {
@@ -335,19 +344,19 @@ export abstract class BaseScraper {
     if (batch.length === 0) return 0;
 
     // Build parameterised VALUES list.
-    // Each station needs 10 params: externalId, country, name, brand,
-    // address, city, province, stationType, longitude, latitude
+    // Each station needs 11 params: externalId, country, name, brand,
+    // address, city, province, stationType, longitude, latitude, maxPowerKw
     const params: unknown[] = [];
     const valueClauses: string[] = [];
 
     for (let i = 0; i < batch.length; i++) {
       const s = batch[i];
-      const offset = i * 10;
+      const offset = i * 11;
       valueClauses.push(
         `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, ` +
           `$${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, ` +
           `ST_SetSRID(ST_MakePoint($${offset + 9}, $${offset + 10}), 4326), ` +
-          `NOW(), NOW())`,
+          `$${offset + 11}::smallint, NOW(), NOW())`,
       );
       params.push(
         s.externalId,
@@ -360,11 +369,12 @@ export abstract class BaseScraper {
         s.stationType,
         s.longitude,
         s.latitude,
+        s.maxPowerKw ?? null,
       );
     }
 
     const sql = `
-      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, created_at, updated_at)
+      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, max_power_kw, created_at, updated_at)
       VALUES ${valueClauses.join(",\n")}
       ON CONFLICT (external_id, country)
       DO UPDATE SET
@@ -375,6 +385,7 @@ export abstract class BaseScraper {
         province     = EXCLUDED.province,
         station_type = EXCLUDED.station_type,
         geom         = EXCLUDED.geom,
+        max_power_kw = EXCLUDED.max_power_kw,
         updated_at   = NOW()
     `;
 

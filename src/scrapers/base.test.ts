@@ -22,7 +22,7 @@ vi.mock("../generated/prisma/client", () => ({
 }));
 
 // Concrete test scraper
-import { BaseScraper, bandFor, type RawStation, type RawFuelPrice } from "./base";
+import { BaseScraper, bandFor, sanePowerKw, type RawStation, type RawFuelPrice } from "./base";
 
 describe("bandFor (per-currency price bands)", () => {
   it("accepts a plausible HUF price (595)", () => {
@@ -155,7 +155,7 @@ describe("BaseScraper.run()", () => {
   });
 
   it("upserts stations and prices in full pipeline", async () => {
-    scraper.mockStations = [makeStation("s1"), makeStation("s2")];
+    scraper.mockStations = [makeStation("s1"), { ...makeStation("s2"), maxPowerKw: 150 }];
     scraper.mockPrices = [
       makePrice("s1", "B7", 1.45),
       makePrice("s2", "E5", 1.60),
@@ -184,6 +184,12 @@ describe("BaseScraper.run()", () => {
       (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
     );
     expect(stationCall).toBeDefined();
+    // 11 params per station; the 11th is max_power_kw (null when unset).
+    expect(stationCall![0]).toContain("max_power_kw = EXCLUDED.max_power_kw");
+    const params = stationCall!.slice(1);
+    expect(params).toHaveLength(22);
+    expect(params[10]).toBeNull();
+    expect(params[21]).toBe(150);
 
     // Verify price insert SQL was called
     const priceCall = mockExecuteRawUnsafe.mock.calls.find(
@@ -402,5 +408,22 @@ describe("BaseScraper.run()", () => {
     await scraper.run();
 
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("sanePowerKw", () => {
+  it("rounds plausible values", () => {
+    expect(sanePowerKw(22)).toBe(22);
+    expect(sanePowerKw(149.6)).toBe(150);
+  });
+
+  it("returns null for missing, implausible or sub-kW values", () => {
+    expect(sanePowerKw(null)).toBeNull();
+    expect(sanePowerKw(undefined)).toBeNull();
+    expect(sanePowerKw(Number.NaN)).toBeNull();
+    expect(sanePowerKw(0)).toBeNull();
+    expect(sanePowerKw(-5)).toBeNull();
+    expect(sanePowerKw(0.3)).toBeNull();
+    expect(sanePowerKw(1001)).toBeNull();
   });
 });
