@@ -154,6 +154,49 @@ describe("pruneCandidates", () => {
     expect(r.stops[0].id).toBe("reach");
   });
 
+  it("keeps the station needed to leave a bucket", () => {
+    // From 72 % the tank reaches km 310. "early" is the cheapest, closest and first
+    // station of its stretch, but from it a full tank ends at km 748, short of 755;
+    // only "late" (10 km on) can carry the car to the destination.
+    const early = st("early", 298, 1.4, 0);
+    const late = st("late", 308.5, 1.9, 2);
+    const fillers = Array.from({ length: 250 }, (_, i) => st(`F${i}`, i * 0.01, 2.5, 1));
+    const input = { ...base, startPct: 72, arrivalPct: 10, reservePct: 10, routeKm: 755 };
+    const unpruned = planRefuel({ ...input, stations: [early, late] });
+    const pruned = planRefuel({ ...input, stations: [...fillers, early, late] });
+    expect(unpruned.status).toBe("ok");
+    expect(pruned.status).toBe("ok");
+    expect(pruned.stops.map((s) => s.id)).toEqual(["early", "late"]);
+    expect(pruned.stops.map((s) => s.id)).toEqual(unpruned.stops.map((s) => s.id));
+    expect(pruned.totalFuelCost).toBeCloseTo(unpruned.totalFuelCost);
+  });
+
+  it("does not make a long plan much dearer by pruning the far-reaching station", () => {
+    // "early" and "late" share a route bucket. From early a full tank ends at km 748,
+    // so the plan must pay the dear X at km 700; from late it reaches the cheap C at km 760.
+    const route = [
+      st("early", 301, 1.4),
+      st("late", 317, 1.45),
+      st("X", 700, 2.4),
+      st("C", 760, 1.2),
+      st("D", 1150, 1.3),
+    ];
+    const fillers = Array.from({ length: 250 }, (_, i) => st(`F${i}`, i * 0.01, 2.5, 1));
+    const input = { ...base, startPct: 75, arrivalPct: 10, reservePct: 10, routeKm: 1500 };
+    expect(pruneCandidates([...fillers, ...route], 1500).map((s) => s.id)).toEqual(expect.arrayContaining(["early", "late"]));
+    const unpruned = planRefuel({ ...input, stations: route });
+    const pruned = planRefuel({ ...input, stations: [...fillers, ...route] });
+    expect(unpruned.status).toBe("ok");
+    expect(pruned.status).toBe("ok");
+    expect(pruned.totalFuelCost).toBeLessThanOrEqual(unpruned.totalFuelCost * 1.01);
+  });
+
+  it("stays within the cap with four stations kept per bucket", () => {
+    const stations = Array.from({ length: 5000 }, (_, i) => st(`S${i}`, i / 5, 1 + ((i * 7) % 13) / 10, (i * 3) % 11));
+    expect(pruneCandidates(stations, 1000, 200).length).toBeLessThanOrEqual(200);
+    expect(pruneCandidates(stations, 1000, 7).length).toBeLessThanOrEqual(7);
+  });
+
   it("returns the input untouched under the cap", () => {
     const stations = [st("A", 1, 1), st("B", 2, 1)];
     expect(pruneCandidates(stations, 10, 200)).toBe(stations);

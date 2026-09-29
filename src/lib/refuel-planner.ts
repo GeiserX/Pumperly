@@ -75,13 +75,16 @@ const L = 101; // fuel levels 0..100 %
 
 /**
  * Keep at most `max` candidates: split the route into equal buckets and keep
- * the cheapest, the least-detour and the earliest-reachable station of each.
- * The last one means a bucket with any station in range keeps one in range, so
- * pruning never drops the only station a low tank can reach. Order by km is preserved.
+ * four stations from each: the cheapest, the least-detour, the earliest-reachable
+ * and the one with the furthest onward reach. The earliest-reachable one means a
+ * bucket with any station in range keeps one in range, so pruning never drops the
+ * only station a low tank can reach; the furthest-reaching one means pruning never
+ * drops the station needed to get out of the bucket towards the next one. At most
+ * four per bucket keeps the total within `max`. Order by km is preserved.
  */
 export function pruneCandidates(stations: PlannerStation[], routeKm: number, max = MAX_CANDIDATES): PlannerStation[] {
   if (stations.length <= max) return stations;
-  const buckets = Math.max(1, Math.floor(max / 3));
+  const buckets = Math.max(1, Math.floor(max / 4));
   const size = routeKm / buckets || 1;
   const keep = new Map<string, PlannerStation>();
   const byBucket = new Map<number, PlannerStation[]>();
@@ -91,15 +94,21 @@ export function pruneCandidates(stations: PlannerStation[], routeKm: number, max
     if (list) list.push(s);
     else byBucket.set(b, [s]);
   }
-  // Distance driven to reach a station, counting half its detour (as legPct does).
-  const reachKm = (s: PlannerStation) => s.km + ((s.detourMin / 60) * DETOUR_KMH) / 2;
+  // Half a station's detour is driven on the way in and half on the way out (as legPct charges it).
+  const halfDetourKm = (s: PlannerStation) => ((s.detourMin / 60) * DETOUR_KMH) / 2;
+  // Distance driven to reach a station.
+  const reachKm = (s: PlannerStation) => s.km + halfDetourKm(s);
+  // Where a full tank bought here effectively starts from, on the route.
+  const onwardKm = (s: PlannerStation) => s.km - halfDetourKm(s);
   for (const list of byBucket.values()) {
     const cheapest = list.reduce((a, b) => (b.price < a.price ? b : a));
     const closest = list.reduce((a, b) => (b.detourMin < a.detourMin ? b : a));
     const earliest = list.reduce((a, b) => (reachKm(b) < reachKm(a) ? b : a));
+    const furthest = list.reduce((a, b) => (onwardKm(b) > onwardKm(a) ? b : a));
     keep.set(cheapest.id, cheapest);
     keep.set(closest.id, closest);
     keep.set(earliest.id, earliest);
+    keep.set(furthest.id, furthest);
   }
   return [...keep.values()].sort((a, b) => a.km - b.km);
 }
