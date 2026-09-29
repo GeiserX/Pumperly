@@ -152,7 +152,7 @@ describe("RefuelPlanner", () => {
   });
 
   it("treats a corridor with no detour yet as loading, not as no candidates", async () => {
-    const { onPlanChange } = renderPlanner({ stations: STATIONS.map((s) => ({ ...s, properties: { ...s.properties, detourMin: null } })) });
+    const { onPlanChange } = renderPlanner({ stations: STATIONS.map((s) => ({ ...s, properties: { ...s.properties, detourMin: undefined } })) });
     await userEvent.click(screen.getByText("planner.title"));
     expect(screen.getByText("planner.calculating")).toBeInTheDocument();
     expect(screen.queryByText("planner.infeasibleNoCandidates")).not.toBeInTheDocument();
