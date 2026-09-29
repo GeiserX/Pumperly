@@ -3,16 +3,21 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { StationGeoJSON } from "@/types/station";
+import type { PlanResult } from "@/lib/refuel-planner";
 
-// Pass-through spy: records what the component actually plans with.
-const { planSpy } = vi.hoisted(() => ({ planSpy: vi.fn() }));
+// Pass-through spy: records what the component actually plans with; a test may
+// set `planOverride.result` to render a given outcome.
+const { planSpy, planOverride } = vi.hoisted(() => ({
+  planSpy: vi.fn(),
+  planOverride: { result: null as PlanResult | null },
+}));
 vi.mock("@/lib/refuel-planner", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/lib/refuel-planner")>();
   return {
     ...mod,
     planRefuel: (input: Parameters<typeof mod.planRefuel>[0]) => {
       planSpy(input);
-      return mod.planRefuel(input);
+      return planOverride.result ?? mod.planRefuel(input);
     },
   };
 });
@@ -95,6 +100,7 @@ describe("RefuelPlanner", () => {
   beforeEach(() => {
     localStorage.clear();
     planSpy.mockClear();
+    planOverride.result = null;
     Object.assign(currencyState, { currency: "EUR", symbol: "€", decimals: 3, rate: 1, rates: null });
   });
 
@@ -244,6 +250,42 @@ describe("RefuelPlanner", () => {
     await userEvent.click(screen.getByText("planner.title"));
     expect(screen.getByText("planner.infeasibleNoCandidates")).toBeInTheDocument();
 
+  });
+
+  it("blames the reserve when only the reserve can't be kept", async () => {
+    // 20 km from 10 % arrives with about 7 %: the 0 % arrival is met, the 10 % reserve is not.
+    renderPlanner({ routeKm: 20, maxPrice: 1.0 });
+    await userEvent.click(screen.getByText("planner.title"));
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("planner.arrival"), { target: { value: "0" } });
+    expect(screen.getByText("planner.infeasibleReserve")).toBeInTheDocument();
+  });
+
+  it("says when the trip needs more stops than the planner suggests", async () => {
+    planOverride.result = { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, endPct: 0, profile: [], gapKm: 300, reason: "stops" };
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("planner.infeasibleStops")).toBeInTheDocument();
+  });
+
+  it("notes a plan that reaches the first stop below the reserve, and only that one", async () => {
+    const stop = { id: "a", km: 100, litres: 30, cost: 42, detourMin: 2, arrivePct: 6, departPct: 66 };
+    const ok: PlanResult = { status: "ok", stops: [stop], totalFuelCost: 42, totalDetourMin: 2, endPct: 20, profile: [] };
+    planOverride.result = ok;
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("Repsol")).toBeInTheDocument();
+    expect(screen.queryByText("planner.dipsReserve")).not.toBeInTheDocument();
+    planOverride.result = { ...ok, dipsBelowReserve: true };
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "11" } });
+    expect(screen.getByText("planner.dipsReserve")).toBeInTheDocument();
+  });
+
+  it("blames the detour service, not the filters, when every detour failed", async () => {
+    renderPlanner({ stations: STATIONS.map((s) => ({ ...s, properties: { ...s.properties, detourMin: -1 } })) });
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("planner.noDetours")).toBeInTheDocument();
+    expect(screen.queryByText("planner.infeasibleNoCandidates")).not.toBeInTheDocument();
   });
 
   it("blames the arrival level when the destination is reachable but not with that much left", async () => {

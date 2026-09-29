@@ -86,6 +86,12 @@ export function RefuelPlanner({
 
   const byId = useMemo(() => new Map(stations.map((s) => [s.properties.id, s])), [stations]);
 
+  // Priced stations exist but every detour request failed: filters are not the cause.
+  const detoursFailed = useMemo(() => {
+    const priced = stations.filter((s) => s.properties.price != null);
+    return priced.length > 0 && priced.every((s) => s.properties.detourMin != null && s.properties.detourMin < 0);
+  }, [stations]);
+
   const plan: PlanResult | null = useMemo(() => {
     if (!open || ratesMissing || detoursPending || routeKm <= 0) return null;
     const candidates = stations.flatMap((s) => {
@@ -139,6 +145,21 @@ export function RefuelPlanner({
   };
 
   const money = (v: number) => `${v.toFixed(Math.min(decimals, 2))} ${symbol}`;
+
+  const infeasibleText = (p: PlanResult) => {
+    switch (p.reason) {
+      case "arrival":
+        return t("planner.infeasibleArrival").replace("{pct}", String(Math.max(arrivalPct, reservePct)));
+      case "reserve":
+        return t("planner.infeasibleReserve").replace("{pct}", String(reservePct));
+      case "stops":
+        return t("planner.infeasibleStops");
+      case "no-candidates":
+        return t(detoursFailed ? "planner.noDetours" : "planner.infeasibleNoCandidates");
+      default:
+        return t("planner.infeasible").replace("{km}", String(Math.round(p.gapKm ?? 0)));
+    }
+  };
 
   return (
     <div className={`${hidden ? "hidden " : ""}mt-2 shrink-0 overflow-hidden rounded-2xl border border-black/[0.06] bg-white/90 shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]`}>
@@ -217,13 +238,7 @@ export function RefuelPlanner({
                 {t("planner.noStop").replace("{pct}", String(Math.round(plan.endPct)))}
               </p>
             ) : plan?.status === "infeasible" ? (
-              <p className="px-4 py-3 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
-                {plan.reason === "arrival"
-                  ? t("planner.infeasibleArrival").replace("{pct}", String(Math.max(arrivalPct, reservePct)))
-                  : plan.reason === "no-candidates"
-                    ? t("planner.infeasibleNoCandidates")
-                    : t("planner.infeasible").replace("{km}", String(Math.round(plan.gapKm ?? 0)))}
-              </p>
+              <p className="px-4 py-3 text-center text-xs font-medium text-amber-700 dark:text-amber-300">{infeasibleText(plan)}</p>
             ) : plan?.status === "ok" ? (
               <>
                 {plan.stops.map((stop, i) => {
@@ -261,6 +276,11 @@ export function RefuelPlanner({
                   <span className="font-bold tabular-nums text-gray-900 dark:text-gray-50">{money(plan.totalFuelCost)}</span>
                 </div>
                 <FuelGauge plan={plan} routeKm={routeKm} reservePct={reservePct} />
+                {plan.dipsBelowReserve && (
+                  <p className="px-4 pb-2 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                    {t("planner.dipsReserve").replace("{pct}", String(reservePct))}
+                  </p>
+                )}
               </>
             ) : null}
           </div>
