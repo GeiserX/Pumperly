@@ -52,7 +52,7 @@ jobs:
           flavor: suffix=-amd64
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/GeiserX/Pumperly/main/README.md
-            io.artifacthub.package.license=GPL-3.0-only
+            io.artifacthub.package.license=AGPL-3.0-or-later
             io.artifacthub.package.keywords=fuel,gas,electric,ev,route,planner,price,comparison,self-hosted
             io.artifacthub.package.maintainers=[{"name":"GeiserX","email":"9169332+GeiserX@users.noreply.github.com"}]
             io.artifacthub.package.category=integration-delivery
