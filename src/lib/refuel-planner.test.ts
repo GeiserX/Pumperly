@@ -180,14 +180,19 @@ describe("planRefuel", () => {
     expect(at(10).dipsBelowReserve).toBeUndefined();
   });
 
-  it("ignores stations with unknown detour or no price", () => {
+  it("ignores stations with unknown detour or a negative price", () => {
     const r = planRefuel({
       ...base,
       startPct: 30,
       routeKm: 400,
-      stations: [st("bad", 100, 1.0, -1), st("free", 100, 0), st("ok", 100, 1.5)],
+      stations: [st("bad", 100, 1.0, -1), st("neg", 100, -1), st("ok", 100, 1.5)],
     });
     expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
+  });
+
+  it("accepts a zero price (EV chargers are planned by energy only)", () => {
+    const r = planRefuel({ ...base, startPct: 30, routeKm: 400, stations: [st("free", 100, 0)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["free"]);
   });
 
   it("ignores stations with a non-finite price, detour or km", () => {
@@ -335,5 +340,57 @@ describe("maxStopsFor", () => {
     const r = planRefuel({ ...input, maxStops: maxStopsFor(2400, base.tankL, base.consumptionL100, base.reservePct) });
     expect(r.status).toBe("ok");
     expect(r.stops.length).toBeGreaterThan(3);
+  });
+});
+
+describe("planRefuel with maxChargePct (EV)", () => {
+  // 60 kWh at 18 kWh/100 km: 0.3 % per km.
+  const ev = { ...base, tankL: 60, consumptionL100: 18, startPct: 50 };
+
+  it("never departs a stop above the cap", () => {
+    const stations = [st("A", 90, 0), st("B", 180, 0)];
+    const capped = planRefuel({ ...ev, routeKm: 300, stations, maxChargePct: 80 });
+    expect(capped.status).toBe("ok");
+    expect(capped.stops.map((s) => s.id)).toEqual(["A", "B"]);
+    expect(Math.max(...capped.stops.map((s) => s.departPct))).toBeLessThanOrEqual(80);
+    // Without the cap one stop at A (to 83 %) is enough.
+    expect(planRefuel({ ...ev, routeKm: 300, stations }).stops.map((s) => s.id)).toEqual(["A"]);
+  });
+
+  it("with no price, adds only the energy needed", () => {
+    const r = planRefuel({ ...ev, routeKm: 200, stations: [st("A", 90, 0)], maxChargePct: 80 });
+    expect(r.status).toBe("ok");
+    // Arrive 23 %, need 110 km × 0.3 + 20 = 53 %.
+    expect(r.stops[0].departPct).toBe(53);
+    expect(r.totalFuelCost).toBe(0);
+  });
+
+  it("reports stops when only a higher cap would do", () => {
+    const r = planRefuel({ ...ev, routeKm: 300, stations: [st("A", 90, 0)], maxChargePct: 80 });
+    expect(r.status).toBe("infeasible");
+  });
+
+  it("caps the stop estimate at the usable band", () => {
+    expect(maxStopsFor(1000, 60, 18, 10, 80)).toBeGreaterThanOrEqual(maxStopsFor(1000, 60, 18, 10));
+  });
+
+  it("allows up to 20 stops under a charge cap, and treats a reserve above it as no range", () => {
+    // 60 % usable of 60 kWh at 18 kWh/100 km = 200 km per leg.
+    expect(maxStopsFor(2300, 60, 18, 20, 80)).toBe(14);
+    expect(maxStopsFor(20000, 60, 18, 20, 80)).toBe(20);
+    expect(maxStopsFor(500, 60, 18, 90, 80)).toBe(20);
+    expect(maxStopsFor(20000, 60, 18, 20)).toBe(10);
+  });
+
+  it("plans a 2,300 km EV trip that needs more than 10 stops", () => {
+    // A charger every 100 km; ~200 km per leg means about 11 stops.
+    const trip = { ...ev, startPct: 80, arrivalPct: 20, reservePct: 20, routeKm: 2300, maxChargePct: 80 };
+    const stations = Array.from({ length: 22 }, (_, i) => st(`C${i}`, (i + 1) * 100, 0));
+    expect(planRefuel({ ...trip, stations, maxStops: 10 })).toMatchObject({ status: "infeasible", reason: "stops" });
+    const r = planRefuel({ ...trip, stations, maxStops: maxStopsFor(2300, 60, 18, 20, 80) });
+    expect(r.status).toBe("ok");
+    expect(r.stops.length).toBeGreaterThan(10);
+    expect(Math.max(...r.stops.map((s) => s.departPct))).toBeLessThanOrEqual(80);
+    expect(Math.min(...r.stops.map((s) => s.arrivePct))).toBeGreaterThanOrEqual(20 - 1e-9);
   });
 });

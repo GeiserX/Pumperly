@@ -97,7 +97,7 @@ export function RefuelPlanner({
     const candidates = stations.flatMap((s) => {
       const p = s.properties;
       // Mixed currencies can't be compared; only use prices in the display currency.
-      if (p.price == null || p.detourMin == null || p.detourMin < 0 || p.currency !== currency) return [];
+      if (p.price == null || p.price <= 0 || p.detourMin == null || p.detourMin < 0 || p.currency !== currency) return [];
       if ((maxPrice != null && p.price > maxPrice) || (maxDetour != null && p.detourMin > maxDetour)) return [];
       return [{ id: p.id, km: (p.routeFraction ?? 0) * routeKm, price: p.price, detourMin: p.detourMin }];
     });

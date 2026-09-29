@@ -35,6 +35,8 @@ export interface PlannerInput {
   reservePct: number;
   timeValuePerHour: number;
   maxStops: number;
+  /** Highest level (%) a stop may fill to; EV charging slows sharply above ~80 %. Default 100. */
+  maxChargePct?: number;
 }
 
 export interface PlannedStop {
@@ -126,16 +128,24 @@ export function pruneCandidates(stations: PlannerStation[], routeKm: number, max
 /** Bounds for the stop cap derived from the trip. */
 const MIN_STOPS_CAP = 3;
 const MAX_STOPS_CAP = 10;
+/**
+ * A charge cap (EV) leaves far less range per stop (~200 km on the default EV
+ * profile), so 10 stops would stop long trips at ~2,000 km. 20 keeps the DP
+ * well under a second at the 200-candidate ceiling.
+ */
+const MAX_STOPS_CAP_CHARGE_CAPPED = 20;
 
 /**
- * Stop cap for a trip: the full tanks it takes between 100 % and the reserve,
- * plus two to spare for cheaper partial fills, kept within [3, 10] so short trips
- * still get options and long ones keep the DP fast.
+ * Stop cap for a trip: the full fills it takes between `maxChargePct` and the
+ * reserve, plus two to spare for cheaper partial fills, kept within [3, 10]
+ * ([3, 20] under a charge cap) so short trips still get options and long ones
+ * keep the DP fast.
  */
-export function maxStopsFor(routeKm: number, tankL: number, consumptionL100: number, reservePct: number): number {
-  const usableRangeKm = ((100 - clamp(reservePct, 0, 100)) * tankL) / consumptionL100;
+export function maxStopsFor(routeKm: number, tankL: number, consumptionL100: number, reservePct: number, maxChargePct = 100): number {
+  const maxCap = maxChargePct < 100 ? MAX_STOPS_CAP_CHARGE_CAPPED : MAX_STOPS_CAP;
+  const usableRangeKm = (Math.max(0, clamp(maxChargePct, 0, 100) - clamp(reservePct, 0, 100)) * tankL) / consumptionL100;
   const stops = Math.ceil(routeKm / usableRangeKm) + 2;
-  return Number.isNaN(stops) ? MIN_STOPS_CAP : clamp(stops, MIN_STOPS_CAP, MAX_STOPS_CAP);
+  return Number.isNaN(stops) ? MIN_STOPS_CAP : clamp(stops, MIN_STOPS_CAP, maxCap);
 }
 
 export function planRefuel(input: PlannerInput): PlanResult {
@@ -150,6 +160,8 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const arrivalPct = clamp(input.arrivalPct, 0, 100);
   const targetEnd = Math.max(arrivalPct, reservePct);
   const maxStops = Math.max(0, Math.floor(input.maxStops));
+  // Departure levels at a stop run 0..topG; the start level itself may be higher.
+  const topG = clamp(Math.floor(input.maxChargePct ?? 100), 0, L - 1);
 
   // Fuel level (%) consumed per km.
   const pctPerKm = consumptionL100 / tankL;
@@ -161,7 +173,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
     input.stations
       .filter((s) => !seen.has(s.id) && seen.add(s.id))
       .filter((s) => Number.isFinite(s.km) && Number.isFinite(s.price) && Number.isFinite(s.detourMin))
-      .filter((s) => s.km >= 0 && s.km <= routeKm && s.price > 0 && s.detourMin >= 0)
+      .filter((s) => s.km >= 0 && s.km <= routeKm && s.price >= 0 && s.detourMin >= 0)
       .sort((a, b) => a.km - b.km),
     routeKm,
   );
@@ -224,7 +236,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
           if (k === 1) {
             const f = startPct - cons;
             if (f < firstLegFloor - 1e-9) continue;
-            for (let g = Math.ceil(f); g < L; g++) {
+            for (let g = Math.ceil(f); g <= topG; g++) {
               const c = (g - f) * unit + stopCost[j];
               if (c < dp[j * L + g]) {
                 dp[j * L + g] = c;
@@ -240,7 +252,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
           let runMin = Infinity;
           let runArg = -1;
           let gi = minGi;
-          for (let g = 0; g < L; g++) {
+          for (let g = 0; g <= topG; g++) {
             // Allowed gi: arrival level gi - cons must not exceed g (can't "buy" negative).
             const maxGi = Math.min(L - 1, Math.floor(g + cons + 1e-9));
             for (; gi <= maxGi; gi++) {
@@ -265,7 +277,7 @@ export function planRefuel(input: PlannerInput): PlanResult {
       // Close out to the destination from this layer.
       for (let j = 0; j < n; j++) {
         const need = Math.ceil(end + legPct(j, n) - 1e-9);
-        for (let g = Math.max(0, need); g < L; g++) {
+        for (let g = Math.max(0, need); g <= topG; g++) {
           const c = dp[j * L + g];
           if (c < best.cost) best = { cost: c, k, j, g };
         }
@@ -363,10 +375,10 @@ export function planRefuel(input: PlannerInput): PlanResult {
       if (startPct - legPct(-1, j) >= firstLegFloor - 1e-9) stopsTo[j] = 1;
       else {
         for (let i = 0; i < j; i++) {
-          if (stopsTo[i] + 1 < stopsTo[j] && 100 - legPct(i, j) >= reservePct - 1e-9) stopsTo[j] = stopsTo[i] + 1;
+          if (stopsTo[i] + 1 < stopsTo[j] && topG - legPct(i, j) >= reservePct - 1e-9) stopsTo[j] = stopsTo[i] + 1;
         }
       }
-      if (100 - legPct(j, n) >= end - 1e-9) fewest = Math.min(fewest, stopsTo[j]);
+      if (topG - legPct(j, n) >= end - 1e-9) fewest = Math.min(fewest, stopsTo[j]);
     }
     return fewest;
   }
