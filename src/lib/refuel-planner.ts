@@ -97,10 +97,9 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const reservePct = clamp(input.reservePct, 0, 100);
   const targetEnd = Math.max(clamp(input.arrivalPct, 0, 100), reservePct);
   const maxStops = Math.max(0, Math.floor(input.maxStops));
-  // Starting at or near the reserve: the first leg may use up to half of what
-  // is left, otherwise nothing would be reachable. Monotone in startPct, so a
-  // fuller tank never makes the first leg stricter.
-  const firstLegFloor = Math.min(reservePct, startPct / 2);
+  // Starting at or below the reserve: the first leg may use up to half of what
+  // is left, otherwise nothing would be reachable. Above it, the reserve holds.
+  const firstLegFloor = startPct > reservePct ? reservePct : startPct / 2;
 
   // Fuel level (%) consumed per km.
   const pctPerKm = consumptionL100 / tankL;

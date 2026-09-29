@@ -96,6 +96,14 @@ describe("planRefuel", () => {
     expect(r.gapKm).toBeCloseTo(25);
   });
 
+  it("keeps the reserve on the first leg when starting above it", () => {
+    // 15 % start, 10 % reserve: OK arrives at exactly 10 %, BELOW is cheaper but would arrive at 8 %.
+    const r = planRefuel({ ...base, startPct: 15, routeKm: 300, stations: [st("OK", 25, 1.6), st("BELOW", 35, 1.5)] });
+    expect(r.status).toBe("ok");
+    expect(r.stops[0].id).toBe("OK");
+    expect(r.stops[0].arrivePct).toBeCloseTo(10);
+  });
+
   it("ignores stations with unknown detour or no price", () => {
     const r = planRefuel({
       ...base,
