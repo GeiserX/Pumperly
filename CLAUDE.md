@@ -17,7 +17,7 @@
 
 - **Live URL**: https://pumperly.com
 - **Repository**: https://github.com/GeiserX/pumperly
-- **License**: GPL-3.0
+- **License**: AGPL-3.0-or-later
 
 ### What Makes This Different
 
