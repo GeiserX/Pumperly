@@ -103,6 +103,7 @@ describe("REVEScraper", () => {
       latitude: 43.526146,
       longitude: -5.874451,
       stationType: "ev_charger",
+      maxPowerKw: 22,
     });
   });
 

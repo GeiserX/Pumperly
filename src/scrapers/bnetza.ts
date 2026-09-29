@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import { BaseScraper, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
+import { BaseScraper, sanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
 
 // ---------------------------------------------------------------------------
 // BNetzA Ladesäulenregister — official German EV charging point registry
@@ -101,6 +101,12 @@ const COLUMNS = {
 
 type ColumnIndices = Record<keyof typeof COLUMNS, number>;
 
+// Per-plug power, the most a car can draw at one point (the facility-level
+// "Nennleistung Ladeeinrichtung" sums the points). Optional, unlike COLUMNS:
+// losing power is a degraded map, not bad data, so a rename must not abort the
+// import. Missing columns resolve to -1 and are skipped.
+const PLUG_POWER_COLUMNS = [1, 2, 3, 4].map((n) => `Nennleistung Stecker${n}`);
+
 // Every field is a `string` by construction after splitting on tabs, so a
 // shape-only schema here would be incapable of failing. Zod earns its place by
 // owning the string→number conversion instead.
@@ -163,11 +169,15 @@ export function stationKey(latitude: number, longitude: number): string {
  * catches it and returns a no-op run, so an upstream format change costs a
  * scrape cycle instead of corrupting the table.
  */
-function resolveColumns(headerLine: string): ColumnIndices {
-  const header = headerLine
-    .replace(/^﻿/, "")
+function headerNames(headerLine: string): string[] {
+  return headerLine
+    .replace(/^\uFEFF/, "")
     .split("\t")
     .map((h) => unquote(h).toLowerCase());
+}
+
+function resolveColumns(headerLine: string): ColumnIndices {
+  const header = headerNames(headerLine);
 
   const indices = {} as ColumnIndices;
   for (const [field, name] of Object.entries(COLUMNS) as Array<
@@ -180,6 +190,21 @@ function resolveColumns(headerLine: string): ColumnIndices {
     indices[field] = idx;
   }
   return indices;
+}
+
+function resolvePlugPowerColumns(headerLine: string): number[] {
+  const header = headerNames(headerLine);
+  return PLUG_POWER_COLUMNS.map((name) => header.indexOf(name.toLowerCase())).filter((i) => i >= 0);
+}
+
+/** Highest plug power on a row, kW. Values are "22" or German-style "22,5". */
+function rowPowerKw(fields: string[], plugCols: number[]): number | null {
+  let max = 0;
+  for (const i of plugCols) {
+    const kw = Number(unquote(fields[i]).replace(",", "."));
+    if (Number.isFinite(kw) && kw > max) max = kw;
+  }
+  return sanePowerKw(max);
 }
 
 /**
@@ -196,6 +221,7 @@ export function parseBnetzaTsv(text: string): {
   // otherwise append a stray \r to the last column and break the status filter.
   const lines = text.split(/\r?\n/);
   const cols = resolveColumns(lines[0] ?? "");
+  const plugCols = resolvePlugPowerColumns(lines[0] ?? "");
   const fieldCount = (lines[0] ?? "").split("\t").length;
 
   const stats: BnetzaParseStats = {
@@ -254,9 +280,13 @@ export function parseBnetzaTsv(text: string): {
     const key = stationKey(latitude, longitude);
     const operator = unquote(fields[cols.operator]);
 
+    const powerKw = rowPowerKw(fields, plugCols);
+
     const existing = byKey.get(key);
     if (existing) {
       stats.mergedDuplicates++;
+      // A location's power is its fastest charger, whichever row it is on.
+      if (powerKw != null && powerKw > (existing.maxPowerKw ?? 0)) existing.maxPowerKw = powerKw;
       if (operator && existing.brand && operator !== existing.brand) {
         stats.operatorConflicts++;
       }
@@ -291,6 +321,7 @@ export function parseBnetzaTsv(text: string): {
       latitude,
       longitude,
       stationType: "ev_charger",
+      maxPowerKw: powerKw,
     });
   }
 

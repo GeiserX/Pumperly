@@ -75,6 +75,31 @@ function tsv(...rows: string[]): string {
 }
 
 describe("parseBnetzaTsv", () => {
+  it("reads the fastest plug, including German decimals, and keeps the max across merged rows", async () => {
+    const { parseBnetzaTsv } = await import("./bnetza");
+    const { stations } = parseBnetzaTsv(
+      tsv(
+        row({ "Nennleistung Stecker1": "11", "Nennleistung Stecker2": "22,5" }),
+        // Same location, a faster charger on another row.
+        row({ "Nennleistung Stecker1": "150", "Nennleistung Stecker2": "" }),
+        // Same location, slower again: must not lower the max.
+        row({ "Nennleistung Stecker1": "3,7", "Nennleistung Stecker2": "" }),
+        row({ Breitengrad: "51.0", "Längengrad": "10.0", "Nennleistung Stecker1": "", "Nennleistung Stecker2": "abc" }),
+      ),
+    );
+    expect(stations.map((s) => s.maxPowerKw)).toEqual([150, null]);
+    const single = parseBnetzaTsv(tsv(row({ "Nennleistung Stecker1": "11", "Nennleistung Stecker2": "22,5" })));
+    expect(single.stations[0].maxPowerKw).toBe(23);
+  });
+
+  it("still imports when the plug power columns are renamed", async () => {
+    const { parseBnetzaTsv } = await import("./bnetza");
+    const text = tsv(row()).replace(/Nennleistung Stecker/g, "Leistung Stecker");
+    const { stations } = parseBnetzaTsv(text);
+    expect(stations).toHaveLength(1);
+    expect(stations[0].maxPowerKw).toBeNull();
+  });
+
   it("maps an operational row into an EV charger station", async () => {
     const { parseBnetzaTsv } = await import("./bnetza");
     const { stations, stats } = parseBnetzaTsv(tsv(row()));
@@ -90,6 +115,7 @@ describe("parseBnetzaTsv", () => {
       latitude: 52.510055,
       longitude: 13.377592,
       stationType: "ev_charger",
+      maxPowerKw: 22,
     });
     expect(stats).toEqual({
       totalRows: 1,

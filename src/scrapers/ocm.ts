@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseScraper, type RawFuelPrice, type RawStation } from "./base";
+import { BaseScraper, sanePowerKw, type RawFuelPrice, type RawStation } from "./base";
 
 // ---------------------------------------------------------------------------
 // OpenChargeMap (OCM) — EV charging station scraper
@@ -117,6 +117,8 @@ const OCMPOISchema = z.object({
       Longitude: z.number().nullish(),
     })
     .nullish(),
+  // Power is a nice-to-have: a malformed Connections entry must not drop the POI.
+  Connections: z.array(z.object({ PowerKW: z.number().nullish().catch(null) })).nullish().catch(null),
 });
 
 type OCMPOI = z.infer<typeof OCMPOISchema>;
@@ -307,6 +309,7 @@ export class OCMScraper extends BaseScraper {
         latitude: addr.Latitude,
         longitude: addr.Longitude,
         stationType: "ev_charger",
+        maxPowerKw: sanePowerKw(Math.max(0, ...(poi.Connections ?? []).map((c) => c.PowerKW ?? 0))),
       });
     }
 

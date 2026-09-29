@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import { BaseScraper, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
+import { BaseScraper, sanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
 
 // ---------------------------------------------------------------------------
 // Mapa REVE — official Spanish EV charging point registry
@@ -201,7 +201,7 @@ function maxPowerKw(loc: REVELocation): number | null {
       if (typeof w === "number" && Number.isFinite(w) && w > maxW) maxW = w;
     }
   }
-  return maxW > 0 ? Math.round(maxW / 1000) : null;
+  return maxW > 0 ? sanePowerKw(maxW / 1000) : null;
 }
 
 export class REVEScraper extends BaseScraper {
@@ -338,6 +338,7 @@ export class REVEScraper extends BaseScraper {
         latitude,
         longitude,
         stationType: "ev_charger",
+        maxPowerKw: kw,
       });
     }
 
