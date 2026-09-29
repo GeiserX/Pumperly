@@ -137,7 +137,7 @@ function SourcesContent() {
         <li><strong>Slovenia</strong> &mdash; Goriva.si, Ministry of Infrastructure</li>
         <li><strong>Denmark</strong> &mdash; FuelPrices.dk API</li>
         <li><strong>Norway</strong> &mdash; Drivstoffappen / Circle K API</li>
-        <li><strong>Sweden</strong> &mdash; Drivstoffappen</li>
+        <li><strong>Sweden</strong> &mdash; bensinpriser.nu</li>
         <li><strong>Greece</strong> &mdash; FuelGR / Ministry of Development</li>
         <li><strong>Romania</strong> &mdash; Peco-Online.ro</li>
         <li><strong>Moldova</strong> &mdash; ANRE (Agentia Nationala pentru Reglementare in Energetica)</li>
