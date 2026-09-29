@@ -120,6 +120,33 @@ describe("planRefuel", () => {
     expect(r.stops[0].arrivePct).toBeCloseTo(10);
   });
 
+  it("never becomes infeasible when the start level rises", () => {
+    // Reserve 10 %, one station at km 20 (4 % away): start 10 may dip to 5 %, so
+    // start 11 must not be refused just because it is above the reserve.
+    let feasibleBefore = false;
+    for (let start = 1; start <= 100; start++) {
+      const r = planRefuel({ ...base, startPct: start, routeKm: 400, stations: [st("A", 20, 1.5)] });
+      const feasible = r.status !== "infeasible";
+      if (feasibleBefore) expect({ start, feasible }).toEqual({ start, feasible: true });
+      feasibleBefore ||= feasible;
+    }
+    expect(feasibleBefore).toBe(true);
+  });
+
+  it("flags a plan that dips below the reserve on the first leg, and only that one", () => {
+    const at = (startPct: number) => planRefuel({ ...base, startPct, routeKm: 400, stations: [st("A", 20, 1.5)] });
+    const dipping = at(11);
+    expect(dipping.status).toBe("ok");
+    expect(dipping.dipsBelowReserve).toBe(true);
+    expect(dipping.stops[0].arrivePct).toBeCloseTo(7);
+    // 14 % reaches km 20 with exactly the reserve left: the strict plan exists and wins.
+    expect(at(14).status).toBe("ok");
+    expect(at(14).dipsBelowReserve).toBeUndefined();
+    // At or below the reserve the half-start rule is the normal one, not a fallback.
+    expect(at(10).status).toBe("ok");
+    expect(at(10).dipsBelowReserve).toBeUndefined();
+  });
+
   it("ignores stations with unknown detour or no price", () => {
     const r = planRefuel({
       ...base,

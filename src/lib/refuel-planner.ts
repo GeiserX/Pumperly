@@ -4,7 +4,9 @@
  * Picks 0..maxStops corridor stations that minimise
  *   fuel bought · price  +  (detour + fixed stop time) · value of time
  * while the tank never drops below `reservePct` and arrives at the destination
- * with at least `arrivalPct`.
+ * with at least `arrivalPct`. The one exception is the first leg: when the start
+ * level can't reach any station with the reserve intact, it may use up to half of
+ * the start level, and the result says so (`dipsBelowReserve`).
  *
  * DP over (stops used, station, departure level in whole %). Arrival levels are
  * kept continuous, so rounding never accumulates along the route. For a fixed
@@ -63,6 +65,11 @@ export interface PlanResult {
    * - `range`: stations exist but the tank can't bridge the gap to the next one.
    */
   reason?: "arrival" | "no-candidates" | "range";
+  /**
+   * Ok only: no plan keeps the reserve on the way to the first stop, so this one
+   * lets the first leg use up to half of the start level instead.
+   */
+  dipsBelowReserve?: boolean;
 }
 
 /** Time spent at the pump regardless of detour (paying, filling), minutes. */
@@ -119,9 +126,6 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const reservePct = clamp(input.reservePct, 0, 100);
   const targetEnd = Math.max(clamp(input.arrivalPct, 0, 100), reservePct);
   const maxStops = Math.max(0, Math.floor(input.maxStops));
-  // Starting at or below the reserve: the first leg may use up to half of what
-  // is left, otherwise nothing would be reachable. Above it, the reserve holds.
-  const firstLegFloor = startPct > reservePct ? reservePct : startPct / 2;
 
   // Fuel level (%) consumed per km.
   const pctPerKm = consumptionL100 / tankL;
@@ -158,142 +162,157 @@ export function planRefuel(input: PlannerInput): PlanResult {
     };
   }
 
-  // dp[k][j*L + g]: min cost having made k stops, the last at station j,
-  // departing with level g. parent stores (prevStation+1)*L + prevLevel, -1 = none.
-  const layers: Float64Array[] = [];
-  const parents: Int32Array[] = [];
-  let best = { cost: Infinity, k: -1, j: -1, g: -1 };
+  // Starting at or below the reserve: the first leg may use up to half of what
+  // is left, otherwise nothing would be reachable. Above it, the reserve holds.
+  const strict = solve(startPct > reservePct ? reservePct : startPct / 2);
+  if (strict.status !== "infeasible" || startPct <= reservePct) return strict;
+  // Above the reserve but no plan keeps it on the first leg: rather than refuse a
+  // start level that a lower one would have been allowed, dip into the reserve
+  // the same way (at most half the start level) and say so. The strict plan wins
+  // whenever it exists, so feasibility never falls as the start level rises.
+  const relaxedFloor = Math.min(reservePct, startPct / 2);
+  if (relaxedFloor >= reservePct) return strict;
+  const relaxed = solve(relaxedFloor);
+  return relaxed.status === "ok" ? { ...relaxed, dipsBelowReserve: true } : strict;
 
-  for (let k = 1; k <= maxStops; k++) {
-    const dp = new Float64Array(n * L).fill(Infinity);
-    const par = new Int32Array(n * L).fill(-1);
-    const prev = k === 1 ? null : layers[k - 2];
+  function solve(firstLegFloor: number): PlanResult {
+    // dp[k][j*L + g]: min cost having made k stops, the last at station j,
+    // departing with level g. parent stores (prevStation+1)*L + prevLevel, -1 = none.
+    const layers: Float64Array[] = [];
+    const parents: Int32Array[] = [];
+    let best = { cost: Infinity, k: -1, j: -1, g: -1 };
 
-    for (let j = 0; j < n; j++) {
-      const price = stations[j].price;
-      const unit = litresPerPct * price;
-      const sources = k === 1 ? [-1] : range(j);
-      for (const i of sources) {
-        const cons = legPct(i, j);
-        if (k === 1) {
-          const f = startPct - cons;
-          if (f < firstLegFloor - 1e-9) continue;
-          for (let g = Math.ceil(f); g < L; g++) {
-            const c = (g - f) * unit + stopCost[j];
+    for (let k = 1; k <= maxStops; k++) {
+      const dp = new Float64Array(n * L).fill(Infinity);
+      const par = new Int32Array(n * L).fill(-1);
+      const prev = k === 1 ? null : layers[k - 2];
+
+      for (let j = 0; j < n; j++) {
+        const price = stations[j].price;
+        const unit = litresPerPct * price;
+        const sources = k === 1 ? [-1] : range(j);
+        for (const i of sources) {
+          const cons = legPct(i, j);
+          if (k === 1) {
+            const f = startPct - cons;
+            if (f < firstLegFloor - 1e-9) continue;
+            for (let g = Math.ceil(f); g < L; g++) {
+              const c = (g - f) * unit + stopCost[j];
+              if (c < dp[j * L + g]) {
+                dp[j * L + g] = c;
+                par[j * L + g] = -1;
+              }
+            }
+            continue;
+          }
+          // Prefix-min over departure level at i of dp[i][gi] - gi·unit, restricted
+          // to levels that arrive at j above the reserve.
+          const minGi = Math.ceil(reservePct + cons - 1e-9);
+          if (minGi >= L) continue;
+          let runMin = Infinity;
+          let runArg = -1;
+          let gi = minGi;
+          for (let g = 0; g < L; g++) {
+            // Allowed gi: arrival level gi - cons must not exceed g (can't "buy" negative).
+            const maxGi = Math.min(L - 1, Math.floor(g + cons + 1e-9));
+            for (; gi <= maxGi; gi++) {
+              const v = prev![i * L + gi] - gi * unit;
+              if (v < runMin) {
+                runMin = v;
+                runArg = gi;
+              }
+            }
+            if (runArg < 0 || runMin === Infinity) continue;
+            const c = runMin + (g + cons) * unit + stopCost[j];
             if (c < dp[j * L + g]) {
               dp[j * L + g] = c;
-              par[j * L + g] = -1;
+              par[j * L + g] = (i + 1) * L + runArg;
             }
-          }
-          continue;
-        }
-        // Prefix-min over departure level at i of dp[i][gi] - gi·unit, restricted
-        // to levels that arrive at j above the reserve.
-        const minGi = Math.ceil(reservePct + cons - 1e-9);
-        if (minGi >= L) continue;
-        let runMin = Infinity;
-        let runArg = -1;
-        let gi = minGi;
-        for (let g = 0; g < L; g++) {
-          // Allowed gi: arrival level gi - cons must not exceed g (can't "buy" negative).
-          const maxGi = Math.min(L - 1, Math.floor(g + cons + 1e-9));
-          for (; gi <= maxGi; gi++) {
-            const v = prev![i * L + gi] - gi * unit;
-            if (v < runMin) {
-              runMin = v;
-              runArg = gi;
-            }
-          }
-          if (runArg < 0 || runMin === Infinity) continue;
-          const c = runMin + (g + cons) * unit + stopCost[j];
-          if (c < dp[j * L + g]) {
-            dp[j * L + g] = c;
-            par[j * L + g] = (i + 1) * L + runArg;
           }
         }
       }
-    }
-    layers.push(dp);
-    parents.push(par);
+      layers.push(dp);
+      parents.push(par);
 
-    // Close out to the destination from this layer.
-    for (let j = 0; j < n; j++) {
-      const need = Math.ceil(targetEnd + legPct(j, n) - 1e-9);
-      for (let g = Math.max(0, need); g < L; g++) {
-        const c = dp[j * L + g];
-        if (c < best.cost) best = { cost: c, k, j, g };
-      }
-    }
-  }
-
-  if (best.k < 0) {
-    // Furthest reachable point: origin with the start level, or any reachable stop state.
-    let reach = Math.min(routeKm, Math.max(0, (startPct - firstLegFloor) / pctPerKm));
-    for (const dp of layers) {
+      // Close out to the destination from this layer.
       for (let j = 0; j < n; j++) {
-        for (let g = L - 1; g >= 0; g--) {
-          if (dp[j * L + g] < Infinity) {
-            reach = Math.max(reach, stations[j].km + Math.max(0, (g - reservePct) / pctPerKm));
-            break;
-          }
+        const need = Math.ceil(targetEnd + legPct(j, n) - 1e-9);
+        for (let g = Math.max(0, need); g < L; g++) {
+          const c = dp[j * L + g];
+          if (c < best.cost) best = { cost: c, k, j, g };
         }
       }
     }
-    const reason = reach >= routeKm - 1e-9 ? "arrival" : n === 0 ? "no-candidates" : "range";
+
+    if (best.k < 0) {
+      // Furthest reachable point: origin with the start level, or any reachable stop state.
+      let reach = Math.min(routeKm, Math.max(0, (startPct - firstLegFloor) / pctPerKm));
+      for (const dp of layers) {
+        for (let j = 0; j < n; j++) {
+          for (let g = L - 1; g >= 0; g--) {
+            if (dp[j * L + g] < Infinity) {
+              reach = Math.max(reach, stations[j].km + Math.max(0, (g - reservePct) / pctPerKm));
+              break;
+            }
+          }
+        }
+      }
+      const reason = reach >= routeKm - 1e-9 ? "arrival" : n === 0 ? "no-candidates" : "range";
+      return {
+        status: "infeasible",
+        stops: [],
+        totalFuelCost: 0,
+        totalDetourMin: 0,
+        endPct: 0,
+        profile: [],
+        gapKm: Math.min(routeKm, reach),
+        reason,
+      };
+    }
+
+    // Backtrack to the stop sequence (station index, departure level).
+    const seq: { j: number; g: number }[] = [];
+    let cur = { k: best.k, j: best.j, g: best.g };
+    while (cur.k >= 1) {
+      seq.unshift({ j: cur.j, g: cur.g });
+      const p = parents[cur.k - 1][cur.j * L + cur.g];
+      if (p < 0) break;
+      cur = { k: cur.k - 1, j: Math.floor(p / L) - 1, g: p % L };
+    }
+
+    const stops: PlannedStop[] = [];
+    const profile: { km: number; pct: number }[] = [{ km: 0, pct: startPct }];
+    let level = startPct;
+    let prevIdx = -1;
+    for (const { j, g } of seq) {
+      const s = stations[j];
+      const arrive = level - legPct(prevIdx, j);
+      const litres = (g - arrive) * litresPerPct;
+      stops.push({
+        id: s.id,
+        km: s.km,
+        litres,
+        cost: litres * s.price,
+        detourMin: s.detourMin,
+        arrivePct: arrive,
+        departPct: g,
+      });
+      profile.push({ km: s.km, pct: arrive }, { km: s.km, pct: g });
+      level = g;
+      prevIdx = j;
+    }
+    const endPct = level - legPct(prevIdx, n);
+    profile.push({ km: routeKm, pct: endPct });
+
     return {
-      status: "infeasible",
-      stops: [],
-      totalFuelCost: 0,
-      totalDetourMin: 0,
-      endPct: 0,
-      profile: [],
-      gapKm: Math.min(routeKm, reach),
-      reason,
+      status: "ok",
+      stops,
+      totalFuelCost: stops.reduce((sum, s) => sum + s.cost, 0),
+      totalDetourMin: stops.reduce((sum, s) => sum + s.detourMin, 0),
+      endPct,
+      profile,
     };
   }
-
-  // Backtrack to the stop sequence (station index, departure level).
-  const seq: { j: number; g: number }[] = [];
-  let cur = { k: best.k, j: best.j, g: best.g };
-  while (cur.k >= 1) {
-    seq.unshift({ j: cur.j, g: cur.g });
-    const p = parents[cur.k - 1][cur.j * L + cur.g];
-    if (p < 0) break;
-    cur = { k: cur.k - 1, j: Math.floor(p / L) - 1, g: p % L };
-  }
-
-  const stops: PlannedStop[] = [];
-  const profile: { km: number; pct: number }[] = [{ km: 0, pct: startPct }];
-  let level = startPct;
-  let prevIdx = -1;
-  for (const { j, g } of seq) {
-    const s = stations[j];
-    const arrive = level - legPct(prevIdx, j);
-    const litres = (g - arrive) * litresPerPct;
-    stops.push({
-      id: s.id,
-      km: s.km,
-      litres,
-      cost: litres * s.price,
-      detourMin: s.detourMin,
-      arrivePct: arrive,
-      departPct: g,
-    });
-    profile.push({ km: s.km, pct: arrive }, { km: s.km, pct: g });
-    level = g;
-    prevIdx = j;
-  }
-  const endPct = level - legPct(prevIdx, n);
-  profile.push({ km: routeKm, pct: endPct });
-
-  return {
-    status: "ok",
-    stops,
-    totalFuelCost: stops.reduce((sum, s) => sum + s.cost, 0),
-    totalDetourMin: stops.reduce((sum, s) => sum + s.detourMin, 0),
-    endPct,
-    profile,
-  };
 }
 
 function clamp(v: number, lo: number, hi: number): number {
