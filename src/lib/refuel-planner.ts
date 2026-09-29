@@ -139,7 +139,12 @@ export function maxStopsFor(routeKm: number, tankL: number, consumptionL100: num
 }
 
 export function planRefuel(input: PlannerInput): PlanResult {
-  const { routeKm, tankL, consumptionL100, timeValuePerHour } = input;
+  const { routeKm, tankL, consumptionL100 } = input;
+  // A vehicle without a usable tank or consumption can't be planned for.
+  if (!(tankL > 0 && tankL < Infinity && consumptionL100 > 0 && consumptionL100 < Infinity)) {
+    return { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, endPct: 0, profile: [], gapKm: 0 };
+  }
+  const timeValuePerHour = input.timeValuePerHour > 0 && input.timeValuePerHour < Infinity ? input.timeValuePerHour : 0;
   const startPct = clamp(input.startPct, 0, 100);
   const reservePct = clamp(input.reservePct, 0, 100);
   const arrivalPct = clamp(input.arrivalPct, 0, 100);
@@ -150,8 +155,12 @@ export function planRefuel(input: PlannerInput): PlanResult {
   const pctPerKm = consumptionL100 / tankL;
   const litresPerPct = tankL / 100;
 
+  // One entry per station id (the first), and only finite, usable numbers.
+  const seen = new Set<string>();
   const stations = pruneCandidates(
     input.stations
+      .filter((s) => !seen.has(s.id) && seen.add(s.id))
+      .filter((s) => Number.isFinite(s.km) && Number.isFinite(s.price) && Number.isFinite(s.detourMin))
       .filter((s) => s.km >= 0 && s.km <= routeKm && s.price > 0 && s.detourMin >= 0)
       .sort((a, b) => a.km - b.km),
     routeKm,

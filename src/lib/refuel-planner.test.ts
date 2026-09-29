@@ -189,6 +189,57 @@ describe("planRefuel", () => {
     });
     expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
   });
+
+  it("ignores stations with a non-finite price, detour or km", () => {
+    const r = planRefuel({
+      ...base,
+      startPct: 30,
+      routeKm: 400,
+      stations: [
+        st("nanPrice", 100, Number.NaN),
+        st("infPrice", 100, Infinity),
+        st("nanDetour", 100, 0.5, Number.NaN),
+        st("infDetour", 100, 0.5, Infinity),
+        st("nanKm", Number.NaN, 0.5),
+        st("ok", 100, 1.5),
+      ],
+    });
+    expect(r.status).toBe("ok");
+    expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
+    expect(Number.isFinite(r.totalFuelCost)).toBe(true);
+    // Stations with an infinite price or detour are not candidates at all.
+    const none = planRefuel({ ...base, routeKm: 600, stations: [st("infPrice", 100, Infinity), st("infDetour", 100, 1.5, Infinity)] });
+    expect(none.reason).toBe("no-candidates");
+  });
+
+  it("keeps only the first station with a given id", () => {
+    const r = planRefuel({
+      ...base,
+      startPct: 30,
+      routeKm: 400,
+      stations: [st("A", 100, 1.5), st("A", 90, 0.5), st("B", 80, 1.6)],
+    });
+    expect(r.stops.map((s) => [s.id, s.km])).toEqual([["A", 100]]);
+    expect(r.totalFuelCost).toBeCloseTo(52.5);
+  });
+
+  it("treats a non-finite or negative value of time as zero", () => {
+    const input = { ...base, startPct: 40, routeKm: 400, stations: [st("A", 100, 1.0, 60), st("B", 100, 1.5, 0)] };
+    const free = planRefuel({ ...input, timeValuePerHour: 0 });
+    for (const v of [Number.NaN, Infinity, -30]) {
+      const r = planRefuel({ ...input, timeValuePerHour: v });
+      expect(r.stops.map((s) => s.id)).toEqual(free.stops.map((s) => s.id));
+      expect(r.totalFuelCost).toBeCloseTo(free.totalFuelCost);
+    }
+  });
+
+  it("refuses a vehicle with no usable tank or consumption instead of returning NaN", () => {
+    for (const bad of [{ tankL: 0 }, { tankL: Number.NaN }, { consumptionL100: Infinity }, { consumptionL100: -1 }]) {
+      const r = planRefuel({ ...base, ...bad, routeKm: 400, stations: [st("A", 100, 1.5)] });
+      expect(r.status).toBe("infeasible");
+      expect(r.gapKm).toBe(0);
+    }
+  });
 });
 
 describe("pruneCandidates", () => {
