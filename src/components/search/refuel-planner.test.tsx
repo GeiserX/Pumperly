@@ -356,4 +356,43 @@ describe("RefuelPlanner", () => {
     expect(tank).toHaveValue(50);
     expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 6.5 });
   });
+
+  describe("EV mode", () => {
+    // 60 kWh at 18 kWh/100 km: 0.3 % per km. From 50 % over 300 km, one stop
+    // capped at 80 % can't make it, so it takes both chargers.
+    const CHARGERS = [
+      makeStation("x", { brand: "Ionity", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+      makeStation("y", { brand: "Tesla", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+    ];
+
+    it("plans price-less chargers by energy, capped at 80 %", async () => {
+      const { onPlanChange } = renderPlanner({ mode: "ev", stations: CHARGERS, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy).toHaveBeenLastCalledWith(expect.objectContaining({ tankL: 60, consumptionL100: 18, maxChargePct: 80 }));
+      expect(onPlanChange.mock.lastCall![0].map((s: { id: string }) => s.id)).toEqual(["x", "y"]);
+      expect(screen.getByText("planner.tripEnergy")).toBeInTheDocument();
+      expect(screen.getAllByText(/^\+\d+\.\d kWh$/)).toHaveLength(2);
+    });
+
+    it("shows battery fields, no value of time, and needs no exchange rates", async () => {
+      currencyState.currency = "HUF";
+      renderPlanner({ mode: "ev", stations: CHARGERS, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(screen.getByLabelText("planner.battery")).toHaveValue(60);
+      expect(screen.getByLabelText("planner.consumptionEv")).toHaveValue(18);
+      expect(screen.queryByText(/planner.timeValue/)).not.toBeInTheDocument();
+      expect(screen.queryByText("planner.noRates")).not.toBeInTheDocument();
+      expect(planSpy).toHaveBeenCalled();
+    });
+
+    it("persists the EV profile apart from the fuel one", async () => {
+      renderPlanner({ mode: "ev", stations: CHARGERS, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const battery = screen.getByLabelText("planner.battery");
+      await userEvent.clear(battery);
+      await userEvent.type(battery, "77{Enter}");
+      expect(JSON.parse(localStorage.getItem("pumperly-ev")!)).toEqual({ batteryKwh: 77, consumptionKwh100: 18 });
+      expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 6.5 });
+    });
+  });
 });

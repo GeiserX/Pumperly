@@ -33,10 +33,13 @@ describe("isPlannableFuel", () => {
     expect(isPlannableFuel("LPG")).toBe(true);
   });
 
-  it("rejects per-kg fuels, EV and AdBlue", () => {
+  it("accepts EV (planned by energy)", () => {
+    expect(isPlannableFuel("EV")).toBe(true);
+  });
+
+  it("rejects per-kg fuels and AdBlue", () => {
     expect(isPlannableFuel("CNG")).toBe(false);
     expect(isPlannableFuel("H2")).toBe(false);
-    expect(isPlannableFuel("EV")).toBe(false);
     expect(isPlannableFuel("ADBLUE")).toBe(false);
   });
 });

@@ -25,9 +25,11 @@ export const DEFAULT_EV: EvProfile = { batteryKwh: 60, consumptionKwh100: 18 };
 
 /**
  * Fuels the refuel planner supports: priced per litre and burned by volume.
- * CNG/LNG/H2 are priced per kg and EV has no prices yet, so they are excluded.
+ * CNG/LNG/H2 are priced per kg, so they are excluded. EV is planned by energy
+ * (kWh) alone, since chargers have no prices yet.
  */
 export function isPlannableFuel(fuel: FuelType): boolean {
+  if (fuel === "EV") return true;
   const info = FUEL_TYPE_MAP.get(fuel);
   if (!info) return false;
   if (info.category === "gasoline" || info.category === "diesel") return true;

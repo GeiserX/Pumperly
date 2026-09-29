@@ -784,11 +784,13 @@ export function SearchPanel({
         </div>
       )}
 
-      {/* Refuel stop planner — liquid fuels only. Collapsing the panel hides it
+      {/* Refuel/charge stop planner — liquid fuels and EV (energy only). Collapsing the panel hides it
           instead of unmounting it: its unmount clears the numbered map markers. */}
       {phase === "route" && primaryRoute && allCorridorStations.length > 0
         && selectedFuel && isPlannableFuel(selectedFuel as FuelType) && (
         <RefuelPlanner
+          key={selectedFuel === "EV" ? "ev" : "fuel"}
+          mode={selectedFuel === "EV" ? "ev" : "fuel"}
           hidden={routeCollapsed}
           stations={allCorridorStations}
           routeKm={primaryRoute.distance}
