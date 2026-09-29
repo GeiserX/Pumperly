@@ -123,6 +123,21 @@ export function pruneCandidates(stations: PlannerStation[], routeKm: number, max
   return [...keep.values()].sort((a, b) => a.km - b.km);
 }
 
+/** Bounds for the stop cap derived from the trip. */
+const MIN_STOPS_CAP = 3;
+const MAX_STOPS_CAP = 10;
+
+/**
+ * Stop cap for a trip: the full tanks it takes between 100 % and the reserve,
+ * plus two to spare for cheaper partial fills, kept within [3, 10] so short trips
+ * still get options and long ones keep the DP fast.
+ */
+export function maxStopsFor(routeKm: number, tankL: number, consumptionL100: number, reservePct: number): number {
+  const usableRangeKm = ((100 - clamp(reservePct, 0, 100)) * tankL) / consumptionL100;
+  const stops = Math.ceil(routeKm / usableRangeKm) + 2;
+  return Number.isNaN(stops) ? MIN_STOPS_CAP : clamp(stops, MIN_STOPS_CAP, MAX_STOPS_CAP);
+}
+
 export function planRefuel(input: PlannerInput): PlanResult {
   const { routeKm, tankL, consumptionL100, timeValuePerHour } = input;
   const startPct = clamp(input.startPct, 0, 100);

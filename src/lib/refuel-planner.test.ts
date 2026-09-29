@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planRefuel, pruneCandidates, type PlannerInput, type PlannerStation } from "./refuel-planner";
+import { maxStopsFor, planRefuel, pruneCandidates, type PlannerInput, type PlannerStation } from "./refuel-planner";
 
 // 50 L tank at 10 L/100 km: 0.2 % per km, 500 km on a full tank.
 const base: Omit<PlannerInput, "routeKm" | "stations"> = {
@@ -260,5 +260,29 @@ describe("pruneCandidates", () => {
   it("returns the input untouched under the cap", () => {
     const stations = [st("A", 1, 1), st("B", 2, 1)];
     expect(pruneCandidates(stations, 10, 200)).toBe(stations);
+  });
+});
+
+describe("maxStopsFor", () => {
+  it("allows the full tanks the trip needs plus two", () => {
+    // 50 L at 10 L/100 km with a 10 % reserve: 450 km per tank.
+    expect(maxStopsFor(2400, 50, 10, 10)).toBe(8);
+    expect(maxStopsFor(900, 50, 10, 10)).toBe(4);
+  });
+
+  it("stays within 3 and 10", () => {
+    expect(maxStopsFor(100, 50, 10, 10)).toBe(3);
+    expect(maxStopsFor(20000, 50, 10, 10)).toBe(10);
+    expect(maxStopsFor(500, 50, 10, 100)).toBe(10);
+    expect(maxStopsFor(500, Number.NaN, 10, 10)).toBe(3);
+  });
+
+  it("lets a long trip with regular stations plan", () => {
+    const stations = Array.from({ length: 59 }, (_, i) => st(`S${i}`, (i + 1) * 40, 1.4 + (i % 4) * 0.05));
+    const input = { ...base, startPct: 100, routeKm: 2400, stations };
+    expect(planRefuel({ ...input, maxStops: 3 }).reason).toBe("stops");
+    const r = planRefuel({ ...input, maxStops: maxStopsFor(2400, base.tankL, base.consumptionL100, base.reservePct) });
+    expect(r.status).toBe("ok");
+    expect(r.stops.length).toBeGreaterThan(3);
   });
 });

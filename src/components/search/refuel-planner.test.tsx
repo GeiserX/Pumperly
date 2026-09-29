@@ -168,6 +168,18 @@ describe("RefuelPlanner", () => {
     expect(screen.getByText("planner.infeasibleArrival")).toBeInTheDocument();
   });
 
+  it("plans a trip that needs more than three stops", async () => {
+    // 4,000 km with a station every 40 km: the default car (50 L at 6.5 L/100 km)
+    // needs five stops, more than a fixed cap of three would allow.
+    const stations = Array.from({ length: 99 }, (_, i) =>
+      makeStation(`s${i}`, { brand: `B${i}`, routeFraction: ((i + 1) * 40) / 4000, detourMin: 1 }),
+    );
+    const { onPlanChange } = renderPlanner({ stations, routeKm: 4000 });
+    await userEvent.click(screen.getByText("planner.title"));
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "100" } });
+    expect(onPlanChange.mock.lastCall![0].length).toBeGreaterThan(3);
+  });
+
   it("persists the vehicle profile", async () => {
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));

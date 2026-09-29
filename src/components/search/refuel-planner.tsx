@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import type { StationGeoJSON } from "@/types/station";
 import { useI18n } from "@/lib/i18n";
 import { useCurrency } from "@/lib/currency";
-import { planRefuel, type PlanResult } from "@/lib/refuel-planner";
+import { maxStopsFor, planRefuel, type PlanResult } from "@/lib/refuel-planner";
 import { useVehicleProfile, vehicleProfileSchema, type VehicleProfile } from "@/lib/vehicle-profile";
 
 export interface PlannedStopMarker {
@@ -46,8 +46,6 @@ export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
   reservePct: 10,
   timeValueEur: 15,
 };
-
-const MAX_STOPS = 3;
 
 export function RefuelPlanner({
   stations,
@@ -94,7 +92,7 @@ export function RefuelPlanner({
       arrivalPct,
       reservePct,
       timeValuePerHour: timeValue,
-      maxStops: MAX_STOPS,
+      maxStops: maxStopsFor(routeKm, profile.tankL, profile.consumptionL100, reservePct),
     });
   }, [open, detoursLoading, routeKm, stations, maxPrice, maxDetour, currency, profile, startPct, arrivalPct, reservePct, timeValue]);
 
