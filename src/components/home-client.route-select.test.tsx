@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { forwardRef, useEffect } from "react";
 import type { MapRef } from "react-map-gl/maplibre";
 import { HomeClient } from "./home-client";
@@ -108,6 +108,38 @@ describe("HomeClient — route selection wiring to the map", () => {
     (searchPanelProps.onFlyTo as (c: [number, number], id: string) => void)([-3.68, 40.42], "a");
     await waitFor(() => expect(typeof mapViewProps.onSelectPlannedStop).toBe("function"));
     (mapViewProps.onSelectPlannedStop as (c: [number, number], id: string) => void)([-3.62, 40.48], "b");
+    await waitFor(() => expect(mapViewProps.selectedStationId).toBe("b"));
+
+    flyTo.mockClear();
+    await onRoute([-3.7, 40.4], [-3.6, 40.5], [[-3.62, 40.48]], { isStationLeg: true });
+    await waitFor(() => expect(flyTo).toHaveBeenCalled());
+    expect(flyTo).toHaveBeenLastCalledWith(expect.objectContaining({ center: [-3.62, 40.48] }));
+  });
+
+  it("re-centres a station leg on the station dot clicked on the map, not the previous selection", async () => {
+    renderHome();
+    const onRoute = searchPanelProps.onRoute as (
+      o: [number, number], d: [number, number], w?: [number, number][], opts?: { isStationLeg?: boolean },
+    ) => Promise<void>;
+    onRoute([-3.7, 40.4], [-3.6, 40.5]);
+    await waitFor(() => expect((mapViewProps.routes as Route[] | null)?.length).toBe(3));
+
+    const station = (id: string, coordinates: [number, number]) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates },
+      properties: { id, name: id, brand: id, address: "", city: "", price: 1.5, reportedAt: null, fuelType: "B7", currency: "EUR", routeFraction: 0.5 },
+    });
+    act(() => {
+      (mapViewProps.onPrimaryStationsChange as (c: unknown) => void)({
+        type: "FeatureCollection",
+        features: [station("a", [-3.68, 40.42]), station("b", [-3.62, 40.48])],
+      });
+    });
+
+    // Station A from the list, then station B's dot on the map (id only).
+    (searchPanelProps.onFlyTo as (c: [number, number], id: string) => void)([-3.68, 40.42], "a");
+    await waitFor(() => expect(mapViewProps.selectedStationId).toBe("a"));
+    (mapViewProps.onSelectStation as (id: string) => void)("b");
     await waitFor(() => expect(mapViewProps.selectedStationId).toBe("b"));
 
     flyTo.mockClear();

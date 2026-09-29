@@ -340,7 +340,11 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
 
   const handleSelectStation = useCallback((id: string | null) => {
     setSelectedStationId(id);
-    if (id == null) selectedStationCoordsRef.current = null;
+    // Map dot clicks only carry the id. Resolve its coordinates so the station
+    // leg re-centres on this station rather than the previous selection.
+    selectedStationCoordsRef.current = id == null
+      ? null
+      : primaryStations.features.find((f) => f.properties.id === id)?.geometry.coordinates ?? null;
     // Deselect clears station-leg preview — search-panel's effect handles waypoint cleanup
     if (id == null) {
       if (stationLegAbortRef.current) { stationLegAbortRef.current.abort(); stationLegAbortRef.current = null; }
@@ -356,7 +360,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
         );
       }
     }
-  }, [routeState]);
+  }, [routeState, primaryStations]);
 
   const handleClearStationLeg = useCallback(() => {
     if (stationLegAbortRef.current) { stationLegAbortRef.current.abort(); stationLegAbortRef.current = null; }
