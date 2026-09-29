@@ -386,7 +386,7 @@ describe("RefuelPlanner", () => {
       expect(planSpy).toHaveBeenCalled();
     });
 
-    it("shows charge time and charger power per stop, and ? kW when unknown", async () => {
+    it("shows charge time and charger power per stop, and unknown power when missing", async () => {
       const chargers = [
         makeStation("f", { brand: "Ionity", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 350 }),
         makeStation("u", { brand: "Mystery", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
@@ -398,7 +398,7 @@ describe("RefuelPlanner", () => {
       expect(first.minutesPerPct).toBeCloseTo(0.32);
       expect(second.minutesPerPct).toBeCloseTo(3.273, 2);
       expect(screen.getByText(/· 350 kW$/)).toBeInTheDocument();
-      expect(screen.getByText(/· \? kW$/)).toBeInTheDocument();
+      expect(screen.getByText(/· popup.powerUnknown$/)).toBeInTheDocument();
       expect(screen.getAllByText(/^\d+ (h \d+ )?min · /).length).toBeGreaterThan(0);
     });
 
@@ -414,6 +414,45 @@ describe("RefuelPlanner", () => {
       expect(ids()).toEqual(["fast", "ac", "unknown"]);
       await userEvent.selectOptions(screen.getByLabelText("planner.minChargerKw"), "50");
       expect(ids()).toEqual(["fast"]);
+    });
+
+    it("caps the arrival level at the 80 % charge limit", () => {
+      // Settings are shared with fuel mode, where arrival can be above the cap.
+      render(
+        <RefuelPlanner
+          mode="ev"
+          stations={CHARGERS}
+          routeKm={300}
+          onStopSelect={vi.fn()}
+          onStopToggleOff={vi.fn()}
+          settings={{ ...DEFAULT_PLANNER_SETTINGS, open: true, arrivalPct: 95 }}
+          onSettingsChange={vi.fn()}
+        />,
+      );
+      const slider = screen.getByLabelText("planner.arrivalEv");
+      expect(slider).toHaveAttribute("max", "80");
+      expect(slider).toHaveAttribute("aria-valuetext", "80%");
+      expect(planSpy).toHaveBeenLastCalledWith(expect.objectContaining({ arrivalPct: 80 }));
+    });
+
+    it("explains a failed plan in charging terms", async () => {
+      const failed: PlanResult = { status: "infeasible", stops: [], totalFuelCost: 0, totalDetourMin: 0, totalChargeMin: 0, endPct: 0, profile: [], gapKm: 0, reason: "stops" };
+      planOverride.result = failed;
+      const { setMounted } = renderPlanner({ mode: "ev", stations: CHARGERS, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(screen.getByText("planner.infeasibleStopsEv")).toBeInTheDocument();
+      planOverride.result = { ...failed, reason: "arrival" };
+      setMounted(false);
+      setMounted(true);
+      expect(screen.getByText(/^planner.infeasibleArrivalEv/)).toBeInTheDocument();
+    });
+
+    it("blames the power filter when it leaves no charger", async () => {
+      const slow = [makeStation("ac", { price: null, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 22 })];
+      renderPlanner({ mode: "ev", stations: slow, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      await userEvent.selectOptions(screen.getByLabelText("planner.minChargerKw"), "50");
+      expect(screen.getByText("planner.infeasibleNoChargersPower")).toBeInTheDocument();
     });
 
     it("persists the EV profile apart from the fuel one", async () => {

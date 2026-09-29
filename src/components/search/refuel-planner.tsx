@@ -85,6 +85,8 @@ export function RefuelPlanner({
   const consumption = ev ? evProfile.consumptionKwh100 : fuelProfile.consumptionL100;
   const maxChargePct = ev ? EV_MAX_CHARGE_PCT : 100;
   const { open, startPct, arrivalPct, reservePct, timeValueEur, minChargerKw } = settings;
+  // Settings are shared with fuel mode, where arrival may be set above the EV charge cap.
+  const arrival = Math.min(arrivalPct, maxChargePct);
   const update = (patch: Partial<PlannerSettings>) => onSettingsChange({ ...settings, ...patch });
   // Drafts so a half-typed number ("6.") doesn't get rejected mid-edit.
   const [tankDraft, setTankDraft] = useState(String(capacity));
@@ -140,14 +142,14 @@ export function RefuelPlanner({
       tankL: capacity,
       consumptionL100: consumption,
       startPct,
-      arrivalPct,
+      arrivalPct: arrival,
       reservePct,
       // With no price the cost is all time, so any positive value gives the same plan.
       timeValuePerHour: ev ? 1 : timeValue,
       maxStops: maxStopsFor(routeKm, capacity, consumption, reservePct, maxChargePct),
       maxChargePct,
     });
-  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evProfile, minChargerKw, maxPrice, maxDetour, currency, capacity, consumption, maxChargePct, startPct, arrivalPct, reservePct, timeValue]);
+  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evProfile, minChargerKw, maxPrice, maxDetour, currency, capacity, consumption, maxChargePct, startPct, arrival, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"
@@ -192,13 +194,15 @@ export function RefuelPlanner({
   const infeasibleText = (p: PlanResult) => {
     switch (p.reason) {
       case "arrival":
-        return t("planner.infeasibleArrival").replace("{pct}", String(Math.max(arrivalPct, reservePct)));
+        return t(ev ? "planner.infeasibleArrivalEv" : "planner.infeasibleArrival").replace("{pct}", String(Math.max(arrival, reservePct)));
       case "reserve":
         return t("planner.infeasibleReserve").replace("{pct}", String(reservePct));
       case "stops":
-        return t("planner.infeasibleStops");
+        return t(ev ? "planner.infeasibleStopsEv" : "planner.infeasibleStops");
       case "no-candidates":
-        return t(detoursFailed ? "planner.noDetours" : ev ? "planner.infeasibleNoChargers" : "planner.infeasibleNoCandidates");
+        if (detoursFailed) return t("planner.noDetours");
+        if (!ev) return t("planner.infeasibleNoCandidates");
+        return t(minChargerKw > 0 ? "planner.infeasibleNoChargersPower" : "planner.infeasibleNoChargers");
       default:
         return t("planner.infeasible").replace("{km}", String(Math.round(p.gapKm ?? 0)));
     }
@@ -282,7 +286,7 @@ export function RefuelPlanner({
               </div>
             )}
             <PctSlider label={t(ev ? "planner.startEv" : "planner.start")} value={startPct} min={1} onChange={(v) => update({ startPct: v })} />
-            <PctSlider label={t(ev ? "planner.arrivalEv" : "planner.arrival")} value={arrivalPct} min={0} onChange={(v) => update({ arrivalPct: v })} />
+            <PctSlider label={t(ev ? "planner.arrivalEv" : "planner.arrival")} value={arrival} min={0} max={maxChargePct} onChange={(v) => update({ arrivalPct: v })} />
             <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={(v) => update({ reservePct: v })} />
             {!ev && <label className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               {t("planner.timeValue").replace("{cur}", symbol)}
@@ -344,7 +348,7 @@ export function RefuelPlanner({
                           <>
                             <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">+{kwh(stop.litres)}</p>
                             <p className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
-                              {minutes(stop.chargeMin)} · {f.properties.powerKw != null ? `${f.properties.powerKw} kW` : "? kW"}
+                              {minutes(stop.chargeMin)} · {f.properties.powerKw != null ? `${f.properties.powerKw} kW` : t("popup.powerUnknown")}
                             </p>
                           </>
                         ) : (
