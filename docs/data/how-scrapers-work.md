@@ -167,7 +167,7 @@ When a source is down or blocks Pumperly, its prices therefore stay at their las
 
 ## The scheduler
 
-Scrapers run inside the web app. There is no separate worker. Next.js calls `register()` in [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts) once when the server starts, and only in the Node.js runtime. `register()` builds the list of scrapers to run and starts a timer for each.
+Scrapers run inside the web app. There is no separate worker. Next.js calls `register()` in [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts) once when the server starts. In the Node.js runtime it loads [`src/instrumentation-node.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts) and calls `registerNode()`, which builds the list of scrapers to run and starts a timer for each. Keeping the scheduler in its own module keeps the scrapers out of the Edge bundle.
 
 ### Scraper keys
 
@@ -198,7 +198,7 @@ Each key's interval, in hours, comes from the first of these that is set:
 
 1. `PUMPERLY_SCRAPE_INTERVAL_<KEY>`, for example `PUMPERLY_SCRAPE_INTERVAL_FR=0.5` or `PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE=2`.
 2. `PUMPERLY_SCRAPE_INTERVAL_HOURS`, when it is greater than zero. It then applies to every key, EV keys included.
-3. The key's default in `DEFAULT_INTERVALS` in `instrumentation.ts`.
+3. The key's default in `DEFAULT_INTERVALS` in `instrumentation-node.ts`.
 4. 12 hours.
 
 An interval of zero or less disables that one key. Fuel sources default to between 1 and 12 hours, depending on how often the upstream changes. OpenChargeMap keys default to 24 hours. `EV_ES_REVE` defaults to 1 hour because the Mapa REVE API allows only a few requests per hour, so the scraper fetches a few pages each hour. [Countries and scrape schedule](../configuration/countries-and-schedule.md) lists every default.

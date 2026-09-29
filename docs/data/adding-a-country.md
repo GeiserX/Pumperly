@@ -27,7 +27,7 @@ The examples below use the placeholder country code `XX`, the country "Examplela
 | --- | --- | --- |
 | `src/scrapers/exampleland.ts` | The scraper class | Always |
 | `src/scrapers/exampleland.test.ts` | Its unit tests | Always |
-| `src/instrumentation.ts` | `XX` and `EV_XX` intervals, the import, the `XX` and `EV_XX` factories | Always |
+| `src/instrumentation-node.ts` | `XX` and `EV_XX` intervals, the import, the `XX` and `EV_XX` factories | Always |
 | `src/scrapers/cli.ts` | The import, the `XX` and `EV_XX` entries | Always |
 | `src/lib/config.ts` | A `COUNTRIES` entry | Always |
 | `src/components/map/country-markers.tsx` | A flag in `FLAG` | Always |
@@ -215,14 +215,14 @@ Run your file alone with `npx vitest run src/scrapers/exampleland.test.ts`, then
 
 ## 3. Register it with the scheduler
 
-In [`src/instrumentation.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts), add four things. The `EV_XX` key gives the country OpenChargeMap EV chargers. The OpenChargeMap scraper takes any country code, so it needs no other setup.
+In [`src/instrumentation-node.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts), add four things. The `EV_XX` key gives the country OpenChargeMap EV chargers. The OpenChargeMap scraper takes any country code, so it needs no other setup.
 
 ```ts
 // In DEFAULT_INTERVALS: hours between runs, with a comment naming the source.
 XX: 12,   // Exampleland open data: updated daily
 EV_XX: 24,
 
-// Inside register(), next to the other imports:
+// Inside registerNode(), next to the other imports:
 const { ExamplelandScraper } = await import("./scrapers/exampleland");
 
 // In scraperFactories:
@@ -249,7 +249,7 @@ EV_XX: [() => new OCMScraper("XX")],
 A second source for an existing country goes into that country's array, as `AU` does, so `--country=XX` runs both.
 
 !!! note "The registry test checks EV keys only"
-    [`src/scrapers/cli.test.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/cli.test.ts) fails when an `EV_` key is in `DEFAULT_INTERVALS` but missing from the factories in `instrumentation.ts` or from `cli.ts`, or when those two files list different `EV_` keys. Nothing checks the fuel keys. Check by hand that `XX` is in all three places.
+    [`src/scrapers/cli.test.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/cli.test.ts) fails when an `EV_` key is in `DEFAULT_INTERVALS` but missing from the factories in `instrumentation-node.ts` or from `cli.ts`, or when those two files list different `EV_` keys. Nothing checks the fuel keys. Check by hand that `XX` is in all three places.
 
 ## 5. Add the country to the map
 
@@ -384,7 +384,7 @@ Before you open it, check:
 - [ ] `npm test` and `npm run lint` pass.
 - [ ] The scraper ran once against a throwaway PostGIS, and a second run added no stations.
 - [ ] Each guard has a test that you watched fail with the guard removed.
-- [ ] `XX` and `EV_XX` are in `instrumentation.ts` (intervals and factories) and in `cli.ts`.
+- [ ] `XX` and `EV_XX` are in `instrumentation-node.ts` (intervals and factories) and in `cli.ts`.
 - [ ] `config.ts`, both flag tables, the attribution list, `.env.example`, `README.md` and the docs are updated.
 - [ ] A new currency has a band, a display entry and, if the ECB lacks it, a fallback rate.
 

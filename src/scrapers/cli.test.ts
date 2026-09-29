@@ -12,7 +12,7 @@ import path from "node:path";
 // silently filtered out, so EV scraping never ran for them.
 //
 // Both maps are module-private (DEFAULT_INTERVALS is a private const,
-// scraperFactories is built inside an async register() with dynamic imports),
+// scraperFactories is built inside an async registerNode() with dynamic imports),
 // so we statically parse the sources rather than importing them. This keeps
 // the production modules' export surface unchanged.
 
