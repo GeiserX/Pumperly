@@ -55,6 +55,8 @@ export interface StationGeoJSON {
     originalPrice?: number | null;
     /** Original currency code before conversion (only set when converted) */
     originalCurrency?: string;
+    /** EV chargers: highest single-connector power in kW (absent when unknown). */
+    powerKw?: number;
     routeFraction?: number;
     detourMin?: number;
     /** Distance from the query point in km (only set by /api/stations/nearest) */
