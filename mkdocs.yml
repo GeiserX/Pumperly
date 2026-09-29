@@ -108,9 +108,11 @@ exclude_docs: |
 
 nav:
   - Home: index.md
+  - Features at a glance: features.md
   - Get started:
       - Run with Docker Compose: getting-started/docker-compose.md
       - What happens on first start: getting-started/first-start.md
+      - Full stack with routing and geocoding: getting-started/full-stack.md
       - Run on Kubernetes with Helm: getting-started/kubernetes.md
       - Local development: getting-started/development.md
   - Using Pumperly:
@@ -120,6 +122,7 @@ nav:
       - Share links and deep links: using/links.md
   - Data sources:
       - Coverage and status: data/coverage.md
+      - Sources at a glance: data/sources-at-a-glance.md
       - Fuel price sources: data/fuel-sources.md
       - EV charging sources: data/ev-sources.md
       - How scrapers work: data/how-scrapers-work.md
