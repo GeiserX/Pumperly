@@ -45,7 +45,7 @@ export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
   open: false,
   startPct: 50,
   arrivalPct: 20,
-  reservePct: 10,
+  reservePct: 20,
   timeValueEur: 15,
 };
 

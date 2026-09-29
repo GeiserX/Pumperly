@@ -128,7 +128,7 @@ describe("RefuelPlanner", () => {
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveTextContent("Repsol");
     expect(screen.getByLabelText("planner.start")).toHaveAttribute("aria-valuetext", "50%");
-    expect(screen.getByLabelText("planner.reserve")).toHaveAttribute("aria-valuetext", "10%");
+    expect(screen.getByLabelText("planner.reserve")).toHaveAttribute("aria-valuetext", "20%");
     expect(screen.getByRole("button", { name: /Repsol/, pressed: true })).toBeInTheDocument();
   });
 
