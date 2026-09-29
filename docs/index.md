@@ -120,8 +120,19 @@ flowchart LR
 - If something is broken, read [Monitoring and troubleshooting](operations/troubleshooting.md), then open an [issue on GitHub](https://github.com/GeiserX/Pumperly/issues).
 - To report a security problem, follow the [security policy](https://github.com/GeiserX/Pumperly/blob/main/SECURITY.md) and do not open a public issue.
 - The [Glossary](reference/glossary.md) explains the terms these pages use.
-- Separate projects connect Pumperly to Home Assistant, to AI assistants over MCP and to n8n. See [Integrations](integrations.md).
-- To add a country or send a fix, read [Adding a country](data/adding-a-country.md) and [Contributing](contributing.md).
+- Separate projects connect Pumperly to Home Assistant, to AI assistants over MCP and to n8n. See [Related projects](related.md).
+- To add a country or send a fix, read [Adding a country](data/adding-a-country.md) and [Development](development.md).
+
+## All pages
+
+- [Features at a glance](features.md)
+- Get started: [Run with Docker Compose](getting-started/docker-compose.md) · [What happens on first start](getting-started/first-start.md) · [Full stack with routing and geocoding](getting-started/full-stack.md) · [Run on Kubernetes with Helm](getting-started/kubernetes.md)
+- Using Pumperly: [The map](using/map.md) · [Planning a route](using/routes.md) · [EV charging](using/ev-charging.md) · [Share links and deep links](using/links.md)
+- Data sources: [Coverage and status](data/coverage.md) · [Sources at a glance](data/sources-at-a-glance.md) · [Fuel price sources](data/fuel-sources.md) · [EV charging sources](data/ev-sources.md) · [How scrapers work](data/how-scrapers-work.md) · [Adding a country](data/adding-a-country.md)
+- Configuration: [Countries and scrape schedule](configuration/countries-and-schedule.md) · [Routing with Valhalla](configuration/routing-valhalla.md) · [Geocoding with Photon](configuration/geocoding-photon.md) · [API keys](configuration/api-keys.md)
+- Operations: [Upgrading](operations/upgrading.md) · [Backing up the database](operations/backup-and-restore.md) · [Monitoring and troubleshooting](operations/troubleshooting.md)
+- Reference: [Environment variables](reference/environment-variables.md) · [HTTP API](reference/api.md) · [Data model](reference/data-model.md) · [Fuel types](reference/fuel-types.md) · [Currencies and exchange rates](reference/currencies.md) · [Glossary](reference/glossary.md)
+- [Related projects](related.md) · [Roadmap](roadmap.md) · [Development](development.md)
 
 ## License
 

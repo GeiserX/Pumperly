@@ -7,8 +7,8 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 - Plan a route from A to B with autocomplete and alternative routes
 - See every fuel station and EV charger within a corridor along your route
 - Filter by "cheapest within N minutes detour" — the feature no competitor has
-- Covers 36 fuel-price countries across Europe, Latin America, and Oceania, plus US EV-charger coverage (stations only — no national fuel-price API exists)
-- 16 languages, multi-currency, fully self-hostable
+- Covers 39 fuel-price countries across Europe, Latin America, Asia and Oceania, plus US EV-charger coverage (stations only — no national fuel-price API exists)
+- 17 languages, 37 currencies, fully self-hostable
 - 100% open source (AGPL-3.0-or-later), no tracking, no cookies, no accounts
 
 ## Features
@@ -21,8 +21,8 @@ Pumperly combines route planning with real-time fuel prices and EV charging stat
 - **Corridor station list** — Sorted by position along route, with price deltas vs average
 - **Price color scale** — Green (cheap) to red (expensive) based on P5/P95 percentiles
 - **Station clustering** — GPU-accelerated clustering at low zoom levels
-- **16 languages** — ES, EN, FR, DE, IT, PT, PL, CS, HU, BG, SK, DA, SV, NO, SR, FI
-- **Multi-currency** — EUR, GBP, CHF, RON, DKK, SEK, NOK, PLN, CZK, HUF, BGN, RSD, TRY, ARS, MXN, AUD
+- **17 languages** — ES, EN, FR, DE, IT, PT, PL, CS, HU, BG, SK, DA, SV, NO, SR, FI, CA
+- **37 currencies** — from EUR, GBP and CHF to ARS, MXN and TWD. See [Currencies and exchange rates](reference/currencies.md)
 - **Geolocation** — Auto-centers on your location with one tap
 - **Privacy-first** — No cookies, no analytics, no personal data collection
 

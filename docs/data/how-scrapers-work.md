@@ -246,7 +246,7 @@ It differs from the scheduler in a few ways:
 - It does not run `STATIC_` datasets.
 - It prints a summary per scraper and exits with status 1 if any scraper recorded an error.
 
-[Local development](../getting-started/development.md) shows how to point it at a local database.
+[Run from source](../development.md#run-from-source) shows how to point it at a local database.
 
 ## Handing a country over to a new source
 

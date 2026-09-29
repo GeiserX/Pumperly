@@ -30,8 +30,8 @@ Pumperly is designed to be self-hosted. The full stack runs as four Docker conta
 ## Quick start
 
 ```bash
-git clone https://github.com/GeiserX/pumperly.git
-cd pumperly
+git clone https://github.com/GeiserX/Pumperly.git
+cd Pumperly
 cp .env.example .env
 # Edit .env — see "Configuration" below
 docker compose -f docker/docker-compose.yml up -d
@@ -107,7 +107,7 @@ Photon provides address autocomplete and geocoding, built on OpenStreetMap data 
 
 ## Full production docker-compose.yml
 
-The provided `docker/docker-compose.yml` includes a minimal setup (PostGIS only). For a full production deployment, use this complete configuration:
+The provided `docker/docker-compose.yml` runs PostGIS, the schema migrations and the app, without routing or address search. For a full production deployment, use this complete configuration:
 
 ```yaml
 services:

@@ -5,7 +5,7 @@ This page follows a new install from the first `docker compose up` to a map full
 ## The short version
 
 1. PostGIS creates its data directory, user and database.
-2. You apply the schema. The app never creates tables itself. See [step 4 of Run with Docker Compose](docker-compose.md#4-create-the-database-schema).
+2. The schema is applied: by the `migrate` service of the shipped compose file, before the app starts, or by you on other setups. The app never creates tables itself. See [step 4 of Run with Docker Compose](docker-compose.md#4-create-the-database-schema).
 3. The app starts its web server on port 3000 and its scheduler in the same process.
 4. The scheduler starts each enabled scraper in turn, 5 seconds apart, beginning 10 seconds after boot.
 5. As each first scrape finishes, that country's stations appear on the map.
@@ -34,10 +34,10 @@ sequenceDiagram
 
 The `postgis/postgis` image initialises its volume on the first start only. It creates the `pumperly` user and database from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`. Later starts reuse the volume and ignore those variables.
 
-The app's image runs `node server.js` and nothing else. It does not run migrations. The tables come from the SQL files under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations), which you apply once. [Run with Docker Compose](docker-compose.md#4-create-the-database-schema) shows how.
+The app's image runs `node server.js` and nothing else. It does not run migrations. The tables come from the SQL files under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations). The shipped compose file applies them with its `migrate` service before the app starts; on other setups you apply them yourself. [Run with Docker Compose](docker-compose.md#4-create-the-database-schema) shows how.
 
 !!! tip "Create the schema before the app's first start"
-    If the app starts first, every first scrape fails with `relation "stations" does not exist`. A failed scraper waits for its next interval before it tries again, which is 12 hours for many countries. Once the schema exists, restart the app to scrape straight away.
+    The shipped compose file already does. On other setups, if the app starts first, every first scrape fails with `relation "stations" does not exist`. A failed scraper waits for its next interval before it tries again, which is 12 hours for many countries. Once the schema exists, restart the app to scrape straight away.
 
 ## The scheduler
 

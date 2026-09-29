@@ -92,7 +92,7 @@ The steps below restore into a new, empty database. The dump brings the PostGIS 
 
     ```bash
     # 1. Stop the app. The database keeps running.
-    docker compose -f docker/docker-compose.yml -f docker/app.yml stop app
+    docker compose -f docker/docker-compose.yml stop app
 
     # 2. Replace the database with an empty one.
     docker compose -f docker/docker-compose.yml exec db dropdb -U pumperly pumperly
@@ -103,10 +103,10 @@ The steps below restore into a new, empty database. The dump brings the PostGIS 
       pg_restore -U pumperly -d pumperly --no-owner < pumperly-2026-01-01.dump
 
     # 4. Start the app again.
-    docker compose -f docker/docker-compose.yml -f docker/app.yml start app
+    docker compose -f docker/docker-compose.yml start app
     ```
 
-    These commands follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md), where the Pumperly service is `app` in `docker/app.yml`. Adjust the file names and the service name if your setup differs.
+    These commands follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md), where the Pumperly service is `app` in `docker/docker-compose.yml`. Adjust the file name and the service name if your setup differs. `start app` does not rerun `migrate`: the dump already carries the schema of the release it was taken from.
 
 === "Helm"
 

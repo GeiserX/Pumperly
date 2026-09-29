@@ -179,7 +179,7 @@ The response is a `FeatureCollection` of [station features](#the-station-feature
 
 ## GET /api/stations/nearest {#stations-nearest}
 
-Returns the stations closest to a point, nearest first. The web app does not call this endpoint. It is there for scripts and [integrations](../integrations.md).
+Returns the stations closest to a point, nearest first. The web app does not call this endpoint. It is there for scripts and [integrations](../related.md).
 
 **Query parameters:**
 
