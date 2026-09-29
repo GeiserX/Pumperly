@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { LOCALES, type Locale } from "./i18n";
+import { LOCALES, translations, type Locale } from "./i18n";
 
 describe("LOCALES", () => {
   it("is a non-empty array", () => {
@@ -50,6 +50,25 @@ describe("LOCALES", () => {
   it("all labels are non-empty native language names", () => {
     for (const l of LOCALES) {
       expect(l.label.length).toBeGreaterThan(2);
+    }
+  });
+});
+
+describe("planner translations", () => {
+  const plannerKeys = (locale: Locale) => Object.keys(translations[locale]).filter((k) => k.startsWith("planner.")).sort();
+
+  it("every locale has the same planner keys", () => {
+    const expected = plannerKeys("en");
+    expect(expected).toEqual(expect.arrayContaining(["planner.noRates", "planner.infeasibleReserve", "planner.infeasibleStops", "planner.dipsReserve", "planner.noDetours"]));
+    for (const { code } of LOCALES) expect({ code, keys: plannerKeys(code) }).toEqual({ code, keys: expected });
+  });
+
+  it("keeps the placeholders in every planner message", () => {
+    for (const { code } of LOCALES) {
+      for (const key of plannerKeys(code)) {
+        const placeholders = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort();
+        expect({ code, key, p: placeholders(translations[code][key]) }).toEqual({ code, key, p: placeholders(translations.en[key]) });
+      }
     }
   });
 });
