@@ -56,8 +56,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     themeListeners.forEach((l) => l());
   }, []);
 
+  // The map style never reaches the SSR HTML, so it can read the real theme
+  // during hydration. Otherwise the map is created with the light style and
+  // then swapped, flashing light for dark users and loading two styles.
+  const mapTheme = typeof document === "undefined" ? theme : getThemeSnapshot();
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, mapStyle: MAP_STYLES[theme] }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, mapStyle: MAP_STYLES[mapTheme] }}>
       {children}
     </ThemeContext.Provider>
   );
