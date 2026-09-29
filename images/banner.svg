@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="50%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="50%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:0.3"/>
+      <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="300" fill="url(#bg)" rx="16"/>
+
+  <!-- Decorative road line -->
+  <path d="M 0 200 Q 200 160, 350 180 T 550 170 T 750 190 T 900 175" fill="none" stroke="url(#road)" stroke-width="3" stroke-dasharray="12 8"/>
+  <path d="M 0 210 Q 200 170, 350 190 T 550 180 T 750 200 T 900 185" fill="none" stroke="url(#road)" stroke-width="2" stroke-dasharray="8 6" opacity="0.5"/>
+
+  <!-- Station dots along the road -->
+  <circle cx="180" cy="175" r="5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="350" cy="182" r="5" fill="#22c55e" opacity="0.9"/>
+  <circle cx="480" cy="173" r="4" fill="#eab308" opacity="0.7"/>
+  <circle cx="620" cy="178" r="5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="750" cy="192" r="4" fill="#ef4444" opacity="0.7"/>
+
+  <!-- Accent line -->
+  <rect x="300" y="40" width="300" height="3" rx="1.5" fill="url(#accent)" opacity="0.8"/>
+
+  <!-- Title -->
+  <text x="450" y="110" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="56" font-weight="700" fill="white" letter-spacing="-1">Pumperly</text>
+
+  <!-- Subtitle -->
+  <text x="450" y="140" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" fill="#94a3b8" letter-spacing="3" font-weight="400">ENERGY ROUTE PLANNER</text>
+
+  <!-- Bottom accent line -->
+  <rect x="300" y="235" width="300" height="3" rx="1.5" fill="url(#accent)" opacity="0.8"/>
+
+  <!-- Tagline -->
+  <text x="450" y="260" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#64748b">Find the cheapest fuel and EV charging along any route</text>
+</svg>

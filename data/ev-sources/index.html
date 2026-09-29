@@ -1,0 +1,2803 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Open-source fuel and EV charging price map and route planner. Self-hosted, with official price data from dozens of countries.">
+      
+      
+      
+        <link rel="canonical" href="https://geiserx.github.io/Pumperly/data/ev-sources/">
+      
+      
+        <link rel="prev" href="../fuel-sources/">
+      
+      
+        <link rel="next" href="../how-scrapers-work/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>EV charging sources - Pumperly</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/theme.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ev-charging-sources" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
+      
+  <img src="../../logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pumperly
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              EV charging sources
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/GeiserX/Pumperly" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GeiserX/Pumperly
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/docker-compose/" class="md-tabs__link">
+          
+  
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../using/map/" class="md-tabs__link">
+          
+  
+  
+  Using Pumperly
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../coverage/" class="md-tabs__link">
+          
+  
+  
+  Data sources
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../configuration/countries-and-schedule/" class="md-tabs__link">
+          
+  
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../operations/upgrading/" class="md-tabs__link">
+          
+  
+  
+  Operations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/environment-variables/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../integrations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Integrations
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
+      
+  <img src="../../logo.svg" alt="logo">
+
+    </a>
+    Pumperly
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/GeiserX/Pumperly" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GeiserX/Pumperly
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/docker-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run with Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What happens on first start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/kubernetes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run on Kubernetes with Helm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using Pumperly
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Using Pumperly
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planning a route
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/ev-charging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EV charging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/links/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Share links and deep links
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data sources
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data sources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coverage and status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fuel-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fuel price sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EV charging sources
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EV charging sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which source a country uses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-charge-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Charge Map
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open Charge Map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ocm-what-is-imported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is imported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-without-a-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Without an API key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-tiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a large country is fetched
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapa-reve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapa REVE, Spain
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mapa REVE, Spain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reve-rate-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The rate limit shapes everything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-page-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which pages a run fetches
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-what-is-imported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is imported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-handover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The handover from Open Charge Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-key-renewal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Renewing the key
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bnetza" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BNetzA Ladesäulenregister, Germany
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BNetzA Ladesäulenregister, Germany">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bnetza-source-choice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing Germany's source
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bnetza-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the file is read
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bnetza-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup after each run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching a source back
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-scrapers-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How scrapers work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding-a-country/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a country
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/countries-and-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Countries and scrape schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/routing-valhalla/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routing with Valhalla
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/geocoding-photon/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geocoding with Photon
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/api-keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/upgrading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/backup-and-restore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backing up the database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring and troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/environment-variables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fuel-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fuel types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/currencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Currencies and exchange rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which source a country uses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-charge-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Charge Map
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open Charge Map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ocm-what-is-imported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is imported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-without-a-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Without an API key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-tiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a large country is fetched
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocm-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapa-reve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapa REVE, Spain
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mapa REVE, Spain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reve-rate-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The rate limit shapes everything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-page-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which pages a run fetches
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-what-is-imported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is imported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-handover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The handover from Open Charge Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reve-key-renewal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Renewing the key
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bnetza" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BNetzA Ladesäulenregister, Germany
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BNetzA Ladesäulenregister, Germany">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bnetza-source-choice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing Germany's source
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bnetza-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the file is read
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bnetza-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup after each run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching a source back
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/GeiserX/Pumperly/edit/main/docs/data/ev-sources.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="ev-charging-sources">EV charging sources<a class="headerlink" href="#ev-charging-sources" title="Permanent link">&para;</a></h1>
+<p>This page describes where Pumperly's EV charging locations come from, how each source is read and which settings tune it. EV chargers carry a location, an operator and an address. They carry no price.</p>
+<h2 id="the-three-sources">The three sources<a class="headerlink" href="#the-three-sources" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Covers</th>
+<th>Key</th>
+<th>Every</th>
+<th>Licence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#open-charge-map">Open Charge Map</a></td>
+<td>Every supported country and the United States</td>
+<td><code>PUMPERLY_OCM_API_KEY</code></td>
+<td>24 h</td>
+<td>Open Database License (ODbL)</td>
+</tr>
+<tr>
+<td><a href="#mapa-reve">Mapa REVE</a></td>
+<td>Spain</td>
+<td><code>PUMPERLY_REVE_API_KEY</code></td>
+<td>1 h</td>
+<td>Non-commercial use, credit Red Eléctrica de España</td>
+</tr>
+<tr>
+<td><a href="#bnetza">BNetzA Ladesäulenregister</a></td>
+<td>Germany</td>
+<td>None</td>
+<td>24 h</td>
+<td>CC BY 4.0, credit "Bundesnetzagentur.de"</td>
+</tr>
+</tbody>
+</table>
+<p>Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced.</p>
+<p>None of the three publishes a per-litre price. Mapa REVE publishes connector tariffs, but they are per kWh and per session, which the price model cannot hold, so they are left out.</p>
+<h2 id="which-source">Which source a country uses<a class="headerlink" href="#which-source" title="Permanent link">&para;</a></h2>
+<p>Every other country uses Open Charge Map. Spain and Germany each have a second, official source, and each uses exactly one of its two sources at a time. Running both would put two pins on almost every charger, because the sources overlap heavily.</p>
+<pre class="mermaid"><code>flowchart TD
+    ES[Spain] --&gt; K{PUMPERLY_REVE_API_KEY set?}
+    K -- Yes --&gt; REVE[Mapa REVE, EV_ES_REVE]
+    K -- No --&gt; OCMES[Open Charge Map, EV_ES]
+    DE[Germany] --&gt; S{PUMPERLY_DE_EV_SOURCE=ocm?}
+    S -- Yes --&gt; OCMDE[Open Charge Map, EV_DE]
+    S -- No --&gt; BNETZA[BNetzA register, EV_DE_BNETZA]</code></pre>
+<p>The scheduler and the manual scraper command apply the same rule, from <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain-ev-source.ts"><code>spain-ev-source.ts</code></a> and <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany-ev-source.ts"><code>germany-ev-source.ts</code></a>. In the scheduler, <code>PUMPERLY_EV_ENABLED=0</code> turns off all three sources at once.</p>
+<div class="admonition warning">
+<p class="admonition-title">Naming a source by hand overrides the rule</p>
+<p>The manual command <code>npm run scraper:run -- --country=all</code> picks one source per country, like the scheduler. Naming a scraper explicitly, such as <code>--country=EV_ES</code>, runs it even when the other source is active. One such run puts back every Open Charge Map row the registry had retired. They stay, as duplicates, until the registry's next error-free run deletes them again.</p>
+</div>
+<h2 id="open-charge-map">Open Charge Map<a class="headerlink" href="#open-charge-map" title="Permanent link">&para;</a></h2>
+<p><a href="https://openchargemap.org">Open Charge Map</a> is a community database of charging locations worldwide. Pumperly runs one scraper per country, keyed <code>EV_&lt;code&gt;</code>, for example <code>EV_FR</code> or <code>EV_US</code>. The code is in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/ocm.ts"><code>src/scrapers/ocm.ts</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>ocm</code></td>
+</tr>
+<tr>
+<td>Station ids</td>
+<td><code>ocm-&lt;id&gt;</code></td>
+</tr>
+<tr>
+<td>Every</td>
+<td>24 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td><code>PUMPERLY_OCM_API_KEY</code>. Free: sign in at openchargemap.org and open <strong>My Profile</strong>, then <strong>My API Keys</strong></td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Open Database License (ODbL)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ocm-what-is-imported">What is imported<a class="headerlink" href="#ocm-what-is-imported" title="Permanent link">&para;</a></h3>
+<p>Only chargers marked operational are requested. Each one becomes a station with:</p>
+<ul>
+<li><strong>Brand:</strong> the operator's name.</li>
+<li><strong>Name:</strong> the location's title, or the operator followed by "Charging" when there is no title.</li>
+<li><strong>Address:</strong> the first address line and the postcode.</li>
+<li><strong>Town and province:</strong> as Open Charge Map records them.</li>
+</ul>
+<h3 id="ocm-without-a-key">Without an API key<a class="headerlink" href="#ocm-without-a-key" title="Permanent link">&para;</a></h3>
+<p>The scrapers still run on schedule. Each one logs <code>PUMPERLY_OCM_API_KEY not set, skipping</code> and writes nothing. Because the run returned no stations, the scheduler reports it with one error. German chargers still load from the BNetzA register, which needs no key.</p>
+<h3 id="ocm-tiling">How a large country is fetched<a class="headerlink" href="#ocm-tiling" title="Permanent link">&para;</a></h3>
+<p>Open Charge Map returns at most 5,000 results per request and cuts the rest off without saying so. Small countries fit in one request. Large ones, such as the United States, Germany, the United Kingdom and France, do not.</p>
+<p>The first request for a country has no bounding box. When it comes back full, the scraper splits the whole world into four boxes and asks for each one, still filtered by country code. It keeps splitting any box that comes back full. Boxes share edges, so results are merged by their Open Charge Map id.</p>
+<p>Open Charge Map also under-reports large boxes: a box wider than about 2 degrees can return far fewer results than it holds. So a box wider than the trusted span is split again whenever it returns anything, even when it is not full.</p>
+<p>Splitting stops at any of these limits:</p>
+<ul>
+<li>a box narrower than 0.05 degrees, about 5 km;</li>
+<li>the request budget for the country, 800 requests by default;</li>
+<li>15 minutes of active request time for the country.</li>
+</ul>
+<p>When a limit stops the split, the scraper logs <code>coverage may be partial</code> and keeps everything it found.</p>
+<h3 id="ocm-rate-limits">Rate limits<a class="headerlink" href="#ocm-rate-limits" title="Permanent link">&para;</a></h3>
+<p>All Open Charge Map scrapers share one rate limit on Open Charge Map's side, so they share one queue on Pumperly's side:</p>
+<ul>
+<li><strong>One request at a time across all countries,</strong> by default. Time spent waiting in this queue does not count against a country's 15-minute budget.</li>
+<li><strong>A 600 ms pause before each tile request.</strong></li>
+<li><strong>HTTP 429 is retried four times.</strong> The scraper waits for the time the <code>Retry-After</code> header gives. Without the header it waits 1, 2, 4 and then 8 seconds. It keeps its place in the queue while it waits, which pauses all Open Charge Map traffic until the limit recovers. A fifth 429 fails that country's run, and nothing from it is written.</li>
+</ul>
+<h3 id="ocm-settings">Settings<a class="headerlink" href="#ocm-settings" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUMPERLY_OCM_API_KEY</code></td>
+<td>unset</td>
+<td>API key. Without it, nothing is fetched.</td>
+</tr>
+<tr>
+<td><code>PUMPERLY_OCM_MAX_CONCURRENCY</code></td>
+<td><code>1</code></td>
+<td>Open Charge Map requests allowed at once, across all countries.</td>
+</tr>
+<tr>
+<td><code>PUMPERLY_OCM_TILE_DELAY_MS</code></td>
+<td><code>600</code></td>
+<td>Pause before each tile request, in milliseconds.</td>
+</tr>
+<tr>
+<td><code>PUMPERLY_OCM_MAX_REQUESTS</code></td>
+<td><code>800</code></td>
+<td>Request budget per country per run.</td>
+</tr>
+<tr>
+<td><code>PUMPERLY_OCM_TRUST_SPAN_DEG</code></td>
+<td><code>2</code></td>
+<td>Widest box, in degrees, whose result count is trusted without splitting.</td>
+</tr>
+</tbody>
+</table>
+<p>The scrapers read these values once, when the app starts. A value that is not a number, or is out of range, falls back to the default.</p>
+<div class="admonition note">
+<p class="admonition-title">Chargers removed from Open Charge Map stay on the map</p>
+<p>The shared scraper pipeline only deletes fuel stations that lost their prices. It never deletes EV chargers. A charger that disappears from Open Charge Map keeps its pin in Pumperly. The only runs that delete Open Charge Map rows are the Spanish and German handovers described below.</p>
+</div>
+<h2 id="mapa-reve">Mapa REVE, Spain<a class="headerlink" href="#mapa-reve" title="Permanent link">&para;</a></h2>
+<p><a href="https://www.mapareve.es">Mapa REVE</a> is Spain's official register of charging points, run by Red Eléctrica de España (REE). Every Spanish charge point operator files into it. The code is in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/reve.ts"><code>src/scrapers/reve.ts</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>reve</code></td>
+</tr>
+<tr>
+<td>Scraper key</td>
+<td><code>EV_ES_REVE</code></td>
+</tr>
+<tr>
+<td>Station ids</td>
+<td><code>reve-&lt;id&gt;</code></td>
+</tr>
+<tr>
+<td>Every</td>
+<td>1 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td><code>PUMPERLY_REVE_API_KEY</code>. Free, request it at <a href="https://www.mapareve.es/api-contacto">mapareve.es/api-contacto</a>. Keys expire after about a year</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Non-commercial use only. Red Eléctrica de España must be credited, and the data must not be altered or misrepresented</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reve-rate-limit">The rate limit shapes everything<a class="headerlink" href="#reve-rate-limit" title="Permanent link">&para;</a></h3>
+<p>The API allows <strong>5 requests per hour</strong> and returns at most 100 locations per request. The register holds about 14,500 locations across about 146 pages. There is no bulk export. So a complete pass takes about 30 hours at the hard limit, and one run can never fetch the whole register.</p>
+<p>The scraper works with that limit. Each hourly run fetches a few pages and saves them, and the register fills in over successive runs. Saving a station that already exists updates it in place, and the pipeline never deletes EV chargers. So each run adds to what the previous runs saved.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUMPERLY_REVE_PAGES_PER_RUN</code></td>
+<td><code>4</code></td>
+<td>Pages per run, capped at 5. A value below 1 or not a number falls back to 4. The default leaves one request per hour spare for a manual run.</td>
+</tr>
+<tr>
+<td><code>PUMPERLY_REVE_CUTOVER_RATIO</code></td>
+<td><code>0.95</code></td>
+<td>Share of the register that must be stored before Open Charge Map's Spanish rows are deleted. Must be above 0 and at most 1.</td>
+</tr>
+</tbody>
+</table>
+<p>At the default of 4 pages per run, the first full load takes about 37 hours. At 5 it takes about 30.</p>
+<h3 id="reve-page-window">Which pages a run fetches<a class="headerlink" href="#reve-page-window" title="Permanent link">&para;</a></h3>
+<p>The scraper stores no cursor. It works out the first page of each run from the clock:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>first page = (hours since 1 January 1970 × pages per run) mod total pages
+</code></pre></div>
+<p>A restart, a redeploy or a fresh install therefore carries on from wherever the clock points, with no state to save or lose. After a full pass the window wraps around and starts again, and that is how existing locations get refreshed.</p>
+<p>The first run after the app starts does not yet know how many pages exist. It fetches page 1, reads the page count from the response headers, then spends the rest of its budget on the pages the clock points to.</p>
+<p>When the API answers HTTP 429, the hourly budget is spent. The API sends no <code>Retry-After</code> and the window is a whole hour, so the scraper stops and saves what it has. The next run continues.</p>
+<div class="admonition warning">
+<p class="admonition-title">Keep REVE hourly</p>
+<p><code>PUMPERLY_SCRAPE_INTERVAL_HOURS</code> also applies to <code>EV_ES_REVE</code>. A global value of <code>24</code> means one run per day, which stretches a full pass from days to weeks. To use a global interval and keep REVE hourly, also set <code>PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE=1</code>. A per-scraper setting always wins over the global one.</p>
+</div>
+<h3 id="reve-what-is-imported">What is imported<a class="headerlink" href="#reve-what-is-imported" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Brand:</strong> the operator's trade name, taken from the <code>owner</code> field before <code>-</code>. For example, <code>Qwello - www.qwello.es</code> becomes <code>Qwello</code>. When <code>owner</code> is empty, the legal name in <code>cpo_name</code> is used.</li>
+<li><strong>Name:</strong> REVE does not send one, so the scraper builds it from the brand and the highest connector power at the location, for example <code>Qwello — 150 kW</code>. Without a brand it uses <code>Punto de recarga</code>.</li>
+<li><strong>Address:</strong> the street address and the postcode.</li>
+<li><strong>Province:</strong> converted from the INE province code, spelled the same way as the Spanish fuel data.</li>
+</ul>
+<h3 id="reve-handover">The handover from Open Charge Map<a class="headerlink" href="#reve-handover" title="Permanent link">&para;</a></h3>
+<p>REVE and Open Charge Map overlap heavily in Spain: most REVE locations sit within 50 m of an Open Charge Map pin. The switch works like this:</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Admin
+    participant Scheduler
+    participant REVE as REVE scraper
+    participant DB as Database
+    Admin-&gt;&gt;Scheduler: Set PUMPERLY_REVE_API_KEY, restart
+    Scheduler-&gt;&gt;Scheduler: Stop scheduling EV_ES (Open Charge Map)
+    loop Every hour
+        Scheduler-&gt;&gt;REVE: Run EV_ES_REVE
+        REVE-&gt;&gt;DB: Save up to 4 pages of locations
+        REVE-&gt;&gt;DB: Count stored REVE rows
+        alt Below 95% of the register
+            Note over DB: Open Charge Map rows for Spain stay
+        else At or above 95%, and the run had no errors
+            REVE-&gt;&gt;DB: Delete every Spanish Open Charge Map charger
+        end
+    end</code></pre>
+<p>Open Charge Map stops being scraped for Spain at once. Its existing Spanish rows stay while REVE fills in, so the map is never empty of chargers. <strong>Expect two pins for many chargers during that time.</strong> Once the stored REVE rows reach the cutover ratio of the register's total, the next error-free run deletes every Spanish Open Charge Map charger. The check needs the register's total from the API, so it never runs on a guess.</p>
+<h3 id="reve-key-renewal">Renewing the key<a class="headerlink" href="#reve-key-renewal" title="Permanent link">&para;</a></h3>
+<p>REVE keys expire about a year after they are issued. Nothing fails loudly when a key lapses. Each run logs an HTTP error, and the Spanish chargers already stored stay on the map but stop being refreshed. Open Charge Map does not come back for Spain, because the key is still set.</p>
+<p>The repository carries a scheduled GitHub Actions workflow, <a href="https://github.com/GeiserX/Pumperly/blob/main/.github/workflows/reve-key-renewal.yml"><code>.github/workflows/reve-key-renewal.yml</code></a>, for the project's own key. Once a year, a week before that key expires, it opens an issue titled "Renew the Mapa REVE API key (expires <date>)" with the renewal steps. If such an issue is already open, it adds a comment instead. It can also be run by hand from the Actions tab.</p>
+<p>The workflow only tracks the project's own key. If you run your own instance, keep your own reminder. The renewal steps are the same:</p>
+<ol>
+<li>Request a new key at <a href="https://www.mapareve.es/api-contacto">mapareve.es/api-contacto</a>. State that the use is non-commercial. The key arrives by email with its new expiry date.</li>
+<li>Set <code>PUMPERLY_REVE_API_KEY</code> to the new key and restart the app.</li>
+<li>
+<p>Check the key with one request. HTTP <code>200</code> means it works. <code>401</code> or <code>403</code> means it is wrong.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sS<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"x-api-key: </span><span class="nv">$NEW_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="s1">'https://www.mapareve.es/api/external/v1/locations?limit=1&amp;page=1'</span>
+</code></pre></div>
+<p>This request counts against the hourly limit of 5.</p>
+</li>
+<li>
+<p>In a fork that uses the workflow, update both the <code>schedule</code> cron and <code>KEY_EXPIRY</code> to a week before the new expiry date.</p>
+</li>
+</ol>
+<details class="note">
+<summary>The workflow file</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">REVE API key renewal reminder</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># The Mapa REVE API key that feeds Spain's EV charging data expires once a year.</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># When it does, the REVE scraper starts failing and Spanish charger data quietly</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># goes stale — nothing else breaks, so it would go unnoticed for a long time.</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1">#</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># This opens an issue a week before expiry with the renewal steps in it.</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">#</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># Renewing? Change BOTH the `schedule` cron below and KEY_EXPIRY to the new</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># date, so next year's reminder still lands a week early.</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1">#</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Current key expires: 2027-08-21  →  reminder fires 2027-08-14.</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="nt">on</span><span class="p">:</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">  </span><span class="nt">schedule</span><span class="p">:</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="c1"># 08:00 UTC on 14 August, every year (a week before the 21 August expiry).</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">cron</span><span class="p">:</span><span class="w"> </span><span class="s">"0</span><span class="nv"> </span><span class="s">8</span><span class="nv"> </span><span class="s">14</span><span class="nv"> </span><span class="s">8</span><span class="nv"> </span><span class="s">*"</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">  </span><span class="nt">workflow_dispatch</span><span class="p">:</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="nt">permissions</span><span class="p">:</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">  </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">  </span><span class="nt">issues</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="nt">env</span><span class="p">:</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="nt">KEY_EXPIRY</span><span class="p">:</span><span class="w"> </span><span class="s">"2027-08-21"</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="nt">jobs</span><span class="p">:</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">  </span><span class="nt">remind</span><span class="p">:</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Open renewal issue</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Open (or update) the renewal issue</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">        </span><span class="nt">env</span><span class="p">:</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">          </span><span class="nt">GH_TOKEN</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.token }}</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">          </span><span class="nt">GH_REPO</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.repository }}</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="w">          </span><span class="no">set -euo pipefail</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="w">          </span><span class="no">TITLE="Renew the Mapa REVE API key (expires ${KEY_EXPIRY})"</span>
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="w">          </span><span class="no"># Don't stack a new issue on top of last year's if one is still open.</span>
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="w">          </span><span class="no">EXISTING=$(gh issue list --state open --search '"Renew the Mapa REVE API key" in:title' \</span>
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="w">            </span><span class="no">--json number --jq '.[0].number // empty')</span>
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="w">          </span><span class="no">BODY=$(cat &lt;&lt;'EOF'</span>
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="w">          </span><span class="no">The Mapa REVE API key behind Spain's EV charging data expires on __EXPIRY__.</span>
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a>
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span class="w">          </span><span class="no">Nothing breaks loudly when it lapses: the scraper logs an HTTP error and</span>
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="w">          </span><span class="no">Spanish charger data simply stops being refreshed. Renew before the date.</span>
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a>
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a><span class="w">          </span><span class="no">## How to renew</span>
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a>
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span class="w">          </span><span class="no">1. Request a new key at https://www.mapareve.es/api-contacto — it is free.</span>
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span class="w">             </span><span class="no">Say the use is non-commercial and name Pumperly. Approval arrives by</span>
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="w">             </span><span class="no">email, usually within a few days, with the key and its new expiry.</span>
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="w">          </span><span class="no">2. Update the running deployment's `PUMPERLY_REVE_API_KEY` and redeploy.</span>
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span class="w">             </span><span class="no">The key is an environment variable — it is never committed.</span>
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a><span class="w">          </span><span class="no">3. Confirm it works. A single request is enough:</span>
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a>
+<a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a><span class="w">             </span><span class="no">```</span>
+<a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span class="w">             </span><span class="no">curl -sS -o /dev/null -w '%{http_code}\n' \</span>
+<a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a><span class="w">               </span><span class="no">-H "x-api-key: $NEW_KEY" \</span>
+<a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a><span class="w">               </span><span class="no">'https://www.mapareve.es/api/external/v1/locations?limit=1&amp;page=1'</span>
+<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a><span class="w">             </span><span class="no">```</span>
+<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a>
+<a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a><span class="w">             </span><span class="no">`200` means good, `401`/`403` means the key is wrong.</span>
+<a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a><span class="w">          </span><span class="no">4. Update `.github/workflows/reve-key-renewal.yml` — both the `schedule`</span>
+<a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a><span class="w">             </span><span class="no">cron and `KEY_EXPIRY` — to a week before the new expiry date, so this</span>
+<a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a><span class="w">             </span><span class="no">reminder keeps working.</span>
+<a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a><span class="w">          </span><span class="no">5. Close this issue.</span>
+<a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a>
+<a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a><span class="w">          </span><span class="no">## Worth knowing</span>
+<a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a>
+<a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="w">          </span><span class="no">- The API allows **5 requests per hour**, 100 locations per page. A full</span>
+<a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a><span class="w">            </span><span class="no">reload of the ~14.5k-location registry takes about 30 hours, so a lapsed</span>
+<a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a><span class="w">            </span><span class="no">key is not instantly recoverable — the data refills gradually.</span>
+<a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a><span class="w">          </span><span class="no">- Terms of use: non-commercial only, Red Eléctrica de España must be</span>
+<a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a><span class="w">            </span><span class="no">credited as the source, and the data must not be altered or</span>
+<a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a><span class="w">            </span><span class="no">misrepresented. The credit lives in the in-app legal modal.</span>
+<a id="__codelineno-2-80" name="__codelineno-2-80" href="#__codelineno-2-80"></a>
+<a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a><span class="w">          </span><span class="no">_Opened automatically by `.github/workflows/reve-key-renewal.yml`._</span>
+<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a><span class="w">          </span><span class="no">EOF</span>
+<a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a><span class="w">          </span><span class="no">)</span>
+<a id="__codelineno-2-84" name="__codelineno-2-84" href="#__codelineno-2-84"></a><span class="w">          </span><span class="no">BODY=${BODY//__EXPIRY__/$KEY_EXPIRY}</span>
+<a id="__codelineno-2-85" name="__codelineno-2-85" href="#__codelineno-2-85"></a>
+<a id="__codelineno-2-86" name="__codelineno-2-86" href="#__codelineno-2-86"></a><span class="w">          </span><span class="no">if [ -n "$EXISTING" ]; then</span>
+<a id="__codelineno-2-87" name="__codelineno-2-87" href="#__codelineno-2-87"></a><span class="w">            </span><span class="no">echo "Issue #$EXISTING is already open — adding a comment instead."</span>
+<a id="__codelineno-2-88" name="__codelineno-2-88" href="#__codelineno-2-88"></a><span class="w">            </span><span class="no">gh issue comment "$EXISTING" --body "$BODY"</span>
+<a id="__codelineno-2-89" name="__codelineno-2-89" href="#__codelineno-2-89"></a><span class="w">          </span><span class="no">else</span>
+<a id="__codelineno-2-90" name="__codelineno-2-90" href="#__codelineno-2-90"></a><span class="w">            </span><span class="no">gh issue create --title "$TITLE" --body "$BODY"</span>
+<a id="__codelineno-2-91" name="__codelineno-2-91" href="#__codelineno-2-91"></a><span class="w">          </span><span class="no">fi</span>
+</code></pre></div>
+</details>
+<h2 id="bnetza">BNetzA Ladesäulenregister, Germany<a class="headerlink" href="#bnetza" title="Permanent link">&para;</a></h2>
+<p>The Ladesäulenregister is the German charging point register kept by the Bundesnetzagentur, the federal network agency. Every operator of a publicly accessible charge point must file into it under §5 of the Ladesäulenverordnung, the charging station ordinance. It holds about 74,000 locations. The code is in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/bnetza.ts"><code>src/scrapers/bnetza.ts</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>bnetza</code></td>
+</tr>
+<tr>
+<td>Scraper key</td>
+<td><code>EV_DE_BNETZA</code></td>
+</tr>
+<tr>
+<td>Station ids</td>
+<td><code>bnetza-&lt;latitude&gt;_&lt;longitude&gt;</code></td>
+</tr>
+<tr>
+<td>Every</td>
+<td>24 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>CC BY 4.0, attribution "Bundesnetzagentur.de"</td>
+</tr>
+</tbody>
+</table>
+<p>The register only lists operators who completed the notification procedure and agreed to publication, so it is not complete. It is still several times larger than Open Charge Map's German coverage.</p>
+<h3 id="bnetza-source-choice">Choosing Germany's source<a class="headerlink" href="#bnetza-source-choice" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th><code>PUMPERLY_DE_EV_SOURCE</code></th>
+<th>Germany's EV source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unset, or any value other than <code>ocm</code></td>
+<td>BNetzA register</td>
+</tr>
+<tr>
+<td><code>ocm</code> (any case)</td>
+<td>Open Charge Map</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bnetza-reading">How the file is read<a class="headerlink" href="#bnetza-reading" title="Permanent link">&para;</a></h3>
+<p>The register is one tab-separated file of about 19 MB, regenerated daily. Each run downloads the whole file, with a 5-minute deadline.</p>
+<ul>
+<li><strong>Columns are found by header name,</strong> not position. If a column the scraper needs is missing or renamed, the run fails without writing anything.</li>
+<li><strong>Only operational rows are kept.</strong> These are rows whose <code>Status</code> is <code>1</code>.</li>
+<li><strong>Coordinates must be plain decimal numbers,</strong> and they must fall inside a padded bounding box around Germany. Anything else is skipped and counted.</li>
+<li><strong>Rows are merged per location.</strong> The register has one row per charging device, so one car park can be five identical rows. The scraper merges rows whose coordinates match to 5 decimal places, about 1.1 m. The station id is built from those same rounded coordinates.</li>
+<li><strong>The brand is the operator.</strong> The name joins the operator, the address supplement (<code>Adresszusatz</code>) and the street.</li>
+</ul>
+<p>Each run logs how many rows it read, merged and skipped:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>[bnetza] DE: &lt;rows&gt; rows → &lt;stations&gt; stations (merged &lt;n&gt;, skipped &lt;n&gt; not operational, &lt;n&gt; out of bounds, &lt;n&gt; malformed)
+</code></pre></div>
+<h3 id="bnetza-cleanup">Cleanup after each run<a class="headerlink" href="#bnetza-cleanup" title="Permanent link">&para;</a></h3>
+<p>The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run refreshed. If the count reaches the safety floor, it makes two deletions:</p>
+<ol>
+<li><strong>BNetzA stations the run did not refresh.</strong> These left the register, or their operator corrected the coordinates, which changes the id.</li>
+<li><strong>Every German Open Charge Map charger.</strong> Once BNetzA has landed, those rows are duplicates.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUMPERLY_BNETZA_MIN_STATIONS</code></td>
+<td><code>10000</code></td>
+<td>Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default.</td>
+</tr>
+</tbody>
+</table>
+<p>The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires Open Charge Map on its strength.</p>
+<h2 id="switching-back">Switching a source back<a class="headerlink" href="#switching-back" title="Permanent link">&para;</a></h2>
+<p>The handovers only run in one direction. Registry runs delete Open Charge Map rows, but nothing deletes registry rows once their scraper stops running. If you switch Spain or Germany back to Open Charge Map, the registry's pins stay, and Open Charge Map adds its own next to them.</p>
+<p>To clear the old registry rows after switching back, delete them in <code>psql</code> against the Pumperly database:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Spain, after removing the REVE key</label><label for="__tabbed_1_2">Germany, after setting PUMPERLY_DE_EV_SOURCE=ocm</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ES'</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'reve-%'</span><span class="p">;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DE'</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'bnetza-%'</span><span class="p">;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>EV chargers have no price rows, so nothing else needs deleting. <a href="../../operations/backup-and-restore/">Backing up the database</a> explains how to take a backup first.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pumperly.com" target="_blank" rel="noopener" title="pumperly.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M32 64C32 28.7 60.7 0 96 0h160c35.3 0 64 28.7 64 64v192h8c48.6 0 88 39.4 88 88v32c0 13.3 10.7 24 24 24s24-10.7 24-24V222c-27.6-7.1-48-32.2-48-62v-59.5l-25.8-28.3c-8.9-9.8-8.2-25 1.6-33.9s25-8.2 33.9 1.6l71.7 78.8c9.4 10.3 14.6 23.7 14.6 37.7V376c0 39.8-32.2 72-72 72s-72-32.2-72-72v-32c0-22.1-17.9-40-40-40h-8v161.4c9.3 3.3 16 12.2 16 22.6 0 13.3-10.7 24-24 24H40c-13.3 0-24-10.7-24-24 0-10.5 6.7-19.3 16-22.6zm64 16v96c0 8.8 7.2 16 16 16h128c8.8 0 16-7.2 16-16V80c0-8.8-7.2-16-16-16H112c-8.8 0-16 7.2-16 16"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/GeiserX/Pumperly" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://hub.docker.com/r/drumsergio/pumperly" target="_blank" rel="noopener" title="hub.docker.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M349.9 236.3h-66.1v-59.4h66.1zm0-204.3h-66.1v60.7h66.1zm78.2 144.8H362v59.4h66.1zm-156.3-72.1h-66.1v60.1h66.1zm78.1 0h-66.1v60.1h66.1zm276.8 100c-14.4-9.7-47.6-13.2-73.1-8.4-3.3-24-16.7-44.9-41.1-63.7l-14-9.3-9.3 14c-18.4 27.8-23.4 73.6-3.7 103.8-8.7 4.7-25.8 11.1-48.4 10.7H2.4c-8.7 50.8 5.8 116.8 44 162.1 37.1 43.9 92.7 66.2 165.4 66.2 157.4 0 273.9-72.5 328.4-204.2 21.4.4 67.6.1 91.3-45.2 1.5-2.5 6.6-13.2 8.5-17.1zm-511.1-27.9h-66v59.4h66.1v-59.4zm78.1 0h-66.1v59.4h66.1zm78.1 0h-66.1v59.4h66.1zm-78.1-72.1h-66.1v60.1h66.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "content.action.edit", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

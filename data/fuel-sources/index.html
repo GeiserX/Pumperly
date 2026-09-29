@@ -1,0 +1,4690 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Open-source fuel and EV charging price map and route planner. Self-hosted, with official price data from dozens of countries.">
+      
+      
+      
+        <link rel="canonical" href="https://geiserx.github.io/Pumperly/data/fuel-sources/">
+      
+      
+        <link rel="prev" href="../coverage/">
+      
+      
+        <link rel="next" href="../ev-sources/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Fuel price sources - Pumperly</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/theme.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fuel-price-sources" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Pumperly" class="md-header__button md-logo" aria-label="Pumperly" data-md-component="logo">
+      
+  <img src="../../logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pumperly
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Fuel price sources
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/GeiserX/Pumperly" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GeiserX/Pumperly
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/docker-compose/" class="md-tabs__link">
+          
+  
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../using/map/" class="md-tabs__link">
+          
+  
+  
+  Using Pumperly
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../coverage/" class="md-tabs__link">
+          
+  
+  
+  Data sources
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../configuration/countries-and-schedule/" class="md-tabs__link">
+          
+  
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../operations/upgrading/" class="md-tabs__link">
+          
+  
+  
+  Operations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/environment-variables/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../integrations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Integrations
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Pumperly" class="md-nav__button md-logo" aria-label="Pumperly" data-md-component="logo">
+      
+  <img src="../../logo.svg" alt="logo">
+
+    </a>
+    Pumperly
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/GeiserX/Pumperly" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GeiserX/Pumperly
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/docker-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run with Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What happens on first start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/kubernetes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run on Kubernetes with Helm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using Pumperly
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Using Pumperly
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planning a route
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/ev-charging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EV charging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/links/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Share links and deep links
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data sources
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data sources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coverage and status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fuel price sources
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fuel price sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to read this page">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-behaviour" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What every source has in common
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#government-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Government and official sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Government and official sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#argentina" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Argentina
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#australia-western-australia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Australia, Western Australia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#australia-new-south-wales" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Australia, New South Wales
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#austria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Austria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#croatia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Croatia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cyprus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cyprus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#france" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        France
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#germany" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Germany
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#italy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Italy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mexico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mexico
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moldova" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moldova
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#portugal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Portugal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#slovenia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slovenia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#taiwan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Taiwan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#united-kingdom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        United Kingdom
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commercial and community sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Commercial and community sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#anwb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ANWB: Netherlands, Belgium, Luxembourg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#denmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Denmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#finland" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finland
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#greece" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greece
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iceland" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Iceland
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#romania" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Romania
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serbia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serbia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweden" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sweden
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unavailable-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources that do not work today
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sources that do not work today">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fuelo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fuelo.net: twelve countries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ireland" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ireland
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#norway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Norway
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ev-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EV charging sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-scrapers-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How scrapers work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding-a-country/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a country
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/countries-and-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Countries and scrape schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/routing-valhalla/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routing with Valhalla
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/geocoding-photon/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geocoding with Photon
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/api-keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/upgrading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/backup-and-restore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backing up the database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring and troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/environment-variables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fuel-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fuel types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/currencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Currencies and exchange rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to read this page">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-behaviour" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What every source has in common
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#government-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Government and official sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Government and official sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#argentina" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Argentina
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#australia-western-australia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Australia, Western Australia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#australia-new-south-wales" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Australia, New South Wales
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#austria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Austria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#croatia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Croatia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cyprus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cyprus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#france" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        France
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#germany" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Germany
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#italy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Italy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mexico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mexico
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moldova" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moldova
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#portugal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Portugal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#slovenia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slovenia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#taiwan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Taiwan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#united-kingdom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        United Kingdom
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commercial and community sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Commercial and community sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#anwb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ANWB: Netherlands, Belgium, Luxembourg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#denmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Denmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#finland" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finland
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#greece" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greece
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iceland" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Iceland
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#romania" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Romania
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serbia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serbia
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweden" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sweden
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unavailable-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources that do not work today
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sources that do not work today">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fuelo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fuelo.net: twelve countries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ireland" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ireland
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#norway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Norway
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/GeiserX/Pumperly/edit/main/docs/data/fuel-sources.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fuel-price-sources">Fuel price sources<a class="headerlink" href="#fuel-price-sources" title="Permanent link">&para;</a></h1>
+<p>This page describes every fuel price source Pumperly reads: what the source is, how the scraper reads it, which fuels it maps and what to watch out for. <a href="../coverage/">Coverage and status</a> has the one-table summary; this page has the detail.</p>
+<h2 id="how-to-read-this-page">How to read this page<a class="headerlink" href="#how-to-read-this-page" title="Permanent link">&para;</a></h2>
+<p>Each source has a short fact table:</p>
+<ul>
+<li><strong>Source key</strong> is the value the scraper writes into the <code>source</code> column of every price row. The scraper's log lines start with it, for example <code>[miteco]</code>.</li>
+<li><strong>Scraper</strong> links to the file that does the work.</li>
+<li><strong>Every</strong> is the default interval between runs. <a href="../../configuration/countries-and-schedule/">Countries and scrape schedule</a> explains how to change it.</li>
+<li><strong>Licence</strong> appears only where the project records one. The app lists its data providers in its <strong>Data Sources</strong> dialog.</li>
+</ul>
+<p>Each source also has a fuel table. It maps the source's own fuel names to Pumperly's fuel codes. A fuel the source publishes but the table leaves out is not imported, unless the section describes a fallback rule for unlisted names. <a href="../../reference/fuel-types/">Fuel types</a> explains each code.</p>
+<h3 id="common-behaviour">What every source has in common<a class="headerlink" href="#common-behaviour" title="Permanent link">&para;</a></h3>
+<p>All scrapers share one pipeline, described in <a href="../how-scrapers-work/">How scrapers work</a>. Four parts of it matter when you read the sections below:</p>
+<ul>
+<li><strong>Implausible prices are dropped.</strong> Each currency has a plausible per-litre range, so a placeholder like <code>999999</code> or a price in the wrong unit never reaches the map.</li>
+<li><strong>A station with no valid price is dropped.</strong> Only stations with at least one price are written.</li>
+<li><strong>Each run replaces the source's prices for its country in one transaction.</strong> The map never shows half a run.</li>
+<li><strong>A station missing from a run disappears.</strong> When a run no longer lists a station, its prices go, and the station is deleted unless another source still prices it. For grid-based scrapers, a grid point that fails for one run can hide its stations until the next good run.</li>
+</ul>
+<h2 id="government-sources">Government and official sources<a class="headerlink" href="#government-sources" title="Permanent link">&para;</a></h2>
+<h3 id="argentina">Argentina<a class="headerlink" href="#argentina" title="Permanent link">&para;</a></h3>
+<p>The Secretaría de Energía publishes pump prices as an open-data CSV file. Each row is one station, one fuel and one time band.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>energia_ar</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/argentina.ts"><code>src/scrapers/argentina.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>ARS</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Source fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nafta (súper) entre 92 y 95 Ron</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>Nafta (premium) de más de 95 Ron</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>Gas Oil Grado 2</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>Gas Oil Grado 3</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>GNC</td>
+<td><code>CNG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>The server does not answer from Europe.</strong> <code>datos.energia.gob.ar</code> drops connections from European addresses, so this scraper only works from a server in the Americas.</li>
+<li><strong>Only daytime prices are used.</strong> The file lists day (<code>Diurno</code>) and night prices separately. The scraper keeps the daytime rows.</li>
+<li><strong>A station is identified by its tax id and coordinates.</strong> A station whose coordinates change gets a new identity, and the old one is removed.</li>
+</ul>
+<h3 id="australia-western-australia">Australia, Western Australia<a class="headerlink" href="#australia-western-australia" title="Permanent link">&para;</a></h3>
+<p>FuelWatch is the Western Australian government's fuel price service. It publishes one RSS feed per fuel product.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>fuelwatch_wa</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/australia.ts"><code>src/scrapers/australia.ts</code></a></td>
+</tr>
+<tr>
+<td>Scraper key</td>
+<td><code>AU</code></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>AUD</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>FuelWatch product</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, Unleaded Petrol</td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td>2, Premium Unleaded</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>4, Diesel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>5, LPG</td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td>6, 98 RON</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>11, Premium Diesel</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Prices arrive in cents per litre.</strong> The scraper divides by 100.</li>
+<li><strong>One request per product.</strong> A product whose feed fails is skipped for that run, and its prices disappear until the next good run.</li>
+</ul>
+<h3 id="australia-new-south-wales">Australia, New South Wales<a class="headerlink" href="#australia-new-south-wales" title="Permanent link">&para;</a></h3>
+<p>FuelCheck is the New South Wales government's fuel price API. It returns every station and every price in one response.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>nsw_fuelcheck</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/australia-nsw.ts"><code>src/scrapers/australia-nsw.ts</code></a></td>
+</tr>
+<tr>
+<td>Scraper key</td>
+<td><code>AU_NSW</code></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>AUD</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td><code>NSW_FUEL_API_KEY</code> and <code>NSW_FUEL_API_SECRET</code>, both required</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>FuelCheck code</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>U91</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>E10</code></td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td><code>P95</code></td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>P98</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>DL</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>PDL</code></td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>LPG</code></td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td><code>B20</code></td>
+<td><code>B10</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Without both credentials, every run fails.</strong> The scraper exchanges the key and secret for an access token on each run, then fetches prices. That is two requests per run.</li>
+<li><strong>B20 biodiesel is filed as <code>B10</code>.</strong> The fuel model has no B20 code, and <code>B10</code> is the closest.</li>
+<li><strong>Prices arrive in cents per litre.</strong> The scraper divides by 100.</li>
+</ul>
+<h3 id="austria">Austria<a class="headerlink" href="#austria" title="Permanent link">&para;</a></h3>
+<p>E-Control, the Austrian energy regulator, runs the Spritpreisrechner. Its API answers "which stations are near this point" for one fuel at a time.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>econtrol</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/austria.ts"><code>src/scrapers/austria.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>2 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>E-Control code</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DIE</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>SUP</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>GAS</code></td>
+<td><code>E10</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Austria is covered with a grid.</strong> The scraper queries points about 15 km apart across the country, once per fuel. That is about 2,200 requests per run.</li>
+<li><strong>Closed stations are excluded.</strong> The scraper asks for open stations only.</li>
+<li><strong>Failed grid points are skipped silently.</strong> When a station shows up in several queries, the cheapest price for each fuel is kept.</li>
+</ul>
+<h3 id="croatia">Croatia<a class="headerlink" href="#croatia" title="Permanent link">&para;</a></h3>
+<p>The Croatian ministry's fuel price monitoring system (MZOE) publishes every station, its operator and its current prices as one JSON file.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>mzoe</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/croatia.ts"><code>src/scrapers/croatia.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>MZOE fuel kind</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, Eurosuper 95 with additives</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>2, Eurosuper 95</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>5, Eurosuper 100 with additives</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>6, Eurosuper 100</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>7, Eurodizel with additives</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>8, Eurodizel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>9, UNP (autogas)</td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td>11, Blue diesel</td>
+<td><code>B_AGRICULTURAL</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Latitude and longitude are swapped upstream.</strong> The field named <code>lat</code> holds the longitude and <code>long</code> holds the latitude. The scraper swaps them back.</li>
+<li><strong>Several products can share one fuel code.</strong> When they do, the cheapest price is kept.</li>
+<li><strong>Prices outside 0.30 to 4.00 EUR per litre are dropped</strong> before the shared checks run.</li>
+<li><strong>The brand is the operator's name</strong> with legal suffixes such as <code>d.d.</code> and <code>d.o.o.</code> removed.</li>
+</ul>
+<h3 id="cyprus">Cyprus<a class="headerlink" href="#cyprus" title="Permanent link">&para;</a></h3>
+<p>The Consumer Protection Service runs a retail fuel price observatory. It is a web form that lists every station's pump price for one fuel at a time.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>cy_observatory</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/cyprus.ts"><code>src/scrapers/cyprus.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>CC BY-SA 4.0: credit the Consumer Protection Service and share derived data alike</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Observatory fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, Unleaded 95</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>2, Unleaded 98</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>3, Diesel</td>
+<td><code>B7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Four requests per run.</strong> The scraper loads the form once, then submits it once per fuel.</li>
+<li><strong>Stations have no id upstream.</strong> The scraper identifies each station by its coordinates, rounded to 5 decimal places (about 1 m).</li>
+<li><strong>Coordinates come in two formats.</strong> Most are decimal degrees. Some are degrees, minutes and seconds, such as <code>34°39'13.5"N 32°58'26.3"E</code>. The scraper reads both.</li>
+<li><strong>Offline stations are skipped.</strong> The observatory marks stations that stopped reporting, and their prices may be stale.</li>
+</ul>
+<h3 id="france">France<a class="headerlink" href="#france" title="Permanent link">&para;</a></h3>
+<p>The French government publishes live pump prices on data.economie.gouv.fr, in the dataset <code>prix-des-carburants-en-france-flux-instantane-v2</code>. The scraper downloads the whole dataset in one bulk export.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>economie_gouv</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/france.ts"><code>src/scrapers/france.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>1 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Licence Ouverte v2.0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Source field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gazole_prix</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>sp95_prix</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>e10_prix</code></td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td><code>sp98_prix</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>e85_prix</code></td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td><code>gplc_prix</code></td>
+<td><code>LPG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>E85 is filed as <code>E10</code>.</strong> The fuel model has no E85 code. A station that sells both E10 and E85 therefore has two <code>E10</code> prices, and the map may show either one.</li>
+<li><strong>Mainland France and Corsica only.</strong> Stations outside 41–52° N and 6° W–10° E, which includes the overseas departments, are skipped.</li>
+<li><strong>The export has no brand.</strong> Station names are built from the town and the address.</li>
+<li>The dataset is refreshed upstream about every 10 minutes. Pumperly reads it hourly.</li>
+</ul>
+<h3 id="germany">Germany<a class="headerlink" href="#germany" title="Permanent link">&para;</a></h3>
+<p>Tankerkoenig republishes the prices German stations must report to the Markttransparenzstelle für Kraftstoffe (MTS-K), the Federal Cartel Office's fuel price transparency unit.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>tankerkoenig</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany.ts"><code>src/scrapers/germany.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>1 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td><code>TANKERKOENIG_API_KEY</code>, required. Register at <a href="https://onboarding.tankerkoenig.de">onboarding.tankerkoenig.de</a></td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>CC BY 4.0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Tankerkoenig fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Diesel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>Super E5</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>Super E10</td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td>Super Plus</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>Any other fuel in the <code>diesel</code> category</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>Any other fuel in the <code>gasoline</code> category</td>
+<td><code>E5</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Without the key, every run fails at once.</strong> Nothing is written, and German fuel prices stay as they were.</li>
+<li><strong>Germany is covered with a grid.</strong> The API searches a radius of at most 25 km, so the scraper queries about 340 overlapping circles, with a 100 ms pause between requests.</li>
+<li><strong>A rate-limited point is skipped, not retried.</strong> When the API answers HTTP 503, the scraper waits 10 seconds and moves on to the next point.</li>
+</ul>
+<h3 id="italy">Italy<a class="headerlink" href="#italy" title="Permanent link">&para;</a></h3>
+<p>MIMIT, the Italian ministry for enterprise, publishes two pipe-delimited CSV files each day: the registry of active stations and the latest prices.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>mimit</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/italy.ts"><code>src/scrapers/italy.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Italian Open Data License v2.0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>MIMIT fuel name</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Benzina</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>Benzina speciale, Blue Super, HiQ Perform+</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>Gasolio, Gasolio Alpino</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>Gasolio speciale, HiQ Diesel, Blue Diesel</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>GPL</td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td>Metano, L-GNC</td>
+<td><code>CNG</code></td>
+</tr>
+<tr>
+<td>GNL</td>
+<td><code>LNG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Unlisted names are matched by keyword.</strong> A name containing <code>gasolio</code> or <code>diesel</code> becomes <code>B7</code>, <code>benzina</code> or <code>super</code> becomes <code>E5</code>, <code>gpl</code> becomes <code>LPG</code>, <code>metano</code> or <code>gnc</code> becomes <code>CNG</code>, and <code>gnl</code> becomes <code>LNG</code>.</li>
+<li><strong>Self-service and attended prices share a code.</strong> The price file lists both, and the scraper stores both under the same fuel code. The map shows one of them.</li>
+<li><strong>A price whose station is not in the registry file is skipped.</strong></li>
+</ul>
+<h3 id="mexico">Mexico<a class="headerlink" href="#mexico" title="Permanent link">&para;</a></h3>
+<p>The Comisión Reguladora de Energía (CRE) publishes two XML feeds: station locations and station prices.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>cre_mx</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/mexico.ts"><code>src/scrapers/mexico.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>MXN</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>CRE fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>regular</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>premium</code></td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>diesel</code></td>
+<td><code>B7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Only stations in both feeds are written.</strong> A station needs a location and at least one price.</li>
+<li><strong>The feeds carry no street address.</strong> Stations show their name and position only.</li>
+</ul>
+<h3 id="moldova">Moldova<a class="headerlink" href="#moldova" title="Permanent link">&para;</a></h3>
+<p>ANRE, the Moldovan energy regulator, runs the eCarburanți public API. One request returns every station with its current prices.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>anre_md</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/moldova.ts"><code>src/scrapers/moldova.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>MDL</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>ANRE field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gasoline</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>diesel</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>gpl</code></td>
+<td><code>LPG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Coordinates arrive in Web Mercator (EPSG:3857).</strong> The scraper converts them to latitude and longitude.</li>
+<li><strong>Inactive stations are skipped.</strong> These are stations whose status code is 4.</li>
+<li><strong>A station is identified by its company id and coordinates.</strong> A station whose coordinates change gets a new identity, and the old one is removed.</li>
+</ul>
+<h3 id="portugal">Portugal<a class="headerlink" href="#portugal" title="Permanent link">&para;</a></h3>
+<p>DGEG, the Portuguese directorate-general for energy, runs a price search API. It returns stations for one fuel at a time, 500 per page.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>dgeg</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/portugal.ts"><code>src/scrapers/portugal.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Non-commercial use only</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>DGEG fuel id</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2101, Gasóleo simples</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>2105, Gasóleo especial</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>3201, Gasolina simples 95</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>3205, Gasolina especial 95</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>3400, Gasolina 98</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>1120, GPL Auto</td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td>1143, GNC</td>
+<td><code>CNG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Mainland Portugal only.</strong> Stations outside 36–43° N and 10° W–6° W are skipped, which excludes Madeira and the Azores.</li>
+<li><strong>Prices arrive as text,</strong> such as <code>1,679 €</code>. The scraper parses the number.</li>
+</ul>
+<h3 id="slovenia">Slovenia<a class="headerlink" href="#slovenia" title="Permanent link">&para;</a></h3>
+<p>goriva.si publishes Slovenian pump prices through a search API. One search, centred on the country with a 200 km radius, covers all of it.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>goriva_si</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/slovenia.ts"><code>src/scrapers/slovenia.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>goriva.si field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>95</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>98</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>100</code></td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>dizel</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>dizel-premium</code></td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>avtoplin-lpg</code></td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td><code>hvo</code></td>
+<td><code>HVO</code></td>
+</tr>
+<tr>
+<td><code>cng</code></td>
+<td><code>CNG</code></td>
+</tr>
+<tr>
+<td><code>lng</code></td>
+<td><code>LNG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Results are paged.</strong> The scraper follows each page's <code>next</code> link, with a 200 ms pause between pages.</li>
+<li><strong>The brand stays empty.</strong> The feed gives the brand only as a numeric franchise id, which the scraper does not map.</li>
+</ul>
+<h3 id="spain">Spain<a class="headerlink" href="#spain" title="Permanent link">&para;</a></h3>
+<p>MITECO, the Spanish ministry for the ecological transition, publishes every station and its prices through one REST endpoint. The list holds about 12,000 stations.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>miteco</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain.ts"><code>src/scrapers/spain.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>MITECO field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Precio Gasoleo A</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>Precio Gasoleo Premium</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>Precio Gasoleo B</td>
+<td><code>B_AGRICULTURAL</code></td>
+</tr>
+<tr>
+<td>Precio Diésel Renovable</td>
+<td><code>HVO</code></td>
+</tr>
+<tr>
+<td>Precio Gasolina 95 E5</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>Precio Gasolina 95 E5 Premium</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>Precio Gasolina 95 E10</td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td>Precio Gasolina 98 E5</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>Precio Gasolina 98 E10</td>
+<td><code>E98_E10</code></td>
+</tr>
+<tr>
+<td>Precio Gases licuados del petróleo, Precio Gas Licuado del Petróleo</td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td>Precio Gas Natural Comprimido</td>
+<td><code>CNG</code></td>
+</tr>
+<tr>
+<td>Precio Gas Natural Licuado</td>
+<td><code>LNG</code></td>
+</tr>
+<tr>
+<td>Precio Hidrogeno</td>
+<td><code>H2</code></td>
+</tr>
+<tr>
+<td>Precio Adblue</td>
+<td><code>ADBLUE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Numbers use a decimal comma.</strong> Coordinates and prices both arrive as strings like <code>38,1234</code>.</li>
+<li><strong>No region is filtered out.</strong> The coordinate check spans the Canary and Balearic Islands, Ceuta and Melilla.</li>
+<li><strong>The response is checked before use.</strong> A reply whose <code>ResultadoConsulta</code> is not <code>OK</code>, or whose station list is empty, fails the run.</li>
+</ul>
+<h3 id="taiwan">Taiwan<a class="headerlink" href="#taiwan" title="Permanent link">&para;</a></h3>
+<p>CPC Corporation, Taiwan's state oil company, publishes its national list prices and its station list as open data. List prices are set nationally and revised weekly.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>cpc_tw</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/taiwan.ts"><code>src/scrapers/taiwan.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>TWD</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Open Government Data License, version 1.0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>CPC product</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>95無鉛汽油 (unleaded 95)</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>98無鉛汽油 (unleaded 98)</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>超級柴油 (super diesel)</td>
+<td><code>B7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Every station gets the list price.</strong> The station list flags which fuels each station sells. Each flagged fuel gets the list price CPC sets for its company-owned stations. Franchise stations may sell below it.</li>
+<li><strong>Only CPC stations are covered.</strong> Formosa Petrochemical stations are not in the feed.</li>
+<li><strong>Two grades are left out on purpose.</strong> Regular 92 has no matching fuel code, and neither does the E3 ethanol blend.</li>
+<li><strong>Only stations marked as open are written.</strong> The coverage includes Penghu, Kinmen and Matsu.</li>
+</ul>
+<h3 id="united-kingdom">United Kingdom<a class="headerlink" href="#united-kingdom" title="Permanent link">&para;</a></h3>
+<p>Under the Competition and Markets Authority's open data scheme, large retailers each publish a JSON feed of their station prices. The scraper reads 13 of them.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>cma</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/uk.ts"><code>src/scrapers/uk.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>GBP</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>4 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>Open Government Licence v3.0</td>
+</tr>
+</tbody>
+</table>
+<p>The feeds read are Asda, BP, Esso, Tesco, Morrisons, Sainsbury's, MFG, SGN, JET, Moto, Rontec, Ascona and Karan.</p>
+<table>
+<thead>
+<tr>
+<th>Feed code</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>E10</code></td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td><code>E5</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>B7</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>SDV</code> (super diesel)</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Shell is not included.</strong> It publishes HTML instead of JSON.</li>
+<li><strong>Prices arrive in pence per litre.</strong> The scraper divides by 100. Values of 900 pence or more, or 1 penny or less, are placeholders and are skipped.</li>
+<li><strong>A failing feed hides its retailer.</strong> Each feed is fetched on its own, and a failure is logged and skipped. That retailer's stations drop off the map until a later run reads the feed again.</li>
+<li><strong>Northern Ireland is included.</strong> Stations between 49–61° N and 11° W–2.5° E are kept.</li>
+<li><strong>The feeds carry no town field.</strong> The town stays empty.</li>
+</ul>
+<h2 id="community-sources">Commercial and community sources<a class="headerlink" href="#community-sources" title="Permanent link">&para;</a></h2>
+<h3 id="anwb">ANWB: Netherlands, Belgium, Luxembourg<a class="headerlink" href="#anwb" title="Permanent link">&para;</a></h3>
+<p>ANWB publishes fuel stations and prices for the Netherlands, Belgium and Luxembourg through its points-of-interest API. Each country's scraper makes one request with that country's bounding box.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Netherlands</th>
+<th>Belgium</th>
+<th>Luxembourg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>anwb</code></td>
+<td><code>anwb</code></td>
+<td><code>anwb</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/netherlands.ts"><code>netherlands.ts</code></a></td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/belgium.ts"><code>belgium.ts</code></a></td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/luxembourg.ts"><code>luxembourg.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+<td>EUR</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+<td>6 h</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>ANWB fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EURO95</code></td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td><code>EURO98</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>DIESEL</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>DIESEL_SPECIAL</code></td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>AUTOGAS</code></td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td><code>CNG</code></td>
+<td><code>CNG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Stations are sorted by country code.</strong> The bounding boxes overlap, so each scraper drops stations whose ISO country code belongs to another country (it keeps <code>NLD</code>, <code>BEL</code> or <code>LUX</code>). A station with no country code is kept if it falls inside the bounding box.</li>
+<li><strong>One source key, three countries.</strong> Price replacement is scoped by country, so the three scrapers never overwrite each other.</li>
+<li><strong>The brand is guessed.</strong> It is the first word of the station's title, which is wrong for brands with a space in their name.</li>
+</ul>
+<h3 id="denmark">Denmark<a class="headerlink" href="#denmark" title="Permanent link">&para;</a></h3>
+<p>FuelPrices.dk is a Danish fuel price service with a documented API. One request returns every station in Denmark with its operator and current prices.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>fuelprices_dk</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/denmark.ts"><code>src/scrapers/denmark.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>DKK</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td><code>FUELPRICES_DK_API_KEY</code>. Register at <a href="https://fuelprices.dk/registrer">fuelprices.dk/registrer</a></td>
+</tr>
+</tbody>
+</table>
+<p>FuelPrices.dk names products the way each operator does. The scraper matches the exact product name first, then any known name contained in the product name. Names that match nothing fall back to rules on the octane number and the words "diesel" and "adblue". A product that matches no rule is not imported. The four Miles names end with a full stop in the scraper's table. Without it, <code>Miles+95</code> falls through to the octane rule and is filed as <code>E5</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Product name</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blyfri 95, Oktan 95, Benzin 95, Miles95., GoEasy 95 Extra E5, Shell FuelSave Blyfri 95</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>Blyfri 95 E10, Oktan 95 E10, 95 E10, GoEasy 95 E10</td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td>Blyfri 98, Premium 98</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>Oktan 100, Miles+95., Shell V-Power, Upgrade 95</td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td>Diesel, Miles Diesel., GoEasy Diesel, Shell FuelSave Diesel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>Diesel+, DieselPlus, Miles+ Diesel., GoEasy Diesel Extra, Shell V-Power Diesel</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>HVO, HVO100</td>
+<td><code>HVO</code></td>
+</tr>
+<tr>
+<td>LPG</td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td>CNG</td>
+<td><code>CNG</code></td>
+</tr>
+<tr>
+<td>AdBlue</td>
+<td><code>ADBLUE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Denmark only updates with a key.</strong> Without <code>FUELPRICES_DK_API_KEY</code>, or when the key is rejected with HTTP 401, the scraper falls back to the DrivstoffAppen API. That API is retired (see <a href="#norway">Norway</a>), so the fallback fails too.</li>
+<li><strong>Station ids combine operator and station.</strong> An id looks like <code>dk-fp-&lt;operator&gt;-&lt;station&gt;</code>, so two operators can never collide.</li>
+<li><strong>The town is read from the address,</strong> after the four-digit postcode.</li>
+</ul>
+<h3 id="finland">Finland<a class="headerlink" href="#finland" title="Permanent link">&para;</a></h3>
+<p>polttoaine.net is a long-running Finnish site where drivers report prices. It has no API, so the scraper reads its HTML pages.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>polttoaine</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/finland.ts"><code>src/scrapers/finland.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>95E10</td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td>98E</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>Diesel</td>
+<td><code>B7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Two passes per run.</strong> The scraper reads 115 town, region and highway pages for names and prices. Then it opens each station's map page to read its coordinates. It pauses 100 ms between requests.</li>
+<li><strong>Stations without a map link are skipped.</strong> Without the link there are no coordinates.</li>
+<li><strong>Prices are crowd-reported.</strong> A station appears on several pages, and the scraper keeps the price from the last page it read.</li>
+</ul>
+<h3 id="greece">Greece<a class="headerlink" href="#greece" title="Permanent link">&para;</a></h3>
+<p>FuelGR is a Greek fuel price app. The scraper queries the app's data service, which returns stations within 30 km of a point for one fuel at a time.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>fuelgr</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/greece.ts"><code>src/scrapers/greece.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>FuelGR fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, 95 octane</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>2, 98–100 octane</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>4, Diesel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>6, LPG</td>
+<td><code>LPG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Greece is covered with a grid,</strong> islands included. The scraper queries 270 points per fuel, about 1,080 requests per run, with a 150 ms pause between requests.</li>
+<li><strong>A rate-limited point is skipped.</strong> On HTTP 429 the scraper waits 5 seconds and moves on. Other failed points are skipped silently.</li>
+<li><strong>Responses are XML.</strong> The price for the requested fuel sits in the station's <code>&lt;ft pr="..."&gt;</code> element.</li>
+</ul>
+<h3 id="iceland">Iceland<a class="headerlink" href="#iceland" title="Permanent link">&para;</a></h3>
+<p>Gasvaktin is a community project that keeps a JSON file of every Icelandic station's current price on GitHub. It is refreshed upstream about every 15 minutes.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>gasvaktin</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/iceland.ts"><code>src/scrapers/iceland.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>ISK</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>MIT</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Gasvaktin field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bensin95</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>diesel</code></td>
+<td><code>B7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Member-card prices are ignored.</strong> The <code>*_discount</code> fields are loyalty prices, not the pump price.</li>
+<li><strong>The file has no street addresses.</strong> The station name carries the place instead.</li>
+</ul>
+<h3 id="romania">Romania<a class="headerlink" href="#romania" title="Permanent link">&para;</a></h3>
+<p>Peco Online is a Romanian fuel price app. The scraper reads the app's public data backend, 1,000 stations per page.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>peco_online</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/romania.ts"><code>src/scrapers/romania.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>RON</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Peco Online field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Benzina_Regular</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>Benzina_Premium</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>Motorina_Regular</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>Motorina_Premium</code></td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>GPL</code></td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td><code>AdBlue</code></td>
+<td><code>ADBLUE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Only stations with a regular petrol price are fetched.</strong> The query asks for stations whose <code>Benzina_Regular</code> price is set, so a station that sells only diesel is not imported.</li>
+<li><strong><code>999999</code> means "no price".</strong> The scraper skips it.</li>
+<li><strong>Station ids are not unique upstream.</strong> The same <code>Id</code> can mean two different stations, or one station listed twice. The scraper adds the coordinates to every id, in the form <code>Id@lat,lng</code>, so each station keeps a stable identity.</li>
+</ul>
+<h3 id="serbia">Serbia<a class="headerlink" href="#serbia" title="Permanent link">&para;</a></h3>
+<p>Serbia has no station-level price feed. The scraper combines two sources. It reads station locations and the fuels each station sells from the NIS Gazprom station map. Then it reads each brand's price per fuel from cenagoriva.rs, which lists one price per chain.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>nis_cenagoriva</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/serbia.ts"><code>src/scrapers/serbia.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>RSD</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>NIS fuel</th>
+<th>cenagoriva.rs page</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EVRO PREMIJUM BMB-95</td>
+<td>BMB 95</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>EBMB100 GDRIVE100</td>
+<td>BMB 100</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>EVRO DIZEL</td>
+<td>Evro Dizel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>G-DRIVE DIZEL</td>
+<td>Evro Dizel Premium</td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td>AUTOGAS TNG</td>
+<td>TNG</td>
+<td><code>LPG</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Only NIS Petrol and Gazprom Petrol stations appear.</strong> The scraper reads locations from the NIS map only.</li>
+<li><strong>Prices are chain prices, not station prices.</strong> Both brands take the <code>nis</code> price from cenagoriva.rs. Serbian fuel prices are regulated and close to uniform within a chain.</li>
+<li><strong>Some fuels have locations but no price.</strong> NIS lists CNG and AdBlue, but cenagoriva.rs has no page for them, so they are not priced.</li>
+<li><strong>A failing price page drops one fuel.</strong> It is logged and skipped, and that fuel has no prices until the next good run.</li>
+</ul>
+<h3 id="sweden">Sweden<a class="headerlink" href="#sweden" title="Permanent link">&para;</a></h3>
+<p>bensinpriser.nu is Sweden's long-running community price site. Its map loads every station from one bulk JSON feed, and the scraper reads that feed in one request. The site's <code>robots.txt</code> allows every path.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>bensinpriser</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/sweden.ts"><code>src/scrapers/sweden.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>SEK</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Feed field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>price95</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>price98</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>priceDiesel</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>priceBiodiesel</code></td>
+<td><code>HVO</code></td>
+</tr>
+<tr>
+<td><code>priceFordonsgas</code></td>
+<td><code>CNG</code>, priced per kg</td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>Two fields are dropped on purpose.</strong> <code>priceLpg</code> repeats the ethanol price byte for byte, and Swedish forecourts sell E85, not autogas. <code>priceEtanol</code> is E85, which has no fuel code. Filing it as <code>E10</code> would show an E85 price to drivers filtering for 95-octane E10.</li>
+<li><strong>95-octane is stored as <code>E5</code>,</strong> although Swedish 95 is an E10 blend. This matches Sweden's default fuel on the map.</li>
+<li><strong>Only recently reported stations carry a price.</strong> Stations without a report are dropped.</li>
+<li><strong><code>Övriga</code> means unbranded.</strong> Those stations get no brand.</li>
+<li><strong>Old Swedish data is cleaned up automatically.</strong> After a run with no errors and at least 200 stations, the scraper deletes Swedish prices from two retired sources, <code>drivstoffappen</code> and <code>bensinpriser_nu</code>. It then deletes the stations left with no price.</li>
+</ul>
+<h2 id="unavailable-sources">Sources that do not work today<a class="headerlink" href="#unavailable-sources" title="Permanent link">&para;</a></h2>
+<p>These scrapers are still in the code and still scheduled, but their sources refuse the requests. Each run fails and writes nothing, and the last prices stay on the map. <a href="../coverage/#choosing-what-runs">Coverage and status</a> shows how to stop the requests.</p>
+<h3 id="fuelo">Fuelo.net: twelve countries<a class="headerlink" href="#fuelo" title="Permanent link">&para;</a></h3>
+<p>Fuelo.net is a pan-European fuel price site. One shared scraper, <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/fuelo.ts"><code>src/scrapers/fuelo.ts</code></a>, serves twelve countries, each through its own subdomain.</p>
+<p><strong>Status: paused.</strong> Fuelo answers the station-list request with HTTP 403, and its <code>robots.txt</code> disallows the endpoint. Pumperly respects that and does not work around it. No replacement source is in place.</p>
+<table>
+<thead>
+<tr>
+<th>Country</th>
+<th>Scraper</th>
+<th>Source key</th>
+<th>Fallback currency</th>
+<th>Every</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bosnia and Herzegovina</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/bosnia.ts"><code>bosnia.ts</code></a></td>
+<td><code>fuelo_ba</code></td>
+<td>BAM</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Bulgaria</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/bulgaria.ts"><code>bulgaria.ts</code></a></td>
+<td><code>fuelo_bg</code></td>
+<td>EUR</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Czech Republic</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/czech.ts"><code>czech.ts</code></a></td>
+<td><code>fuelo_cz</code></td>
+<td>CZK</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Estonia</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/estonia.ts"><code>estonia.ts</code></a></td>
+<td><code>fuelo_ee</code></td>
+<td>EUR</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Hungary</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/hungary.ts"><code>hungary.ts</code></a></td>
+<td><code>fuelo_hu</code></td>
+<td>HUF</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Latvia</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/latvia.ts"><code>latvia.ts</code></a></td>
+<td><code>fuelo_lv</code></td>
+<td>EUR</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Lithuania</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/lithuania.ts"><code>lithuania.ts</code></a></td>
+<td><code>fuelo_lt</code></td>
+<td>EUR</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>North Macedonia</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/north-macedonia.ts"><code>north-macedonia.ts</code></a></td>
+<td><code>fuelo_mk</code></td>
+<td>MKD</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Poland</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/poland.ts"><code>poland.ts</code></a></td>
+<td><code>fuelo_pl</code></td>
+<td>PLN</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Slovakia</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/slovakia.ts"><code>slovakia.ts</code></a></td>
+<td><code>fuelo_sk</code></td>
+<td>EUR</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Switzerland</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/switzerland.ts"><code>switzerland.ts</code></a></td>
+<td><code>fuelo_ch</code></td>
+<td>CHF</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>Turkey</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/turkey.ts"><code>turkey.ts</code></a></td>
+<td><code>fuelo_tr</code></td>
+<td>TRY</td>
+<td>12 h</td>
+</tr>
+</tbody>
+</table>
+<p>When the source answers, a run works in two phases. First, one request lists every station id and position inside the country's bounding box. Then one request per station reads its name, address and prices, with a short pause after every five stations. Station ids take the form <code>fuelo_&lt;id&gt;</code>, and the brand comes from the station's logo name.</p>
+<p>Fuelo marks each fuel with an icon. The scraper maps the icon's file name:</p>
+<table>
+<thead>
+<tr>
+<th>Fuelo icon</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gasoline.png</code></td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td><code>gasoline95plus.png</code></td>
+<td><code>E5_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>gasoline98.png</code>, <code>gasoline98plus.png</code> (100 octane)</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>diesel.png</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>dieselplus.png</code></td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>lpg.png</code></td>
+<td><code>LPG</code></td>
+</tr>
+<tr>
+<td><code>methane.png</code>, <code>cng.png</code></td>
+<td><code>CNG</code></td>
+</tr>
+<tr>
+<td><code>lng.png</code></td>
+<td><code>LNG</code></td>
+</tr>
+<tr>
+<td><code>adblue.png</code></td>
+<td><code>ADBLUE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Things to know:</p>
+<ul>
+<li><strong>The currency comes from each price label,</strong> such as <code>563,8 HUF/l</code> or <code>1,42 €/l</code>. The fallback currency applies only when the label shows none the scraper recognises.</li>
+<li><strong>A lone dot is ambiguous.</strong> In <code>1.518</code>, the dot is a decimal point for EUR, GBP, CHF, BGN, BAM, PLN and RON, and a thousands separator for every other currency. For HUF, <code>1.518</code> means 1518. The per-currency price check catches a misread value.</li>
+</ul>
+<h3 id="ireland">Ireland<a class="headerlink" href="#ireland" title="Permanent link">&para;</a></h3>
+<p>Pick A Pump is an Irish price site where drivers report prices.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>pickapump</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/ireland.ts"><code>src/scrapers/ireland.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>12 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Status: blocked.</strong> Pick A Pump rejects scrapers with HTTP 403, and its <code>robots.txt</code> disallows them. No open alternative source exists.</p>
+<p>When the source answers, the scraper queries about 120 points on a grid with a 20 km radius, 150 ms apart. It keeps stations in the Republic of Ireland only. Northern Ireland comes from the <a href="#united-kingdom">United Kingdom</a> feeds.</p>
+<table>
+<thead>
+<tr>
+<th>Pick A Pump field</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>petrol</code></td>
+<td><code>E10</code></td>
+</tr>
+<tr>
+<td><code>petrolplus</code></td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td><code>diesel</code></td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td><code>dieselplus</code></td>
+<td><code>B7_PREMIUM</code></td>
+</tr>
+<tr>
+<td><code>hvo</code></td>
+<td><code>HVO</code></td>
+</tr>
+</tbody>
+</table>
+<p>Prices arrive in euro cents per litre, and the scraper divides by 100. Irish standard unleaded is E10, so <code>petrol</code> maps to <code>E10</code>.</p>
+<h3 id="norway">Norway<a class="headerlink" href="#norway" title="Permanent link">&para;</a></h3>
+<p>DrivstoffAppen was Norway's main fuel price aggregator. It built on the country's mandatory real-time price reporting.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>drivstoffappen</code></td>
+</tr>
+<tr>
+<td>Scraper</td>
+<td><a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/norway.ts"><code>src/scrapers/norway.ts</code></a></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>NOK</td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Status: down.</strong> The public API is retired. The endpoint that issued session tokens answers HTTP 404, and its successor requires authorisation that is not publicly available. The scraper still sends that one request each run, so Norway recovers on its own if the public API returns.</p>
+<p>No replacement is adopted. The alternatives either forbid scraping, require credentials meant only for their own apps, or publish data that does not hold up. Statistics Norway publishes national monthly averages, not station prices.</p>
+<p>When the source answers, the scraper maps these fuels:</p>
+<table>
+<thead>
+<tr>
+<th>DrivstoffAppen fuel</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, Diesel</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>2, 95 Oktan</td>
+<td><code>E5</code></td>
+</tr>
+<tr>
+<td>3, 98 Oktan</td>
+<td><code>E5_98</code></td>
+</tr>
+<tr>
+<td>4, Frigårdsdiesel (farm diesel)</td>
+<td><code>B7</code></td>
+</tr>
+<tr>
+<td>7, HVO 100</td>
+<td><code>HVO</code></td>
+</tr>
+<tr>
+<td>9, E-85</td>
+<td><code>E10</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pumperly.com" target="_blank" rel="noopener" title="pumperly.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M32 64C32 28.7 60.7 0 96 0h160c35.3 0 64 28.7 64 64v192h8c48.6 0 88 39.4 88 88v32c0 13.3 10.7 24 24 24s24-10.7 24-24V222c-27.6-7.1-48-32.2-48-62v-59.5l-25.8-28.3c-8.9-9.8-8.2-25 1.6-33.9s25-8.2 33.9 1.6l71.7 78.8c9.4 10.3 14.6 23.7 14.6 37.7V376c0 39.8-32.2 72-72 72s-72-32.2-72-72v-32c0-22.1-17.9-40-40-40h-8v161.4c9.3 3.3 16 12.2 16 22.6 0 13.3-10.7 24-24 24H40c-13.3 0-24-10.7-24-24 0-10.5 6.7-19.3 16-22.6zm64 16v96c0 8.8 7.2 16 16 16h128c8.8 0 16-7.2 16-16V80c0-8.8-7.2-16-16-16H112c-8.8 0-16 7.2-16 16"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/GeiserX/Pumperly" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://hub.docker.com/r/drumsergio/pumperly" target="_blank" rel="noopener" title="hub.docker.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M349.9 236.3h-66.1v-59.4h66.1zm0-204.3h-66.1v60.7h66.1zm78.2 144.8H362v59.4h66.1zm-156.3-72.1h-66.1v60.1h66.1zm78.1 0h-66.1v60.1h66.1zm276.8 100c-14.4-9.7-47.6-13.2-73.1-8.4-3.3-24-16.7-44.9-41.1-63.7l-14-9.3-9.3 14c-18.4 27.8-23.4 73.6-3.7 103.8-8.7 4.7-25.8 11.1-48.4 10.7H2.4c-8.7 50.8 5.8 116.8 44 162.1 37.1 43.9 92.7 66.2 165.4 66.2 157.4 0 273.9-72.5 328.4-204.2 21.4.4 67.6.1 91.3-45.2 1.5-2.5 6.6-13.2 8.5-17.1zm-511.1-27.9h-66v59.4h66.1v-59.4zm78.1 0h-66.1v59.4h66.1zm78.1 0h-66.1v59.4h66.1zm-78.1-72.1h-66.1v60.1h66.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "content.action.edit", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
