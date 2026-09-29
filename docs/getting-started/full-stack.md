@@ -251,7 +251,7 @@ services:
           memory: 2G
 
   app:
-    image: drumsergio/pumperly:latest
+    image: drumsergio/pumperly:1.15.1
     container_name: pumperly
     restart: unless-stopped
     depends_on:
