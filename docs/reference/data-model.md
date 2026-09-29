@@ -75,6 +75,12 @@ The shipped files, included here word for word:
     --8<-- "prisma/migrations/20260607220949_stations_geom_geography_gist/migration.sql"
     ```
 
+=== "Price column migration"
+
+    ```sql
+    --8<-- "prisma/migrations/20260929000000_widen_fuel_price/migration.sql"
+    ```
+
 ## `stations`
 
 One row per place: a fuel station, an EV charger, or a site that is both.
