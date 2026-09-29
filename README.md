@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.svg" alt="Pumperly banner" width="900"/>
+  <img src="https://raw.githubusercontent.com/GeiserX/Pumperly/main/docs/images/banner.svg" alt="Pumperly banner" width="900"/>
 </p>
 
 <br>
