@@ -12,10 +12,37 @@ services:
     volumes:
       - pumperly-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pumperly -d pumperly"]
+      # Over TCP: during the first start the image runs its init scripts on a
+      # socket-only server, and a socket check would pass too early.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U pumperly -d pumperly"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # One-shot: applies the SQL migrations under prisma/migrations that the
+  # database has not recorded yet, then exits. See docker/migrate.sh.
+  migrate:
+    image: postgis/postgis:17-3.4
+    env_file: ../.env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../prisma/migrations:/migrations:ro
+      - ./migrate.sh:/usr/local/bin/pumperly-migrate:ro
+    entrypoint: ["pumperly-migrate"]
+    restart: "no"
+
+  app:
+    image: drumsergio/pumperly:1.15.2
+    container_name: pumperly
+    restart: unless-stopped
+    env_file: ../.env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
 
 volumes:
   pumperly-pgdata:

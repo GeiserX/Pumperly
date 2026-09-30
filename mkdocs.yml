@@ -1,15 +1,19 @@
 site_name: Pumperly
-site_url: https://geiserx.github.io/Pumperly
+site_url: https://geiserx.github.io/Pumperly/
 site_description: Open-source fuel and EV charging price map and route planner. Self-hosted, with official price data from dozens of countries.
 repo_url: https://github.com/GeiserX/Pumperly
 repo_name: GeiserX/Pumperly
 edit_uri: edit/main/docs/
 
+# A warning is a broken link, a missing page or a page nobody can reach. All of
+# them fail the build, locally and in CI, so nobody has to remember --strict.
+strict: true
+
 theme:
   name: material
   language: en
-  logo: logo.svg
-  favicon: icon.svg
+  logo: images/logo.svg
+  favicon: images/icon.svg
   palette:
     - scheme: slate
       primary: custom
@@ -36,16 +40,37 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
-# A cross-link to a heading that no longer exists is only an info line in
-# MkDocs 1.6, even with --strict. Promoting it to a warning makes the strict
-# build fail on it.
+# MkDocs reports most link problems as `info`, which --strict ignores. Every
+# line here promotes one of them to a warning so the build fails on it:
+#   nav.omitted_files   a Markdown file under docs/ that is in no nav entry and
+#                       not in exclude_docs (a page nobody can reach, published
+#                       at a public URL anyway);
+#   nav.not_found       a nav entry whose file does not exist;
+#   links.not_found     a relative link to a page or file that does not exist;
+#   links.anchors       a link to a heading that does not exist;
+#   links.absolute_links  a link written as /path/ (breaks under the /Pumperly/
+#                       prefix of the site);
+#   links.unrecognized_links  a relative link that leaves docs/ (../README.md).
+#                       Repo files are linked by absolute GitHub URL instead.
 validation:
-  anchors: warn
-  links:
+  nav:
+    omitted_files: warn
+    not_found: warn
     absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
 
 plugins:
   - search
+  # Renamed pages keep their old URLs alive.
+  - redirects:
+      redirect_maps:
+        contributing.md: development.md
+        getting-started/development.md: development.md
+        integrations.md: related.md
 
 markdown_extensions:
   - admonition
@@ -95,15 +120,17 @@ extra:
 extra_css:
   - stylesheets/theme.css
 
-# Files under docs/ that must not be published as pages.
-#
-# MkDocs builds every Markdown file in docs_dir, listed in nav or not. A file
-# left out of nav still gets a public URL. `mkdocs build --strict` does not
-# catch this: validation.nav.omitted_files defaults to `info`, and --strict
-# only turns warnings into errors. The only reliable guard is this list.
+# Files under docs/ that are not pages. MkDocs publishes every Markdown file in
+# docs/ whether or not it is in the nav, so anything that is not a page must be
+# listed here. The patterns follow the docs/ contract: a page is a lowercase
+# kebab-case .md file; anything with a capital letter (ROADMAP.md, CHANGELOG.md,
+# GOAL.md, DESIGN.md) is a repo-facing note, and design/, research/ and notes/
+# hold material read on GitHub. Add a line for any other per-repo note.
 exclude_docs: |
-  # The docs build dependencies. The workflow reads them from docs/; they are
-  # not a page.
+  [A-Z]*.md
+  design/
+  research/
+  notes/
   requirements-docs.txt
 
 nav:
@@ -114,7 +141,6 @@ nav:
       - What happens on first start: getting-started/first-start.md
       - Full stack with routing and geocoding: getting-started/full-stack.md
       - Run on Kubernetes with Helm: getting-started/kubernetes.md
-      - Local development: getting-started/development.md
   - Using Pumperly:
       - The map: using/map.md
       - Planning a route: using/routes.md
@@ -143,6 +169,6 @@ nav:
       - Fuel types: reference/fuel-types.md
       - Currencies and exchange rates: reference/currencies.md
       - Glossary: reference/glossary.md
-  - Integrations: integrations.md
+  - Related projects: related.md
   - Roadmap: roadmap.md
-  - Contributing: contributing.md
+  - Development: development.md

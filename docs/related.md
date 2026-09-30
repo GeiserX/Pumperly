@@ -1,4 +1,4 @@
-# Integrations
+# Related projects
 
 This page lists the projects that use Pumperly's data outside the web map: an MCP server for AI assistants, a Home Assistant integration and an n8n node. Each one is a separate repository with its own releases and issues.
 
@@ -20,7 +20,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | [pumperly-mcp](https://github.com/GeiserX/pumperly-mcp) | An MCP server | An AI assistant can look up prices, find stations, plan routes and geocode places | GPL-3.0 |
 | [pumperly-ha](https://github.com/GeiserX/pumperly-ha) | A Home Assistant custom integration | Price sensors for the stations around a location, for dashboards and automations | GPL-3.0 |
-| [n8n-nodes-pumperly](https://github.com/GeiserX/n8n-nodes-pumperly) | An n8n community node | Workflow steps for stations, routes, stats, config, exchange rates and geocoding, plus a trigger that fires when a country's prices refresh | MIT |
+| [n8n-nodes-pumperly](https://github.com/GeiserX/n8n-nodes-pumperly) (archived) | An n8n community node | Workflow steps for stations, routes, stats, config, exchange rates and geocoding, plus a trigger that fires when a country's prices refresh | MIT |
 
 ## pumperly-mcp
 
@@ -75,7 +75,7 @@ The integration polls every 30 minutes. Each poll reads `GET /api/stats` once an
 
 ## n8n-nodes-pumperly
 
-[n8n-nodes-pumperly](https://github.com/GeiserX/n8n-nodes-pumperly) adds Pumperly to [n8n](https://n8n.io/), a workflow automation tool. It is an n8n community node, installed from n8n's community nodes settings.
+[n8n-nodes-pumperly](https://github.com/GeiserX/n8n-nodes-pumperly) adds Pumperly to [n8n](https://n8n.io/), a workflow automation tool. Its repository is archived, so it gets no more updates. It is an n8n community node, installed from n8n's community nodes settings.
 
 The Pumperly node offers these operations:
 

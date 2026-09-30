@@ -39,8 +39,8 @@ The workflows live in [`.github/workflows/auto-tag.yml`](https://github.com/Geis
 
 | Tag | What it is |
 |-----|------------|
-| `1.14.0`, `v1.14.0` | A release. Both names point at the same image, for `linux/amd64` and `linux/arm64`. |
-| `1.14.0-amd64`, `1.14.0-arm64` | The single-architecture images the multi-architecture tag is made of. You do not need them. |
+| `1.15.1`, `v1.15.1` | A release. Both names point at the same image, for `linux/amd64` and `linux/arm64`. |
+| `1.15.1-amd64`, `1.15.1-arm64` | The single-architecture images the multi-architecture tag is made of. You do not need them. |
 | `latest` | Not tied to a release. Do not use it. |
 
 Pin a release tag in your compose file or Helm values. With `latest` you cannot tell which version runs, and the app changes whenever the image is pulled again. That includes changes that need a migration you have not applied.
@@ -74,7 +74,7 @@ No output means there is nothing to apply.
 
 Apply migrations before you start the new image. The new code may rely on them.
 
-The Docker Compose commands below follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md): the shipped `docker/docker-compose.yml` plus your `docker/app.yml`, run from the repository root. The database service is `db` and the Pumperly service is `app`.
+With the shipped `docker/docker-compose.yml` there is nothing to do here: its `migrate` service applies new migrations on every `up`, before the app starts, and records them in `_prisma_migrations`. See [Upgrade a Docker Compose install](#upgrade-a-docker-compose-install). The rest of this section is for other setups, and for a compose file of your own. The commands follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md), run from the repository root: the database service is `db` and the Pumperly service is `app`.
 
 First check whether your database keeps a migration history. Prisma records applied migrations in a table called `_prisma_migrations`:
 
@@ -92,7 +92,7 @@ An error saying the relation does not exist means the database has no history. P
     ```bash
     git clone https://github.com/GeiserX/Pumperly.git
     cd Pumperly
-    git checkout v1.14.0
+    git checkout v1.15.1
     npm ci
     DATABASE_URL=postgresql://pumperly:pumperly@localhost:5433/pumperly npx prisma migrate deploy
     ```
@@ -128,27 +128,26 @@ Pumperly ships no down migrations. To go back to an older release after a migrat
 
 1. Read the [release notes](https://github.com/GeiserX/Pumperly/releases) for every release between yours and the new one.
 2. Back up the database. See [Backing up the database](backup-and-restore.md).
-3. Check for new migrations and apply them, as [above](#migrations).
-4. Move the image pin of the Pumperly service to the new release, in `docker/app.yml`:
-
-    ```yaml
-    services:
-      app:
-        image: drumsergio/pumperly:1.14.0
-    ```
-
-5. Pull and recreate the container:
+3. Update the checkout. The compose file on `main` pins the newest release, and the checkout brings that release's migrations:
 
     ```bash
-    docker compose -f docker/docker-compose.yml -f docker/app.yml pull app
-    docker compose -f docker/docker-compose.yml -f docker/app.yml up -d app
+    git pull
     ```
 
-6. Run the [checks after an upgrade](#after-an-upgrade).
+    To move to a release other than the newest, check out its tag (for example `git checkout v1.15.0`) and set the `app` image in `docker/docker-compose.yml` to the same version.
 
-`docker compose pull` on its own only pulls the tag you already pinned. Moving the pin is the upgrade.
+4. Pull the new image and recreate the stack:
 
-These commands follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md), where the Pumperly service is `app` in `docker/app.yml`. Adjust the file names and the service name if your setup differs.
+    ```bash
+    docker compose -f docker/docker-compose.yml pull app
+    docker compose -f docker/docker-compose.yml up -d
+    ```
+
+    `migrate` runs first and applies any new migration; the app restarts on the new image only if that succeeds. `docker compose -f docker/docker-compose.yml logs migrate` shows what it applied.
+
+5. Run the [checks after an upgrade](#after-an-upgrade).
+
+If you changed `docker/docker-compose.yml` yourself, `git pull` may stop on a conflict. Keep your changes in a second compose file passed with another `-f`, so the shipped file stays as released.
 
 ## Upgrade a Helm install { #helm }
 
@@ -164,7 +163,7 @@ Set `image.tag` in your values file to the release you want, then upgrade:
 
 ```yaml
 image:
-  tag: "1.14.0"
+  tag: "1.15.1"
 ```
 
 ```bash

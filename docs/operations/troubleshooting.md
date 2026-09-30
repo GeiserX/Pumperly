@@ -24,10 +24,10 @@ The scrapers run inside the web process, so everything is in the app's log.
 === "Docker Compose"
 
     ```bash
-    docker compose -f docker/docker-compose.yml -f docker/app.yml logs -f app
+    docker compose -f docker/docker-compose.yml logs -f app
     ```
 
-    This follows the layout of [Run with Docker Compose](../getting-started/docker-compose.md), where the Pumperly service is `app` in `docker/app.yml`.
+    This follows the layout of [Run with Docker Compose](../getting-started/docker-compose.md), where the Pumperly service is `app` in `docker/docker-compose.yml`. The schema migrations run in the `migrate` service; read them with `logs migrate`.
 
 === "Helm"
 
