@@ -146,7 +146,7 @@ Pumperly ships no down migrations. To go back to an older release after a migrat
     git pull
     ```
 
-    To move to a release other than the newest, check out its tag (for example `git checkout v1.15.0`) and set the `app` image in `docker/docker-compose.yml` to the same version.
+    To move to a release other than the newest, check out its tag (for example `git checkout v1.15.0`) and set the image pin at the top of `docker/docker-compose.yml` to the same version. Both `migrate` and `app` use that one pin, so the migrations applied are always the ones of the image that runs.
 
 4. Pull the new image and recreate the stack:
 

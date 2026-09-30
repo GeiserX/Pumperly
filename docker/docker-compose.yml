@@ -1,3 +1,8 @@
+# One image for the app and for the migrate service, so the migrations a
+# release ships are the ones applied. The auto-tag workflow moves this pin.
+x-app-image: &app-image
+  image: drumsergio/pumperly:1.16.0
+
 services:
   db:
     image: postgis/postgis:17-3.4
@@ -22,7 +27,7 @@ services:
   # One-shot: applies the SQL migrations shipped in the image that the
   # database has not recorded yet, then exits. See docker/migrate.mjs.
   migrate:
-    image: drumsergio/pumperly:1.15.3
+    <<: *app-image
     env_file: ../.env
     depends_on:
       db:
@@ -31,7 +36,7 @@ services:
     restart: "no"
 
   app:
-    image: drumsergio/pumperly:1.16.0
+    <<: *app-image
     container_name: pumperly
     restart: unless-stopped
     env_file: ../.env
