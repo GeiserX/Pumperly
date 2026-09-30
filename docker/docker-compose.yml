@@ -19,18 +19,15 @@ services:
       timeout: 5s
       retries: 5
 
-  # One-shot: applies the SQL migrations under prisma/migrations that the
-  # database has not recorded yet, then exits. See docker/migrate.sh.
+  # One-shot: applies the SQL migrations shipped in the image that the
+  # database has not recorded yet, then exits. See docker/migrate.mjs.
   migrate:
-    image: postgis/postgis:17-3.4
+    image: drumsergio/pumperly:1.15.3
     env_file: ../.env
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ../prisma/migrations:/migrations:ro
-      - ./migrate.sh:/usr/local/bin/pumperly-migrate:ro
-    entrypoint: ["pumperly-migrate"]
+    command: ["node", "migrate.mjs"]
     restart: "no"
 
   app:
