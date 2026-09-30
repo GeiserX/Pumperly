@@ -103,7 +103,18 @@ describe("REVEScraper", () => {
       latitude: 43.526146,
       longitude: -5.874451,
       stationType: "ev_charger",
+      maxPowerKw: 22,
     });
+  });
+
+  it("keeps a valid connector power when another connector is implausible", async () => {
+    vi.stubEnv("PUMPERLY_REVE_PAGES_PER_RUN", "1");
+    const { REVEScraper } = await import("./reve");
+    const evses = [{ id: "e1", connectors: [{ standard: "IEC_62196_T2_COMBO", max_electric_power: 150000 }, { standard: "IEC_62196_T2", max_electric_power: 1_200_000 }] }];
+    vi.mocked(fetch).mockResolvedValue(okResponse([location({ evses })], PAGE_HEADERS));
+
+    const { stations } = await new REVEScraper().fetch();
+    expect(stations[0].maxPowerKw).toBe(150);
   });
 
   it("falls back to the legal CPO name when owner is missing", async () => {

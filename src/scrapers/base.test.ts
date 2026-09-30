@@ -22,7 +22,7 @@ vi.mock("../generated/prisma/client", () => ({
 }));
 
 // Concrete test scraper
-import { BaseScraper, bandFor, type RawStation, type RawFuelPrice } from "./base";
+import { BaseScraper, bandFor, maxSanePowerKw, sanePowerKw, type RawStation, type RawFuelPrice } from "./base";
 
 describe("bandFor (per-currency price bands)", () => {
   it("accepts a plausible HUF price (595)", () => {
@@ -154,6 +154,29 @@ describe("BaseScraper.run()", () => {
     expect(mockDisconnect).toHaveBeenCalled();
   });
 
+  it("writes max_power_kw for charger batches", async () => {
+    scraper.mockStations = [
+      { ...makeStation("s1"), stationType: "ev_charger" },
+      { ...makeStation("s2"), stationType: "ev_charger", maxPowerKw: 150 },
+    ];
+    scraper.mockPrices = [];
+    mockQueryRawUnsafe.mockResolvedValue([]);
+    mockExecuteRawUnsafe.mockResolvedValue(undefined);
+
+    await scraper.run();
+
+    const stationCall = mockExecuteRawUnsafe.mock.calls.find(
+      (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
+    );
+    expect(stationCall).toBeDefined();
+    // 11 params per station; the 11th is max_power_kw (null when unset).
+    expect(stationCall![0]).toContain("max_power_kw = EXCLUDED.max_power_kw");
+    const params = stationCall!.slice(1);
+    expect(params).toHaveLength(22);
+    expect(params[10]).toBeNull();
+    expect(params[21]).toBe(150);
+  });
+
   it("upserts stations and prices in full pipeline", async () => {
     scraper.mockStations = [makeStation("s1"), makeStation("s2")];
     scraper.mockPrices = [
@@ -184,6 +207,9 @@ describe("BaseScraper.run()", () => {
       (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
     );
     expect(stationCall).toBeDefined();
+    // Fuel-only batch: no max_power_kw, so it runs on an un-migrated database.
+    expect(stationCall![0]).not.toContain("max_power_kw");
+    expect(stationCall!.slice(1)).toHaveLength(20);
 
     // Verify price insert SQL was called
     const priceCall = mockExecuteRawUnsafe.mock.calls.find(
@@ -402,5 +428,34 @@ describe("BaseScraper.run()", () => {
     await scraper.run();
 
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("sanePowerKw", () => {
+  it("rounds plausible values", () => {
+    expect(sanePowerKw(22)).toBe(22);
+    expect(sanePowerKw(149.6)).toBe(150);
+  });
+
+  it("returns null for missing, implausible or sub-kW values", () => {
+    expect(sanePowerKw(null)).toBeNull();
+    expect(sanePowerKw(undefined)).toBeNull();
+    expect(sanePowerKw(Number.NaN)).toBeNull();
+    expect(sanePowerKw(0)).toBeNull();
+    expect(sanePowerKw(-5)).toBeNull();
+    expect(sanePowerKw(0.3)).toBeNull();
+    expect(sanePowerKw(1001)).toBeNull();
+  });
+});
+
+describe("maxSanePowerKw", () => {
+  it("keeps the highest valid value when a larger one is implausible", () => {
+    expect(maxSanePowerKw([150, 1200])).toBe(150);
+    expect(maxSanePowerKw([22, null, Number.NaN, 49.6])).toBe(50);
+  });
+
+  it("returns null when no value is valid", () => {
+    expect(maxSanePowerKw([])).toBeNull();
+    expect(maxSanePowerKw([null, undefined, 0, 5000])).toBeNull();
   });
 });

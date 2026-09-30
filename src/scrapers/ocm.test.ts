@@ -85,12 +85,38 @@ describe("OCMScraper", () => {
     expect(tesla!.province).toBe("Berlin");
     expect(tesla!.stationType).toBe("ev_charger");
     expect(tesla!.latitude).toBeCloseTo(52.52, 2);
+    expect(tesla!.maxPowerKw).toBe(250);
 
     // Station without OperatorInfo or Title
     const noName = stations.find((s) => s.externalId === "ocm-67890");
     expect(noName).toBeDefined();
     expect(noName!.name).toBe("EV Charger 67890");
     expect(noName!.brand).toBeNull();
+    expect(noName!.maxPowerKw).toBeNull();
+  });
+
+  it("takes the fastest connector and keeps a POI whose power is malformed", async () => {
+    const { OCMScraper } = await import("./ocm");
+    const scraper = new OCMScraper("DE");
+    const at = (ID: number, Connections: unknown) => ({
+      ID,
+      AddressInfo: { AddressLine1: "A", Town: "T", Latitude: 52.5, Longitude: 13.4 },
+      Connections,
+    });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => [
+        at(1, [{ PowerKW: 11 }, { PowerKW: 150.4 }, { PowerKW: null }]),
+        at(2, [{ PowerKW: "fast" }]),
+        at(3, "not an array"),
+        at(4, [{ PowerKW: 5000 }]),
+        at(5, [{ PowerKW: 150 }, { PowerKW: 1200 }]),
+      ],
+    } as Response);
+
+    const { stations } = await scraper.fetch();
+    const kw = Object.fromEntries(stations.map((s) => [s.externalId, s.maxPowerKw]));
+    expect(kw).toEqual({ "ocm-1": 150, "ocm-2": null, "ocm-3": null, "ocm-4": null, "ocm-5": 150 });
   });
 
   it("returns empty when API key is not set", async () => {

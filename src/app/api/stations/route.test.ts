@@ -85,6 +85,7 @@ describe("stations API", () => {
       ...mockRow,
       price: null,
       reported_at: null,
+      max_power_kw: 150,
     }]);
 
     const response = (await GET(makeRequest({
@@ -98,6 +99,8 @@ describe("stations API", () => {
     // EV query uses station_type filter; verify the SQL includes it
     const sqlArg = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0][0] as string;
     expect(sqlArg).toContain("station_type");
+    expect(sqlArg).toContain("s.max_power_kw::int AS max_power_kw");
+    expect(response.data.features[0].properties.powerKw).toBe(150);
   });
 
   it("returns 400 when bbox is missing", async () => {

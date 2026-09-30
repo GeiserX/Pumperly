@@ -7,6 +7,7 @@ import {
   parseStationParams,
   buildRouteQuery,
   parseRouteParams,
+  deepLinkFuel,
   MAX_VIA,
   type StationShareParams,
   type RouteShareParams,
@@ -335,5 +336,17 @@ describe("buildRouteQuery / parseRouteParams round-trip", () => {
   it("returns null when no route params are present", () => {
     expect(parseRouteParams(new URLSearchParams())).toBeNull();
     expect(parseRouteParams(new URLSearchParams("foo=bar"))).toBeNull();
+  });
+});
+
+describe("deepLinkFuel", () => {
+  const q = (s: string) => new URLSearchParams(s);
+  it("reads the fuel of a route or station link", () => {
+    expect(deepLinkFuel(q("from=40.4,-3.7&to=41.4,2.2&fuel=EV"))).toBe("EV");
+    expect(deepLinkFuel(q("station=ES:1&lat=40.4&lng=-3.7&fuel=B7"))).toBe("B7");
+  });
+  it("ignores a fuel without a valid link, and unknown fuels", () => {
+    expect(deepLinkFuel(q("fuel=EV"))).toBeNull();
+    expect(deepLinkFuel(q("from=40.4,-3.7&to=41.4,2.2&fuel=NOPE"))).toBeNull();
   });
 });

@@ -21,6 +21,7 @@ erDiagram
         text province
         varchar station_type
         geometry geom
+        smallint max_power_kw
         timestamptz created_at
         timestamptz updated_at
     }
@@ -81,6 +82,12 @@ The shipped files, included here word for word:
     --8<-- "prisma/migrations/20260929000000_widen_fuel_price/migration.sql"
     ```
 
+=== "Charger power migration"
+
+    ```sql
+    --8<-- "prisma/migrations/20260930000000_station_max_power_kw/migration.sql"
+    ```
+
 ## `stations`
 
 One row per place: a fuel station, an EV charger, or a site that is both.
@@ -97,6 +104,7 @@ One row per place: a fuel station, an EV charger, or a site that is both.
 | `province` | `text` | Yes | Region, state or county, when the source gives one. |
 | `station_type` | `varchar(20)` | No | `fuel`, `ev_charger` or `both`. Defaults to `fuel`. |
 | `geom` | `geometry(Point, 4326)` | Yes | The position, as a PostGIS point in WGS84 longitude and latitude. Scrapers always set it. |
+| `max_power_kw` | `smallint` | Yes | EV chargers: highest single-connector power in kW, set by the BNetzA, OCM and REVE scrapers. `null` for fuel stations and chargers with no published power. |
 | `created_at` | `timestamptz` | No | When the row was first inserted. Never changed afterwards. |
 | `updated_at` | `timestamptz` | No | When a scraper run last wrote this station. Every successful upsert sets it to the current time, even when nothing changed. |
 

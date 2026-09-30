@@ -112,4 +112,17 @@ describe("StationPopup", () => {
     expect(copied).toContain("fuel=E5");
     vi.unstubAllGlobals();
   });
+
+  it("shows an EV charger's power instead of an empty price", () => {
+    render(<StationPopup station={makeStation({ fuelType: "EV", price: null, powerKw: 150 })} onClose={() => {}} />);
+    expect(screen.getByText("150")).toBeInTheDocument();
+    expect(screen.getByText("kW")).toBeInTheDocument();
+    expect(screen.getByText(/popup.maxPower/)).toBeInTheDocument();
+  });
+
+  it("says so when an EV charger's power is unknown", () => {
+    render(<StationPopup station={makeStation({ fuelType: "EV", price: null })} onClose={() => {}} />);
+    expect(screen.getByText("popup.powerUnknown")).toBeInTheDocument();
+    expect(screen.queryByText("kW")).not.toBeInTheDocument();
+  });
 });

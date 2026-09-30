@@ -13,8 +13,7 @@ import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
 import type { PlannedStopMarker } from "@/components/search/refuel-planner";
 import { useDetourStream } from "@/lib/use-detour-stream";
-import { parseStationParams, parseRouteParams, buildStationQuery } from "@/lib/share-url";
-import { fuelTypeEnum } from "@/types/fuel";
+import { parseStationParams, parseRouteParams, buildStationQuery, deepLinkFuel } from "@/lib/share-url";
 
 interface Props {
   defaultFuel: string;
@@ -41,12 +40,12 @@ function readDeepLink(): { fuel: FuelType | null; route: InitialRoute | null; st
   const empty = { fuel: null, route: null, station: null };
   if (typeof window === "undefined") return empty;
   const sp = new URLSearchParams(window.location.search);
+  const fuel = deepLinkFuel(sp);
 
   const route = parseRouteParams(sp);
   if (route) {
-    const parsedFuel = fuelTypeEnum.safeParse(route.fuel);
     return {
-      fuel: parsedFuel.success ? parsedFuel.data : null,
+      fuel,
       route: {
         from: [route.from.lng, route.from.lat],
         to: [route.to.lng, route.to.lat],
@@ -57,13 +56,7 @@ function readDeepLink(): { fuel: FuelType | null; route: InitialRoute | null; st
   }
 
   const station = parseStationParams(sp);
-  if (station && station.lat != null && station.lng != null) {
-    // Same fuel handling as the route branch: the viewport fetch is fuel-
-    // filtered, so an EV charger shared from the EV layer only ever loads (and
-    // gets selected) if the link puts the visitor on that layer (#129).
-    const parsedFuel = fuelTypeEnum.safeParse(station.fuel);
-    return { fuel: parsedFuel.success ? parsedFuel.data : null, route: null, station };
-  }
+  if (station && station.lat != null && station.lng != null) return { fuel, route: null, station };
   return empty;
 }
 

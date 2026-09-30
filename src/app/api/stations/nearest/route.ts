@@ -48,6 +48,8 @@ interface NearestStationRow {
   currency: string;
   reported_at: Date | null;
   distance_km: number;
+  /** EV query only. */
+  max_power_kw?: number | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -91,6 +93,7 @@ export async function GET(request: NextRequest) {
             NULL::float AS price,
             'EUR' AS currency,
             NULL::timestamptz AS reported_at,
+            s.max_power_kw::int AS max_power_kw,
             (ST_Distance(s.geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)) * 111.32)::float AS distance_km
           FROM stations s
           WHERE s.station_type IN ('ev_charger', 'both')
@@ -165,6 +168,7 @@ export async function GET(request: NextRequest) {
         currency: row.currency,
         ...(row.price != null ? { price: row.price } : {}),
         ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
+        ...(row.max_power_kw != null ? { powerKw: row.max_power_kw } : {}),
         distanceKm: Math.round(row.distance_km * 1000) / 1000,
       },
     }));

@@ -450,6 +450,7 @@ curl -sN -X POST http://localhost:3000/api/route-detour \
 | `currency` | yes | ISO 4217 code of `price`. `EUR` on EV chargers, where it carries no meaning. |
 | `price` | no | Latest price for `fuelType`, in `currency`. Absent on EV chargers. |
 | `reportedAt` | no | ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. Absent on EV chargers. |
+| `powerKw` | no | EV chargers only: highest single-connector power in kW. Absent when the source publishes none. |
 | `distanceKm` | only `/api/stations/nearest` | Approximate distance from the query point. |
 | `routeFraction` | only `/api/route-stations` | Position along the route, `0` to `1`. |
 

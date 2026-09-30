@@ -56,6 +56,8 @@ interface StationRow {
   reported_at: Date | null;
   route_fraction: number;
   distance_m: number;
+  /** EV query only. */
+  max_power_kw?: number | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest) {
             ST_X(s.geom) AS longitude, ST_Y(s.geom) AS latitude,
             NULL::float AS price, 'EUR' AS currency,
             NULL::timestamptz AS reported_at,
+            s.max_power_kw::int AS max_power_kw,
             ST_LineLocatePoint(r.g::geometry, s.geom)::float AS route_fraction,
             ST_Distance(s.geom::geography, r.g::geography)::float AS distance_m
           FROM stations s, route r
@@ -183,6 +186,7 @@ export async function POST(request: NextRequest) {
         currency: row.currency,
         ...(row.price != null ? { price: row.price } : {}),
         ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
+        ...(row.max_power_kw != null ? { powerKw: row.max_power_kw } : {}),
         routeFraction: row.route_fraction,
         // detourMin is computed later via /api/route-detour (Valhalla-based)
       },

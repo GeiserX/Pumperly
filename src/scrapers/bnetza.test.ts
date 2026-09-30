@@ -75,6 +75,40 @@ function tsv(...rows: string[]): string {
 }
 
 describe("parseBnetzaTsv", () => {
+  it("reads multi-plug cells and decimals, and keeps the max across merged rows", async () => {
+    const { parseBnetzaTsv } = await import("./bnetza");
+    const { stations } = parseBnetzaTsv(
+      tsv(
+        // Type 2 + Schuko on one charging point: one value per plug.
+        row({ "Nennleistung Stecker1": "22; 22", "Nennleistung Stecker2": "" }),
+        // Same location, CCS + CHAdeMO on another row.
+        row({ "Nennleistung Stecker1": "300; 300", "Nennleistung Stecker2": "" }),
+        // Same location, slower again: must not lower the max.
+        row({ "Nennleistung Stecker1": "30.0", "Nennleistung Stecker2": "" }),
+        row({ Breitengrad: "51.0", "Längengrad": "10.0", "Nennleistung Stecker1": "", "Nennleistung Stecker2": "abc" }),
+      ),
+    );
+    expect(stations.map((s) => s.maxPowerKw)).toEqual([300, null]);
+    for (const [cell, kw] of [["300; 300", 300], ["22; 22", 22], ["30.0", 30]] as const) {
+      const single = parseBnetzaTsv(tsv(row({ "Nennleistung Stecker1": cell, "Nennleistung Stecker2": "" })));
+      expect(single.stations[0].maxPowerKw).toBe(kw);
+    }
+  });
+
+  it("keeps a valid plug power when another plug on the row is implausible", async () => {
+    const { parseBnetzaTsv } = await import("./bnetza");
+    const { stations } = parseBnetzaTsv(tsv(row({ "Nennleistung Stecker1": "150", "Nennleistung Stecker2": "1200" })));
+    expect(stations[0].maxPowerKw).toBe(150);
+  });
+
+  it("still imports when the plug power columns are renamed", async () => {
+    const { parseBnetzaTsv } = await import("./bnetza");
+    const text = tsv(row()).replace(/Nennleistung Stecker/g, "Leistung Stecker");
+    const { stations } = parseBnetzaTsv(text);
+    expect(stations).toHaveLength(1);
+    expect(stations[0].maxPowerKw).toBeNull();
+  });
+
   it("maps an operational row into an EV charger station", async () => {
     const { parseBnetzaTsv } = await import("./bnetza");
     const { stations, stats } = parseBnetzaTsv(tsv(row()));
@@ -90,6 +124,7 @@ describe("parseBnetzaTsv", () => {
       latitude: 52.510055,
       longitude: 13.377592,
       stationType: "ev_charger",
+      maxPowerKw: 22,
     });
     expect(stats).toEqual({
       totalRows: 1,

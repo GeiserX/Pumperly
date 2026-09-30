@@ -142,6 +142,23 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
               </p>
             )}
           </div>
+        ) : properties.fuelType === "EV" ? (
+          // Chargers have no prices yet; their power is what tells them apart.
+          <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800">
+            {properties.powerKw != null ? (
+              <div className="flex items-baseline gap-1">
+                <span className="text-[22px] font-bold tabular-nums leading-none text-gray-900 dark:text-gray-100">
+                  {properties.powerKw}
+                </span>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">kW</span>
+              </div>
+            ) : (
+              <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-200">{t("popup.powerUnknown")}</p>
+            )}
+            <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+              {t("popup.maxPower")} · {t("popup.noPrice")} {fuelInfo?.label ?? properties.fuelType}
+            </p>
+          </div>
         ) : (
           <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-center dark:bg-gray-800">
             <span className="text-[11px] text-gray-500 dark:text-gray-400">

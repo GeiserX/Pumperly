@@ -40,6 +40,8 @@ interface StationRow {
   price: number | null;
   currency: string;
   reported_at: Date | null;
+  /** EV query only. */
+  max_power_kw?: number | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -79,7 +81,8 @@ export async function GET(request: NextRequest) {
             ST_Y(s.geom) AS latitude,
             NULL::float AS price,
             'EUR' AS currency,
-            NULL::timestamptz AS reported_at
+            NULL::timestamptz AS reported_at,
+            s.max_power_kw::int AS max_power_kw
           FROM stations s
           WHERE s.station_type IN ('ev_charger', 'both')
             AND ST_Within(
@@ -149,6 +152,7 @@ export async function GET(request: NextRequest) {
         currency: row.currency,
         ...(row.price != null ? { price: row.price } : {}),
         ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
+        ...(row.max_power_kw != null ? { powerKw: row.max_power_kw } : {}),
       },
     }));
 

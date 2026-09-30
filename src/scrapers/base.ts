@@ -38,6 +38,28 @@ export interface RawStation {
   latitude: number;
   longitude: number;
   stationType: "fuel" | "ev_charger" | "both";
+  /** EV chargers: highest single-connector power in kW, null/unset when unknown. */
+  maxPowerKw?: number | null;
+}
+
+/** A published charger power as kW, or null when missing or implausible (≤ 0 or > 1000). */
+export function sanePowerKw(kw: number | null | undefined): number | null {
+  if (typeof kw !== "number" || !Number.isFinite(kw) || kw > 1000) return null;
+  const rounded = Math.round(kw);
+  return rounded > 0 ? rounded : null;
+}
+
+/**
+ * The highest plausible power among a charger's connectors, kW. Each value is
+ * checked before comparing, so one bogus reading can't hide a valid one.
+ */
+export function maxSanePowerKw(kws: Iterable<number | null | undefined>): number | null {
+  let max: number | null = null;
+  for (const kw of kws) {
+    const sane = sanePowerKw(kw);
+    if (sane != null && (max == null || sane > max)) max = sane;
+  }
+  return max;
 }
 
 export interface RawFuelPrice {
@@ -334,19 +356,26 @@ export abstract class BaseScraper {
   ): Promise<number> {
     if (batch.length === 0) return 0;
 
+    // Only charger batches write max_power_kw: fuel stations never have a
+    // power, so fuel scrapers keep working on a database without the column.
+    const withPower = batch.some((s) => s.stationType !== "fuel");
+    const perRow = withPower ? 11 : 10;
+
     // Build parameterised VALUES list.
     // Each station needs 10 params: externalId, country, name, brand,
-    // address, city, province, stationType, longitude, latitude
+    // address, city, province, stationType, longitude, latitude,
+    // plus maxPowerKw for charger batches.
     const params: unknown[] = [];
     const valueClauses: string[] = [];
 
     for (let i = 0; i < batch.length; i++) {
       const s = batch[i];
-      const offset = i * 10;
+      const offset = i * perRow;
       valueClauses.push(
         `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, ` +
           `$${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, ` +
           `ST_SetSRID(ST_MakePoint($${offset + 9}, $${offset + 10}), 4326), ` +
+          (withPower ? `$${offset + 11}::smallint, ` : "") +
           `NOW(), NOW())`,
       );
       params.push(
@@ -361,10 +390,11 @@ export abstract class BaseScraper {
         s.longitude,
         s.latitude,
       );
+      if (withPower) params.push(s.maxPowerKw ?? null);
     }
 
     const sql = `
-      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, created_at, updated_at)
+      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, ${withPower ? "max_power_kw, " : ""}created_at, updated_at)
       VALUES ${valueClauses.join(",\n")}
       ON CONFLICT (external_id, country)
       DO UPDATE SET
@@ -374,7 +404,7 @@ export abstract class BaseScraper {
         city         = EXCLUDED.city,
         province     = EXCLUDED.province,
         station_type = EXCLUDED.station_type,
-        geom         = EXCLUDED.geom,
+        geom         = EXCLUDED.geom,${withPower ? "\n        max_power_kw = EXCLUDED.max_power_kw," : ""}
         updated_at   = NOW()
     `;
 

@@ -127,8 +127,9 @@ describe("route-stations API", () => {
 
   it("queries EV stations without price join", async () => {
     const { prisma } = await import("@/lib/db");
-    const evRow = { ...mockStationRow, price: null, reported_at: null };
-    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([evRow]);
+    const evRow = { ...mockStationRow, price: null, reported_at: null, max_power_kw: 150 };
+    const unknownKw = { ...evRow, id: "unknown-kw", max_power_kw: null };
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([evRow, unknownKw]);
 
     const { POST } = await import("./route");
     const response = (await POST(makeRequest({
@@ -138,9 +139,12 @@ describe("route-stations API", () => {
     }) as any)) as any;
 
     expect(response.status).toBe(200);
-    expect(response.data.features).toHaveLength(1);
+    expect(response.data.features).toHaveLength(2);
     // EV query should not include price
     expect(response.data.features[0].properties.price).toBeUndefined();
+    // Charger power passes through; unknown power is omitted, not null.
+    expect(response.data.features[0].properties.powerKw).toBe(150);
+    expect(response.data.features[1].properties).not.toHaveProperty("powerKw");
 
     expect(vi.mocked(prisma.$queryRawUnsafe)).toHaveBeenCalledTimes(1);
     const sql = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0][0] as string;
@@ -152,6 +156,7 @@ describe("route-stations API", () => {
     expect(sql).toContain("ST_DWithin(s.geom::geography, r.g::geography, $4)");
     expect(sql).toContain("LIMIT 5000");
     expect(sql).not.toContain("JOIN LATERAL");
+    expect(sql).toContain("s.max_power_kw::int AS max_power_kw");
   });
 
   it("pads longitude wider than latitude for a high-latitude route (cos-lat correction)", async () => {
