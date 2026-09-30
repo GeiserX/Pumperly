@@ -4,7 +4,7 @@ This page explains how to plan a trip in Pumperly and how it finds and ranks the
 
 A route needs two self-hosted services. [Valhalla](../configuration/routing-valhalla.md) computes routes and detour times. [Photon](../configuration/geocoding-photon.md) turns what you type into places. Without Valhalla every route fails. Without Photon the search box finds nothing.
 
-![A diesel route opened from a shared link. The corridor stations are coloured by price along the blue line, and the side panel holds the sort, detour and search radius controls.](../images/screenshots/route-diesel.png)
+![A diesel route from Lisbon to Porto. The corridor stations are coloured by price along the route line, and the side panel lists them with their detour minutes and badges.](../images/screenshots/route-stations.png)
 
 ## How a route is built
 

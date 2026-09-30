@@ -2,7 +2,7 @@
 
 This page explains the EV layer: what it shows, what a charger's popup holds, and how charging stations along a route work. The map and route controls themselves are described in [The map](map.md) and [Planning a route](routes.md).
 
-![The EV layer in Berlin. Chargers are grey dots, the route has two alternatives, and the side panel lists the chargers along the selected route with their detours.](../images/screenshots/ev-route-berlin.png)
+![The EV layer in Berlin. Chargers are grey dots, and the side panel lists the chargers along the route with their detours.](../images/screenshots/ev-chargers.png)
 
 ## Turning on the EV layer
 
