@@ -199,7 +199,7 @@ function resolvePlugPowerColumns(headerLine: string): number[] {
 
 /** Highest plug power on a row, kW. A cell holds one value per plug, joined with ";" ("300; 300"). */
 function rowPowerKw(fields: string[], plugCols: number[]): number | null {
-  return maxSanePowerKw(plugCols.flatMap((i) => unquote(fields[i]).split(";").map(Number)));
+  return maxSanePowerKw(plugCols.flatMap((i) => unquote(fields[i]).split(";").map((v) => Number(v.trim().replace(",", ".")))));
 }
 
 /**
