@@ -2038,14 +2038,13 @@
 <ol>
 <li>The <strong>brand</strong>. For chargers this is the operator, when the source names one.</li>
 <li>The <strong>address</strong> and the <strong>city</strong>.</li>
-<li>The line "No price for EV Charging".</li>
+<li>The charger's <strong>highest power</strong> in kW, such as <code>150 kW</code>, labelled "Max. charging power · No price for EV Charging". When the source lists no power, it reads "Power unknown" instead. The German registry, OpenChargeMap and Mapa REVE all publish power.</li>
 <li>The same four buttons as any station: <strong>Get directions</strong>, <strong>Show on map</strong>, <strong>Copy link</strong> and <strong>Share</strong>. See <a href="../map/#station-popup">Station popup</a>.</li>
 </ol>
 <p>In a route's station list, a charger row shows the operator and the station name. Each source builds that name differently. The German registry, for example, combines the operator with the street and a site label, which tells apart two chargers at one address.</p>
 <div class="admonition note">
 <p class="admonition-title">No tariffs, connectors or live availability</p>
-<p>Pumperly does not store charging tariffs, connector types or live availability. Its price model holds one price per litre for each fuel. A charging tariff is per kWh and per session, and that does not fit. The popup tells you where a charger is and who runs it. Check the operator's app for price and plug type.</p>
-<p>Power has one exception. A Spanish charger from Mapa REVE gets a name that ends in its highest power, such as <code>150 kW</code>, when the registry lists one. That name shows in a route's station list, not in the popup.</p>
+<p>Pumperly does not store charging tariffs, connector types or live availability. Its price model holds one price per litre for each fuel. A charging tariff is per kWh and per session, and that does not fit. The popup tells you where a charger is, who runs it and how fast it can charge. Check the operator's app for price and plug type.</p>
 </div>
 <h2 id="chargers-along-a-route">Chargers along a route<a class="headerlink" href="#chargers-along-a-route" title="Permanent link">&para;</a></h2>
 <p>Route planning on the EV layer works the same way as on a fuel layer. See <a href="../routes/">Planning a route</a>. Pumperly finds the chargers within the search radius of each route and times the detour to each one.</p>
@@ -2098,13 +2097,14 @@
 <p>Cities have far more chargers than fuel stations. A 5 km radius across a large city can hold hundreds of them. Pumperly times detours in batches of 150 chargers, and each batch is one request. A visitor may send 10 detour requests a minute, so the later batches of a very dense corridor come back as unknown detours. Lower the search radius, or pick a route that avoids the centre. The limits are listed in <a href="../routes/#limits">Limits</a>.</p>
 </div>
 <p>Clicking a charger in the list or on the map adds it to the route as a stop, as on any layer. See <a href="../routes/#pick-a-station-as-a-stop">Pick a station as a stop</a>.</p>
+<p>On the EV layer, the fuel stop planner becomes <strong>Plan charging stops</strong>. You set the battery size in kWh, the consumption in kWh/100 km, the car's max charge power, and the battery level at the start and at arrival. The planner then picks the chargers along the route that get you there with the least detour and charging time, since chargers have no prices. Each stop charges to at most 80 %, because charging slows sharply above that. Charging time uses the lower of the charger's power and the car's max charge power, capped at 22 kW on AC chargers. On DC it averages 75 % of that, because charging tapers as the battery fills. The reserve defaults to 20 %. <strong>Min charger power</strong> (Any, 50 kW or 150 kW) skips slower chargers. It also skips chargers whose power is unknown, because the filter can't vouch for them.</p>
 <h2 id="sharing-a-charger">Sharing a charger<a class="headerlink" href="#sharing-a-charger" title="Permanent link">&para;</a></h2>
 <p>A charger link must carry <code>fuel=EV</code>. The map only loads chargers on the EV layer, so a link without it opens a fuel layer where the charger never loads. The <strong>Copy link</strong> and <strong>Share</strong> buttons add it for you. <a href="../links/#the-ev-rule">The EV rule</a> explains it in full.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Pick <strong>EV Charging</strong> (<code>EV</code>) in the fuel selector to see chargers.</li>
 <li>The EV layer shows every charger in view. Chargers have no price, so dots are grey and there is no legend or price slider.</li>
-<li>A charger's popup shows the operator, the address and the city. There are no tariffs, connectors or live availability.</li>
+<li>A charger's popup shows the operator, the address, the city and the highest power in kW. There are no tariffs, connectors or live availability.</li>
 <li>Along a route, detours and the detour filter work as usual. Price sorting and the Cheapest and Balanced badges do not apply.</li>
 <li>Keep the search radius small in cities, or dense corridors run into the detour rate limit.</li>
 </ul>
