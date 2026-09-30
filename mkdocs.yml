@@ -1,6 +1,6 @@
 site_name: Pumperly
 site_url: https://geiserx.github.io/Pumperly/
-site_description: Open-source fuel and EV charging price map and route planner. Self-hosted, with official price data from dozens of countries.
+site_description: Open-source map of fuel prices and EV chargers with a route planner that finds the cheapest stops. Live prices from 22 countries. Self-hostable.
 repo_url: https://github.com/GeiserX/Pumperly
 repo_name: GeiserX/Pumperly
 edit_uri: edit/main/docs/
@@ -71,6 +71,7 @@ plugins:
         contributing.md: development.md
         getting-started/development.md: development.md
         integrations.md: related.md
+        features.md: index.md
 
 markdown_extensions:
   - admonition
@@ -116,6 +117,8 @@ extra:
       link: https://github.com/GeiserX/Pumperly
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/r/drumsergio/pumperly
+    - icon: simple/artifacthub
+      link: https://artifacthub.io/packages/helm/pumperly/pumperly
 
 extra_css:
   - stylesheets/theme.css
@@ -135,7 +138,6 @@ exclude_docs: |
 
 nav:
   - Home: index.md
-  - Features at a glance: features.md
   - Get started:
       - Run with Docker Compose: getting-started/docker-compose.md
       - What happens on first start: getting-started/first-start.md
@@ -169,6 +171,7 @@ nav:
       - Fuel types: reference/fuel-types.md
       - Currencies and exchange rates: reference/currencies.md
       - Glossary: reference/glossary.md
-  - Related projects: related.md
-  - Roadmap: roadmap.md
-  - Development: development.md
+  - Project:
+      - Roadmap: roadmap.md
+      - Related projects: related.md
+      - Development: development.md

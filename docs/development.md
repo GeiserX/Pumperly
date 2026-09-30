@@ -469,4 +469,14 @@ Open `http://localhost:3000`.
 | `npm run lint` | Run ESLint |
 | `npm run scraper:run -- --country=XX` | Run scraper for a country (or `--country=all`) |
 
-The tech stack is listed in [Features at a glance](features.md#tech-stack).
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | [Next.js](https://nextjs.org) 16, [React](https://react.dev) 19, [MapLibre GL JS](https://maplibre.org), [Tailwind CSS](https://tailwindcss.com) |
+| Backend | Next.js API routes, [Prisma](https://prisma.io) ORM |
+| Database | [PostGIS](https://postgis.net) 17 (PostgreSQL + spatial) |
+| Routing | [Valhalla](https://github.com/valhalla/valhalla) 3.5.1 |
+| Geocoding | [Photon](https://github.com/komoot/photon) 1.0.1 |
+| Map tiles | [OpenFreeMap](https://openfreemap.org) (OpenStreetMap) |
+| Deployment | Docker, GitHub Actions CI/CD |
