@@ -1,7 +1,7 @@
 # One image for the app and for the migrate service, so the migrations a
 # release ships are the ones applied. The auto-tag workflow moves this pin.
 x-app-image: &app-image
-  image: drumsergio/pumperly:1.16.0
+  image: drumsergio/pumperly:1.17.0
 
 services:
   db:
