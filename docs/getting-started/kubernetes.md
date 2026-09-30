@@ -18,7 +18,7 @@ This page installs Pumperly on a Kubernetes cluster with the Helm chart in [`cha
 The app pod also has up to two init containers, which run before the app starts:
 
 - `wait-for-database` waits until the database port answers, for up to `waitForDatabase.timeoutSeconds` (300 by default).
-- `prisma-db-push` runs `npx prisma db push` in the app image. Read [The schema](#the-schema) before you rely on it.
+- `migrate` runs `node migrate.mjs` in the app image. It applies the SQL migrations the image ships that the database has not recorded yet, and the app starts only if that succeeds. See [The schema](#the-schema).
 
 The chart requires Kubernetes 1.21 or newer.
 
@@ -37,7 +37,7 @@ Start from this `my-values.yaml` and change what you need:
 
 ```yaml
 image:
-  tag: "1.14.0"          # the newest release; the chart's default is older
+  tag: "1.17.0"          # the release you want; the chart's default lags behind
 
 config:
   defaultCountry: "ES"
@@ -45,9 +45,6 @@ config:
 
 apiKeys:
   openChargeMap: "your-ocm-key"
-
-databaseInit:
-  enabled: false         # see "The schema" below
 
 ingress:
   enabled: true
@@ -73,23 +70,13 @@ With the release name `pumperly`, the objects are called `pumperly` (the app), `
 
 ### 4. Create the schema
 
-Do this once, after PostGIS is running. See [The schema](#the-schema) for why.
+The `migrate` init container does this before the app's first start, and again on every later start, applying only what the database has not recorded yet. There is nothing to run by hand. Read what it did with:
 
 ```bash
-kubectl rollout status statefulset/pumperly-postgis
-for f in prisma/migrations/*/migration.sql; do
-  kubectl exec -i pumperly-postgis-0 -- \
-    psql -v ON_ERROR_STOP=1 -U pumperly -d pumperly < "$f"
-done
+kubectl logs deployment/pumperly -c migrate
 ```
 
-Run it from a checkout of the repository, which holds the migration files.
-
-Then restart the app, so its first scrapes run against the new tables:
-
-```bash
-kubectl rollout restart deployment/pumperly
-```
+The last line is `migrate: N migration(s) applied, schema up to date`. If you set `databaseInit.enabled: false`, apply the migrations yourself as described in [The schema](#the-schema), then restart the app so its first scrapes run against the new tables.
 
 ### 5. Check it
 
@@ -108,12 +95,12 @@ The log lines and the checks are the same as with Docker. See [What happens on f
 
 ## The schema
 
-The app never creates its tables. The chart offers the `prisma-db-push` init container for that, on by default. It runs `npx prisma db push` on every pod start. Two facts make it the wrong tool for this schema:
+The app never creates its tables. They come from the SQL migrations under `prisma/migrations`, which the image carries together with `migrate.mjs`, the script that applies them. The chart's `migrate` init container, on by default, runs that script in the app image before the app starts: one transaction per migration, recorded in Prisma's history table `_prisma_migrations`, and the app does not start if a migration fails. [Apply new migrations](../operations/upgrading.md#apply-new-migrations) describes what the script does and what it refuses.
 
-- `prisma db push` builds the tables from `prisma/schema.prisma`. That file does not declare the `geom` column that holds each station's position, because Prisma has no type for it. Every scraper writes `geom`, so a schema built this way cannot store stations.
-- The image does not carry `prisma/schema.prisma`, `prisma.config.ts` or the Prisma CLI, which `prisma db push` needs. It carries only the migration files and `migrate.mjs`, the script that applies them.
+!!! danger "Do not use `prisma db push` to create the schema"
+    Chart versions before 0.2.0 ran `npx prisma db push` in this init container. That never worked: the image carries neither the Prisma CLI nor `prisma/schema.prisma`, and that file does not declare the `geom` column every scraper writes. Build the schema from the migrations.
 
-Set `databaseInit.enabled: false` and apply the migrations with the script the image carries, for example as a one-off pod that can reach the database:
+With `databaseInit.enabled: false`, apply the migrations yourself with the same script, for example as a one-off pod that can reach the database:
 
 ```bash
 kubectl run pumperly-migrate --rm -it --restart=Never \
@@ -121,8 +108,6 @@ kubectl run pumperly-migrate --rm -it --restart=Never \
   --env=DATABASE_URL=postgresql://pumperly:<password>@<database host>:5432/pumperly \
   -- node migrate.mjs
 ```
-
-They create the `geom` column and its spatial indexes. [Apply new migrations](../operations/upgrading.md#apply-new-migrations) describes what the script does and what it refuses.
 
 With `databaseInit.enabled: true`, the chart refuses to render when `replicaCount` is above 1, so that two pods never change the schema at once.
 
@@ -183,7 +168,7 @@ With `existingSecret`, your Secret must hold `DATABASE_URL`. With the bundled Po
 | `externalDatabase.url` | `""` | A full connection string for your own PostGIS. |
 | `externalDatabase.host`, `port`, `user`, `password`, `database` | `""`, `5432` | The same, in parts, used when `url` is empty. |
 | `waitForDatabase.enabled` | `true` | The `wait-for-database` init container. |
-| `databaseInit.enabled` | `true` | The `prisma-db-push` init container. Set it to `false`. |
+| `databaseInit.enabled` | `true` | The `migrate` init container, which applies the image's migrations before the app starts. |
 
 To use your own database, set `postgis.enabled: false` and fill `externalDatabase`. The database needs the PostGIS extension available. If you keep `waitForDatabase.enabled`, also set `externalDatabase.host`, even when you give a full `url`: the wait step probes that host.
 

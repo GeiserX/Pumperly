@@ -4,7 +4,7 @@ fullnameOverride: ""
 image:
   repository: drumsergio/pumperly
   pullPolicy: IfNotPresent
-  tag: "1.4.8"
+  tag: "1.17.0"
 
 imagePullSecrets: []
 
@@ -91,9 +91,10 @@ waitForDatabase:
   timeoutSeconds: 300
   resources: {}
 
-# -- Runs `npx prisma db push` as an init container on every pod start.
-# -- Safe for single-replica homelab deploys. Disable for HA or strict
-# -- rollout processes where schema mutations should be a separate step.
+# -- Runs `node migrate.mjs` from the app image as an init container on every
+# -- pod start: it applies the SQL migrations the image ships that the database
+# -- has not recorded yet, so a release that adds one never runs on an old
+# -- schema. Disable it to apply migrations as a separate step of your own.
 databaseInit:
   enabled: true
   resources: {}

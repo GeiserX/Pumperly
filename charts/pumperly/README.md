@@ -8,7 +8,7 @@ This chart deploys the Pumperly web application plus optional bundled PostGIS, V
 - Optional bundled PostGIS StatefulSet
 - Optional Valhalla routing Deployment
 - Optional Photon Deployment when you provide a real image and startup command
-- Automatic `npx prisma db push` init step for the primary database
+- A `migrate` init step that applies the SQL migrations shipped in the app image
 
 ## Important Notes
 
@@ -59,7 +59,7 @@ helm upgrade --install pumperly ./charts/pumperly -f my-values.yaml
 - `waitForDatabase.timeoutSeconds`: fail startup if the database never becomes reachable instead of waiting forever
 - `deploymentStrategy.type`: switch back to `RollingUpdate` only if you are comfortable with overlapping scraper pods during upgrades
 - `postgis.enabled`: disable bundled PostGIS for managed PostgreSQL/PostGIS
-- `databaseInit.enabled`: run `npx prisma db push` before the app starts
+- `databaseInit.enabled`: run `node migrate.mjs` from the app image before the app starts, applying the migrations the database has not recorded yet
 - `externalServices.valhallaUrl`: use an external Valhalla instance
 - `externalServices.photonUrl`: use an external Photon instance
 - `extraEnv` / `extraEnvFrom`: inject additional app settings without editing templates
