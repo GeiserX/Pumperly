@@ -128,7 +128,7 @@ describe("RefuelPlanner", () => {
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveTextContent("Repsol");
     expect(screen.getByLabelText("planner.start")).toHaveAttribute("aria-valuetext", "50%");
-    expect(screen.getByLabelText("planner.reserve")).toHaveAttribute("aria-valuetext", "20%");
+    expect(screen.getByLabelText("planner.reserve")).toHaveAttribute("aria-valuetext", "10%");
     expect(screen.getByRole("button", { name: /Repsol/, pressed: true })).toBeInTheDocument();
   });
 
@@ -372,6 +372,19 @@ describe("RefuelPlanner", () => {
       expect(onPlanChange.mock.lastCall![0].map((s: { id: string }) => s.id)).toEqual(["x", "y"]);
       expect(screen.getByText("planner.tripEnergy")).toBeInTheDocument();
       expect(screen.getAllByText(/^\+\d+\.\d kWh$/)).toHaveLength(2);
+    });
+
+    it("keeps its own reserve, 20 % by default, apart from the fuel one", async () => {
+      const all = { stations: CHARGERS, routeKm: 300, onStopSelect: vi.fn(), onStopToggleOff: vi.fn() };
+      const { rerender } = render(<Harness {...all} mode="ev" />);
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy).toHaveBeenLastCalledWith(expect.objectContaining({ reservePct: 20 }));
+      fireEvent.change(screen.getByLabelText("planner.reserve"), { target: { value: "30" } });
+
+      rerender(<Harness {...all} mode="fuel" />);
+      expect(screen.getByLabelText("planner.reserve")).toHaveValue("10");
+      rerender(<Harness {...all} mode="ev" />);
+      expect(screen.getByLabelText("planner.reserve")).toHaveValue("30");
     });
 
     it("shows battery fields, no value of time, and needs no exchange rates", async () => {

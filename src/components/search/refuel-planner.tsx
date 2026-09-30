@@ -45,6 +45,8 @@ export interface PlannerSettings {
   startPct: number;
   arrivalPct: number;
   reservePct: number;
+  /** EV keeps its own reserve: a charger can be far or busy, so it needs a larger buffer. */
+  evReservePct: number;
   /** Stored in EUR so the default means the same everywhere; shown and planned in the display currency. */
   timeValueEur: number;
   /** EV only: skip chargers below this power (kW); 0 = any. */
@@ -55,7 +57,8 @@ export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
   open: false,
   startPct: 50,
   arrivalPct: 20,
-  reservePct: 20,
+  reservePct: 10,
+  evReservePct: 20,
   timeValueEur: 15,
   minChargerKw: 0,
 };
@@ -84,7 +87,8 @@ export function RefuelPlanner({
   const capacity = ev ? evProfile.batteryKwh : fuelProfile.tankL;
   const consumption = ev ? evProfile.consumptionKwh100 : fuelProfile.consumptionL100;
   const maxChargePct = ev ? EV_MAX_CHARGE_PCT : 100;
-  const { open, startPct, arrivalPct, reservePct, timeValueEur, minChargerKw } = settings;
+  const { open, startPct, arrivalPct, timeValueEur, minChargerKw } = settings;
+  const reservePct = ev ? settings.evReservePct : settings.reservePct;
   // Settings are shared with fuel mode, where arrival may be set above the EV charge cap.
   const arrival = Math.min(arrivalPct, maxChargePct);
   const update = (patch: Partial<PlannerSettings>) => onSettingsChange({ ...settings, ...patch });
@@ -287,7 +291,7 @@ export function RefuelPlanner({
             )}
             <PctSlider label={t(ev ? "planner.startEv" : "planner.start")} value={startPct} min={1} onChange={(v) => update({ startPct: v })} />
             <PctSlider label={t(ev ? "planner.arrivalEv" : "planner.arrival")} value={arrival} min={0} max={maxChargePct} onChange={(v) => update({ arrivalPct: v })} />
-            <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={(v) => update({ reservePct: v })} />
+            <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={(v) => update(ev ? { evReservePct: v } : { reservePct: v })} />
             {!ev && <label className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               {t("planner.timeValue").replace("{cur}", symbol)}
               <input
