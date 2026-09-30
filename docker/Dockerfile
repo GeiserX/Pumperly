@@ -50,6 +50,11 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# The migrations and the script that applies them, so `node migrate.mjs` works
+# from the image alone. Nothing runs it on start: docker/docker-compose.yml runs
+# it as the `migrate` service before the app.
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/migrations ./prisma/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/docker/migrate.mjs ./migrate.mjs
 
 USER nextjs
 

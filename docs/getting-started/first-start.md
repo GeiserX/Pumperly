@@ -34,7 +34,7 @@ sequenceDiagram
 
 The `postgis/postgis` image initialises its volume on the first start only. It creates the `pumperly` user and database from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`. Later starts reuse the volume and ignore those variables.
 
-The app's image runs `node server.js` and nothing else. It does not run migrations. The tables come from the SQL files under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations). The shipped compose file applies them with its `migrate` service before the app starts; on other setups you apply them yourself. [Run with Docker Compose](docker-compose.md#4-create-the-database-schema) shows how.
+The app runs `node server.js` and does not run migrations. The tables come from the SQL files under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations), which the image carries together with `migrate.mjs`, the script that applies them. The shipped compose file runs that script as its `migrate` service before the app starts; on other setups you run it yourself. [Run with Docker Compose](docker-compose.md#4-create-the-database-schema) shows how.
 
 !!! tip "Create the schema before the app's first start"
     The shipped compose file already does. On other setups, if the app starts first, every first scrape fails with `relation "stations" does not exist`. A failed scraper waits for its next interval before it tries again, which is 12 hours for many countries. Once the schema exists, restart the app to scrape straight away.

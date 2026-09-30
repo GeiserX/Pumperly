@@ -88,7 +88,7 @@ docker compose -f docker/docker-compose.yml logs -f app
 
 ### 4. Create the database schema
 
-The `migrate` service does this for you, on the first `up` and on every later one. It runs [`docker/migrate.sh`](https://github.com/GeiserX/Pumperly/blob/main/docker/migrate.sh) in a PostGIS container: each folder under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations) is applied once, oldest first, in one transaction per migration, and recorded in Prisma's history table, `_prisma_migrations`, with the checksum Prisma uses. A later `npx prisma migrate deploy` therefore sees the same history and applies nothing twice. Read what it did with:
+The `migrate` service does this for you, on the first `up` and on every later one. It runs `node migrate.mjs` from the app image, which carries [`docker/migrate.mjs`](https://github.com/GeiserX/Pumperly/blob/main/docker/migrate.mjs) and the migration files of its release, so the service needs no checkout and always applies the migrations that match the image: each folder under [`prisma/migrations`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations) is applied once, oldest first, in one transaction per migration, and recorded in Prisma's history table, `_prisma_migrations`, with the checksum Prisma uses. A later `npx prisma migrate deploy` therefore sees the same history and applies nothing twice. Read what it did with:
 
 ```bash
 docker compose -f docker/docker-compose.yml logs migrate

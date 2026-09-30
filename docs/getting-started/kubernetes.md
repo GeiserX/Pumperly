@@ -111,9 +111,18 @@ The log lines and the checks are the same as with Docker. See [What happens on f
 The app never creates its tables. The chart offers the `prisma-db-push` init container for that, on by default. It runs `npx prisma db push` on every pod start. Two facts make it the wrong tool for this schema:
 
 - `prisma db push` builds the tables from `prisma/schema.prisma`. That file does not declare the `geom` column that holds each station's position, because Prisma has no type for it. Every scraper writes `geom`, so a schema built this way cannot store stations.
-- The final stage of the [Dockerfile](https://github.com/GeiserX/Pumperly/blob/main/docker/Dockerfile) copies only `public/`, `.next/standalone` and `.next/static` into the image. It does not copy the `prisma/` directory or `prisma.config.ts`, which `prisma db push` reads.
+- The image does not carry `prisma/schema.prisma`, `prisma.config.ts` or the Prisma CLI, which `prisma db push` needs. It carries only the migration files and `migrate.mjs`, the script that applies them.
 
-Set `databaseInit.enabled: false` and apply the SQL migrations as in step 4. They create the `geom` column and its spatial indexes.
+Set `databaseInit.enabled: false` and apply the migrations with the script the image carries, for example as a one-off pod that can reach the database:
+
+```bash
+kubectl run pumperly-migrate --rm -it --restart=Never \
+  --image=drumsergio/pumperly:<release> \
+  --env=DATABASE_URL=postgresql://pumperly:<password>@<database host>:5432/pumperly \
+  -- node migrate.mjs
+```
+
+They create the `geom` column and its spatial indexes. [Apply new migrations](../operations/upgrading.md#apply-new-migrations) describes what the script does and what it refuses.
 
 With `databaseInit.enabled: true`, the chart refuses to render when `replicaCount` is above 1, so that two pods never change the schema at once.
 

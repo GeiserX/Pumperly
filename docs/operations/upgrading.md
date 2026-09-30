@@ -50,7 +50,7 @@ Pin a release tag in your compose file or Helm values. With `latest` you cannot 
 
 ## The database schema is not migrated on start { #migrations }
 
-The image starts the web server with `node server.js` and nothing else. It never changes the database schema. The final build stage copies only the compiled app into the image: `public/`, `.next/standalone` and `.next/static`. It does not copy the `prisma/` folder, so the migration files are not in the image. See [`docker/Dockerfile`](https://github.com/GeiserX/Pumperly/blob/main/docker/Dockerfile).
+The app starts the web server with `node server.js` and never changes the database schema. The image does carry the migration files of its release, under `prisma/migrations`, and [`migrate.mjs`](https://github.com/GeiserX/Pumperly/blob/main/docker/migrate.mjs), the script that applies them. Nothing runs that script unless you do: the shipped compose file runs it as the `migrate` service before the app starts, and any other setup runs it from the image, as shown [below](#apply-new-migrations). See [`docker/Dockerfile`](https://github.com/GeiserX/Pumperly/blob/main/docker/Dockerfile).
 
 Schema changes ship as SQL files, one folder per migration, under [`prisma/migrations/`](https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations). A release that adds a folder there needs you to apply it. A release that adds none needs nothing.
 
@@ -74,7 +74,19 @@ No output means there is nothing to apply.
 
 Apply migrations before you start the new image. The new code may rely on them.
 
-With the shipped `docker/docker-compose.yml` there is nothing to do here: its `migrate` service applies new migrations on every `up`, before the app starts, and records them in `_prisma_migrations`. See [Upgrade a Docker Compose install](#upgrade-a-docker-compose-install). The rest of this section is for other setups, and for a compose file of your own. The commands follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md), run from the repository root: the database service is `db` and the Pumperly service is `app`.
+With the shipped `docker/docker-compose.yml` there is nothing to do here: its `migrate` service applies new migrations on every `up`, before the app starts, and records them in `_prisma_migrations`. See [Upgrade a Docker Compose install](#upgrade-a-docker-compose-install).
+
+On any other setup, run the same script from the new release's image. It needs `DATABASE_URL` and a network path to the database:
+
+```bash
+docker run --rm --network <network of your database> \
+  -e DATABASE_URL=postgresql://pumperly:<password>@<database host>:5432/pumperly \
+  drumsergio/pumperly:<release> node migrate.mjs
+```
+
+It applies every migration the history does not list yet, oldest first, one transaction each, and records each one in `_prisma_migrations` with the checksum Prisma uses. On a database whose schema was built by hand, with no history, it first checks that `0_init` is complete (both tables and the `geom` column) and records it as applied, the same as `prisma migrate resolve --applied 0_init`. It refuses a partial schema with no history and a history row Prisma left unfinished, and when a migration fails it rolls that one back and exits with an error, so the history never lists a migration that did not run.
+
+The rest of this section applies the migrations by hand instead. The commands follow the layout of [Run with Docker Compose](../getting-started/docker-compose.md), run from the repository root: the database service is `db` and the Pumperly service is `app`.
 
 First check whether your database keeps a migration history. Prisma records applied migrations in a table called `_prisma_migrations`:
 
@@ -128,13 +140,13 @@ Pumperly ships no down migrations. To go back to an older release after a migrat
 
 1. Read the [release notes](https://github.com/GeiserX/Pumperly/releases) for every release between yours and the new one.
 2. Back up the database. See [Backing up the database](backup-and-restore.md).
-3. Update the checkout. The compose file on `main` pins the newest release, and the checkout brings that release's migrations:
+3. Update the checkout. The compose file on `main` pins the newest release:
 
     ```bash
     git pull
     ```
 
-    To move to a release other than the newest, check out its tag (for example `git checkout v1.15.0`) and set the `app` image in `docker/docker-compose.yml` to the same version.
+    To move to a release other than the newest, check out its tag (for example `git checkout v1.15.0`) and set the image pin at the top of `docker/docker-compose.yml` to the same version. Both `migrate` and `app` use that one pin, so the migrations applied are always the ones of the image that runs.
 
 4. Pull the new image and recreate the stack:
 
