@@ -19,9 +19,10 @@ hide:
 
 ---
 
-**Pumperly** is an open-source map of fuel prices and EV charging stations, with a route planner on top. You pick a start and a destination. Pumperly draws the route and lists the stations along it, with each station's price and the extra minutes a stop would cost you. You can use it at [pumperly.com](https://pumperly.com) or run your own copy.
+**Pumperly** is an open-source map of fuel prices and EV chargers with a route planner on top. Pick a destination and it draws the route, lists every station along it with its price and the minutes a stop would add, and plans the cheapest places to fill up. Prices come straight from government and community sources in 22 countries, with no key to set. Use it at [pumperly.com](https://pumperly.com) or [run your own copy with Docker Compose](getting-started/docker-compose.md) and read [Planning a route](using/routes.md) to see what it does with a trip.
 
-Prices come from official, community and commercial sources, with at least one scraper per country. A scraper is a small job inside the app that downloads a source's data on a schedule and stores it in a PostGIS database. PostGIS is PostgreSQL with map and distance functions. Routing uses [Valhalla](https://github.com/valhalla/valhalla) and address search uses [Photon](https://github.com/komoot/photon). Both are optional: without them, the map and its prices still work.
+[Open pumperly.com](https://pumperly.com){ .md-button .md-button--primary }
+[Run it yourself](getting-started/docker-compose.md){ .md-button }
 
 <div class="grid cards" markdown>
 
@@ -29,19 +30,19 @@ Prices come from official, community and commercial sources, with at least one s
 
     ---
 
-    Start PostGIS and the app with Docker, create the database schema and open the map.
+    Start PostGIS and the app with the shipped compose file and open the map on port 3000.
 
--   :material-map-marker-radius: **[The map](using/map.md)**
-
-    ---
-
-    Find the cheapest station near you, switch fuel type and currency, and read a station's prices.
-
--   :material-earth: **[Coverage and status](data/coverage.md)**
+-   :material-play-circle-outline: **[What happens on first start](getting-started/first-start.md)**
 
     ---
 
-    Which countries have prices, where they come from, and which sources are paused.
+    Watch the scrapers fill the map country by country, and check that it worked.
+
+-   :material-map-marker-path: **[Planning a route](using/routes.md)**
+
+    ---
+
+    Stations along your trip, the detour each one costs, and the cheapest fuel stops planned for you.
 
 -   :material-format-list-bulleted: **[Environment variables](reference/environment-variables.md)**
 
@@ -51,27 +52,45 @@ Prices come from official, community and commercial sources, with at least one s
 
 </div>
 
-## The map
+## The map and the route
 
-Each dot is a station, coloured by its price for the fuel you picked. The scale runs from green for the cheapest through yellow and red to purple for the most expensive. See [The map](using/map.md).
+Each dot is a station, coloured by its price for the fuel you picked: green is the cheapest 5% on screen, purple the most expensive. See [The map](using/map.md).
 
-![The Pumperly map around a city, with stations coloured by diesel price and the price legend in the corner](images/screenshot-map.png)
+![The Pumperly map over Lisbon on the diesel layer. Stations are coloured from green to purple by price, with the price legend and the max-price slider in the bottom-left corner.](images/screenshots/map.png)
 
-Plan a route and the side panel lists the stations along it. The detour slider hides stations that would cost more than the minutes you allow. See [Planning a route](using/routes.md).
+Plan a route and the side panel lists the stations along it, sorted by price, detour or position. The max-detour slider hides the ones that cost more minutes than you allow. See [Planning a route](using/routes.md).
 
-![A route of about 360 km with the stations along it, the detour slider and the price legend](images/screenshots/route-diesel.png)
+![A diesel route from Lisbon to Porto. The side panel lists the stations along it with their prices, the extra minutes each one adds and the Cheapest and Balanced badges.](images/screenshots/route-stations.png)
 
-## What it does
+Open **Plan fuel stops**, give it your tank size, consumption and how full you start, and it picks the cheapest stops that get you there. The stops are numbered on the map. Added in v1.15.0.
 
-- Shows fuel stations with their latest prices, for the fuel type you choose. The colour scale is set from the stations currently loaded, between their 5th and 95th percentile price, so green means cheap for the area you are looking at.
-- Shows EV charging stations. Spain and Germany can use their official national registries. Every other country uses [Open Charge Map](https://openchargemap.org). See [EV charging sources](data/ev-sources.md).
-- Plans a route from A to B, with stops and alternative routes, when Valhalla is configured. See [Routing with Valhalla](configuration/routing-valhalla.md).
-- Lists the stations along the route with the detour each one adds, so you can pick the cheapest stop within the minutes you allow.
-- Searches addresses and places as you type, when Photon is configured. See [Geocoding with Photon](configuration/geocoding-photon.md).
-- Converts prices into the currency you choose, using the European Central Bank's daily reference rates. A few currencies the ECB does not publish use a fixed approximate rate. See [Currencies and exchange rates](reference/currencies.md).
-- Speaks 17 languages. The address bar carries the language, for example `/en` or `/de`.
-- Makes routes and stations shareable as a link. See [Share links and deep links](using/links.md).
-- Answers a small [HTTP API](reference/api.md) for stations, routes and statistics.
+![The refuel planner open under the same route. It proposes one numbered stop near Lisbon, shows the fuel level before and after it, and the total fuel cost for the trip.](images/screenshots/route-planner.png)
+
+<div class="pumperly-phone-gallery" markdown>
+<figure markdown>
+![The map on a phone, with the fuel selector in the top bar and the legend at the bottom](images/screenshots/map-mobile.png)
+<figcaption>On a phone</figcaption>
+</figure>
+<figure markdown>
+![The route on a phone. The station list sits in a sheet at the bottom of the screen, opened halfway](images/screenshots/route-mobile.png)
+<figcaption>Stations in the bottom sheet</figcaption>
+</figure>
+<figure markdown>
+![The map on a phone in dark mode, with the dark map style and the same price colours](images/screenshots/map-dark-mobile.png)
+<figcaption>Dark mode</figcaption>
+</figure>
+</div>
+
+## What it shows
+
+- Fuel stations with their latest prices for the fuel you choose: diesel, petrol, LPG, CNG, LNG, hydrogen, HVO and AdBlue. See [Fuel types](reference/fuel-types.md).
+- Live prices from 22 countries with no key to set, and from two more with a free key. 39 countries are supported in all; [Coverage and status](data/coverage.md) lists each one, its source and whether the source works today.
+- EV chargers from the official registries of Spain and Germany and from [Open Charge Map](https://openchargemap.org) elsewhere. See [EV charging](using/ev-charging.md).
+- A station's popup: brand, address, price, when it was last updated, directions, and a link to share. See [Station popup](using/map.md#station-popup).
+- Routes with up to five stops and up to three alternatives, when Valhalla is configured; address search as you type, when Photon is configured.
+- Prices in any of 37 currencies, converted with the European Central Bank's daily rates; the interface in 17 languages. See [Currencies and exchange rates](reference/currencies.md).
+- Share links for a station or a route. See [Share links and deep links](using/links.md).
+- A small [HTTP API](reference/api.md) for stations, routes and statistics, used by the [related projects](related.md).
 
 ## How it runs
 
@@ -107,33 +126,45 @@ flowchart LR
     TILES --> BR
 ```
 
-- The app is one Next.js process. It serves the map, answers the API and runs every scraper on its own timer. See [How scrapers work](data/how-scrapers-work.md).
+- One Next.js process serves the map, answers the API and runs every scraper on its own timer. See [How scrapers work](data/how-scrapers-work.md).
 - The image is `drumsergio/pumperly` on Docker Hub, for linux/amd64 and linux/arm64. It listens on port 3000 and runs as user id 1001.
-- Scrapers write to PostGIS. The API reads from it: stations in the map view, stations along a route, and statistics.
-- The app calls Valhalla for routes and Photon for address search. When `VALHALLA_URL` or `PHOTON_URL` is not set, that feature is off and the rest keeps working.
-- The browser loads the map tiles straight from [OpenFreeMap](https://openfreemap.org), which draws [OpenStreetMap](https://www.openstreetmap.org) data.
-- Because scrapers run inside the web process, run one copy of the app per database. Two copies would scrape every source twice.
+- Scrapers write to PostGIS. The map, the route list and the stats read from it.
+- Routes need [Valhalla](configuration/routing-valhalla.md) and address search needs [Photon](configuration/geocoding-photon.md). Without them the map and its prices still work. [Full stack with routing and geocoding](getting-started/full-stack.md) runs all of it.
+- Run one copy of the app per database. Two copies would scrape every source twice.
+
+## What it does not do
+
+- It has no prices for EV charging. The sources publish charger locations, not tariffs.
+- It has no fuel prices for the United States, only chargers. No national price feed exists.
+- It does not route without Valhalla, and its search box finds nothing without Photon. The shipped compose file starts neither.
+- It does not store prices for a paused or blocked source. The last good prices stay on the map, and each popup says how old they are.
+
+## Privacy
+
+- No accounts, no cookies for tracking, no analytics. The only cookie remembers your language. Your currency and theme are saved in the browser, not on the server.
+- Your position is used to centre the map and to fill in "My location" as the start of a route. It is sent to the server only as the start point of a route you ask for.
+- Address searches go to the Photon server the operator configured, and routes to the Valhalla server. On pumperly.com both are self-hosted.
+- The map tiles load from [OpenFreeMap](https://openfreemap.org), which sees your tile requests like any map site.
 
 ## Getting help
 
-- New here? Start with [Run with Docker Compose](getting-started/docker-compose.md), then read [What happens on first start](getting-started/first-start.md).
+- New here? Start with [Run with Docker Compose](getting-started/docker-compose.md), then [What happens on first start](getting-started/first-start.md).
 - If something is broken, read [Monitoring and troubleshooting](operations/troubleshooting.md), then open an [issue on GitHub](https://github.com/GeiserX/Pumperly/issues).
 - To report a security problem, follow the [security policy](https://github.com/GeiserX/Pumperly/blob/main/SECURITY.md) and do not open a public issue.
 - The [Glossary](reference/glossary.md) explains the terms these pages use.
-- Separate projects connect Pumperly to Home Assistant, to AI assistants over MCP and to n8n. See [Related projects](related.md).
+- Home Assistant, AI assistants over MCP and n8n connect through the [related projects](related.md).
 - To add a country or send a fix, read [Adding a country](data/adding-a-country.md) and [Development](development.md).
 
 ## All pages
 
-- [Features at a glance](features.md)
 - Get started: [Run with Docker Compose](getting-started/docker-compose.md) · [What happens on first start](getting-started/first-start.md) · [Full stack with routing and geocoding](getting-started/full-stack.md) · [Run on Kubernetes with Helm](getting-started/kubernetes.md)
 - Using Pumperly: [The map](using/map.md) · [Planning a route](using/routes.md) · [EV charging](using/ev-charging.md) · [Share links and deep links](using/links.md)
 - Data sources: [Coverage and status](data/coverage.md) · [Sources at a glance](data/sources-at-a-glance.md) · [Fuel price sources](data/fuel-sources.md) · [EV charging sources](data/ev-sources.md) · [How scrapers work](data/how-scrapers-work.md) · [Adding a country](data/adding-a-country.md)
 - Configuration: [Countries and scrape schedule](configuration/countries-and-schedule.md) · [Routing with Valhalla](configuration/routing-valhalla.md) · [Geocoding with Photon](configuration/geocoding-photon.md) · [API keys](configuration/api-keys.md)
 - Operations: [Upgrading](operations/upgrading.md) · [Backing up the database](operations/backup-and-restore.md) · [Monitoring and troubleshooting](operations/troubleshooting.md)
 - Reference: [Environment variables](reference/environment-variables.md) · [HTTP API](reference/api.md) · [Data model](reference/data-model.md) · [Fuel types](reference/fuel-types.md) · [Currencies and exchange rates](reference/currencies.md) · [Glossary](reference/glossary.md)
-- [Related projects](related.md) · [Roadmap](roadmap.md) · [Development](development.md)
+- Project: [Roadmap](roadmap.md) · [Related projects](related.md) · [Development](development.md)
 
 ## License
 
-Pumperly is released under the [AGPL-3.0-or-later](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) license. Price and charger data keep the licence of their source. [Fuel price sources](data/fuel-sources.md) and [EV charging sources](data/ev-sources.md) list them. Some sources allow only non-commercial use, and most require credit. If you run a public instance, read [Data licences on a public instance](getting-started/docker-compose.md#data-licences-on-a-public-instance) first.
+Pumperly is released under the [AGPL-3.0-or-later](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) license. Price and charger data keep the licence of their source; [Fuel price sources](data/fuel-sources.md) and [EV charging sources](data/ev-sources.md) list them, and some allow only non-commercial use. If you run a public instance, read [Data licences on a public instance](getting-started/docker-compose.md#data-licences-on-a-public-instance) first.
