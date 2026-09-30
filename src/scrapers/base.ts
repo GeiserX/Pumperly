@@ -356,20 +356,27 @@ export abstract class BaseScraper {
   ): Promise<number> {
     if (batch.length === 0) return 0;
 
+    // Only charger batches write max_power_kw: fuel stations never have a
+    // power, so fuel scrapers keep working on a database without the column.
+    const withPower = batch.some((s) => s.stationType !== "fuel");
+    const perRow = withPower ? 11 : 10;
+
     // Build parameterised VALUES list.
-    // Each station needs 11 params: externalId, country, name, brand,
-    // address, city, province, stationType, longitude, latitude, maxPowerKw
+    // Each station needs 10 params: externalId, country, name, brand,
+    // address, city, province, stationType, longitude, latitude,
+    // plus maxPowerKw for charger batches.
     const params: unknown[] = [];
     const valueClauses: string[] = [];
 
     for (let i = 0; i < batch.length; i++) {
       const s = batch[i];
-      const offset = i * 11;
+      const offset = i * perRow;
       valueClauses.push(
         `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, ` +
           `$${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, ` +
           `ST_SetSRID(ST_MakePoint($${offset + 9}, $${offset + 10}), 4326), ` +
-          `$${offset + 11}::smallint, NOW(), NOW())`,
+          (withPower ? `$${offset + 11}::smallint, ` : "") +
+          `NOW(), NOW())`,
       );
       params.push(
         s.externalId,
@@ -382,12 +389,12 @@ export abstract class BaseScraper {
         s.stationType,
         s.longitude,
         s.latitude,
-        s.maxPowerKw ?? null,
       );
+      if (withPower) params.push(s.maxPowerKw ?? null);
     }
 
     const sql = `
-      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, max_power_kw, created_at, updated_at)
+      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, ${withPower ? "max_power_kw, " : ""}created_at, updated_at)
       VALUES ${valueClauses.join(",\n")}
       ON CONFLICT (external_id, country)
       DO UPDATE SET
@@ -397,8 +404,7 @@ export abstract class BaseScraper {
         city         = EXCLUDED.city,
         province     = EXCLUDED.province,
         station_type = EXCLUDED.station_type,
-        geom         = EXCLUDED.geom,
-        max_power_kw = EXCLUDED.max_power_kw,
+        geom         = EXCLUDED.geom,${withPower ? "\n        max_power_kw = EXCLUDED.max_power_kw," : ""}
         updated_at   = NOW()
     `;
 

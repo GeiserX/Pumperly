@@ -154,8 +154,31 @@ describe("BaseScraper.run()", () => {
     expect(mockDisconnect).toHaveBeenCalled();
   });
 
+  it("writes max_power_kw for charger batches", async () => {
+    scraper.mockStations = [
+      { ...makeStation("s1"), stationType: "ev_charger" },
+      { ...makeStation("s2"), stationType: "ev_charger", maxPowerKw: 150 },
+    ];
+    scraper.mockPrices = [];
+    mockQueryRawUnsafe.mockResolvedValue([]);
+    mockExecuteRawUnsafe.mockResolvedValue(undefined);
+
+    await scraper.run();
+
+    const stationCall = mockExecuteRawUnsafe.mock.calls.find(
+      (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
+    );
+    expect(stationCall).toBeDefined();
+    // 11 params per station; the 11th is max_power_kw (null when unset).
+    expect(stationCall![0]).toContain("max_power_kw = EXCLUDED.max_power_kw");
+    const params = stationCall!.slice(1);
+    expect(params).toHaveLength(22);
+    expect(params[10]).toBeNull();
+    expect(params[21]).toBe(150);
+  });
+
   it("upserts stations and prices in full pipeline", async () => {
-    scraper.mockStations = [makeStation("s1"), { ...makeStation("s2"), maxPowerKw: 150 }];
+    scraper.mockStations = [makeStation("s1"), makeStation("s2")];
     scraper.mockPrices = [
       makePrice("s1", "B7", 1.45),
       makePrice("s2", "E5", 1.60),
@@ -184,12 +207,9 @@ describe("BaseScraper.run()", () => {
       (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
     );
     expect(stationCall).toBeDefined();
-    // 11 params per station; the 11th is max_power_kw (null when unset).
-    expect(stationCall![0]).toContain("max_power_kw = EXCLUDED.max_power_kw");
-    const params = stationCall!.slice(1);
-    expect(params).toHaveLength(22);
-    expect(params[10]).toBeNull();
-    expect(params[21]).toBe(150);
+    // Fuel-only batch: no max_power_kw, so it runs on an un-migrated database.
+    expect(stationCall![0]).not.toContain("max_power_kw");
+    expect(stationCall!.slice(1)).toHaveLength(20);
 
     // Verify price insert SQL was called
     const priceCall = mockExecuteRawUnsafe.mock.calls.find(
