@@ -75,21 +75,24 @@ function tsv(...rows: string[]): string {
 }
 
 describe("parseBnetzaTsv", () => {
-  it("reads the fastest plug, including German decimals, and keeps the max across merged rows", async () => {
+  it("reads multi-plug cells and decimals, and keeps the max across merged rows", async () => {
     const { parseBnetzaTsv } = await import("./bnetza");
     const { stations } = parseBnetzaTsv(
       tsv(
-        row({ "Nennleistung Stecker1": "11", "Nennleistung Stecker2": "22,5" }),
-        // Same location, a faster charger on another row.
-        row({ "Nennleistung Stecker1": "150", "Nennleistung Stecker2": "" }),
+        // Type 2 + Schuko on one charging point: one value per plug.
+        row({ "Nennleistung Stecker1": "22; 22", "Nennleistung Stecker2": "" }),
+        // Same location, CCS + CHAdeMO on another row.
+        row({ "Nennleistung Stecker1": "300; 300", "Nennleistung Stecker2": "" }),
         // Same location, slower again: must not lower the max.
-        row({ "Nennleistung Stecker1": "3,7", "Nennleistung Stecker2": "" }),
+        row({ "Nennleistung Stecker1": "30.0", "Nennleistung Stecker2": "" }),
         row({ Breitengrad: "51.0", "Längengrad": "10.0", "Nennleistung Stecker1": "", "Nennleistung Stecker2": "abc" }),
       ),
     );
-    expect(stations.map((s) => s.maxPowerKw)).toEqual([150, null]);
-    const single = parseBnetzaTsv(tsv(row({ "Nennleistung Stecker1": "11", "Nennleistung Stecker2": "22,5" })));
-    expect(single.stations[0].maxPowerKw).toBe(23);
+    expect(stations.map((s) => s.maxPowerKw)).toEqual([300, null]);
+    for (const [cell, kw] of [["300; 300", 300], ["22; 22", 22], ["30.0", 30]] as const) {
+      const single = parseBnetzaTsv(tsv(row({ "Nennleistung Stecker1": cell, "Nennleistung Stecker2": "" })));
+      expect(single.stations[0].maxPowerKw).toBe(kw);
+    }
   });
 
   it("keeps a valid plug power when another plug on the row is implausible", async () => {

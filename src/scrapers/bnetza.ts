@@ -197,9 +197,9 @@ function resolvePlugPowerColumns(headerLine: string): number[] {
   return PLUG_POWER_COLUMNS.map((name) => header.indexOf(name.toLowerCase())).filter((i) => i >= 0);
 }
 
-/** Highest plug power on a row, kW. Values are "22" or German-style "22,5". */
+/** Highest plug power on a row, kW. A cell holds one value per plug, joined with ";" ("300; 300"). */
 function rowPowerKw(fields: string[], plugCols: number[]): number | null {
-  return maxSanePowerKw(plugCols.map((i) => Number(unquote(fields[i]).replace(",", "."))));
+  return maxSanePowerKw(plugCols.flatMap((i) => unquote(fields[i]).split(";").map(Number)));
 }
 
 /**
