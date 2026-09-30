@@ -1,5 +1,5 @@
 site_name: Pumperly
-site_url: https://geiserx.github.io/Pumperly
+site_url: https://geiserx.github.io/Pumperly/
 site_description: Open-source fuel and EV charging price map and route planner. Self-hosted, with official price data from dozens of countries.
 repo_url: https://github.com/GeiserX/Pumperly
 repo_name: GeiserX/Pumperly
@@ -120,13 +120,17 @@ extra:
 extra_css:
   - stylesheets/theme.css
 
-# Files under docs/ that must not be published as pages. MkDocs builds every
-# Markdown file in docs_dir, listed in nav or not; validation.nav.omitted_files
-# above fails the build on a page left out of nav, and this list keeps the
-# files that are not pages out of the site.
+# Files under docs/ that are not pages. MkDocs publishes every Markdown file in
+# docs/ whether or not it is in the nav, so anything that is not a page must be
+# listed here. The patterns follow the docs/ contract: a page is a lowercase
+# kebab-case .md file; anything with a capital letter (ROADMAP.md, CHANGELOG.md,
+# GOAL.md, DESIGN.md) is a repo-facing note, and design/, research/ and notes/
+# hold material read on GitHub. Add a line for any other per-repo note.
 exclude_docs: |
-  # The docs build dependencies. The workflow reads them from docs/; they are
-  # not a page.
+  [A-Z]*.md
+  design/
+  research/
+  notes/
   requirements-docs.txt
 
 nav:
