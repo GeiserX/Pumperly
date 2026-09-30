@@ -2314,11 +2314,11 @@
 <ul>
 <li><strong>Downtime.</strong> The web Deployment uses the <code>Recreate</code> strategy by default. Kubernetes stops the old pod before it starts the new one, so the site is down for the length of a start. This is on purpose: every pod runs the scrapers, and two overlapping pods would scrape the same sources twice. Keep <code>replicaCount: 1</code>.</li>
 <li><strong>Secrets.</strong> When the chart manages the Secret, a change to it rolls the web pod.</li>
-<li><strong>Database init step.</strong> With <code>databaseInit.enabled: true</code>, the default, an init container runs <code>npx prisma db push</code> before the app starts. The chart refuses to render if you combine it with <code>replicaCount</code> above 1.</li>
+<li><strong>Migrations.</strong> With <code>databaseInit.enabled: true</code>, the default since chart 0.2.0, the <code>migrate</code> init container runs <code>node migrate.mjs</code> from the new image before the app starts, so the migrations a release adds are applied by the upgrade itself. The chart refuses to render if you combine it with <code>replicaCount</code> above 1.</li>
 </ul>
 <div class="admonition warning">
-<p class="admonition-title">Apply migrations yourself on Kubernetes too</p>
-<p><code>prisma db push</code> syncs the database to <code>schema.prisma</code>, which does not declare the <code>geom</code> column. See <a href="#migrations">the schema warning</a>. Set <code>databaseInit.enabled: false</code> and apply new migrations from a checkout of the release tag, as <a href="#migrations">above</a>. Reach the database with <code>kubectl port-forward</code> to the PostGIS service, or run <code>psql</code> inside the PostGIS pod.</p>
+<p class="admonition-title">Chart versions before 0.2.0 ran <code>prisma db push</code></p>
+<p>That init container never worked: the image has neither the Prisma CLI nor <code>schema.prisma</code>, and <code>schema.prisma</code> does not declare the <code>geom</code> column. See <a href="#migrations">the schema warning</a>. Upgrade the chart to 0.2.0 or newer, or set <code>databaseInit.enabled: false</code> and run the script from the image yourself, as <a href="#apply-new-migrations">above</a>.</p>
 </div>
 <p>For the chart's other values, see <a href="../../getting-started/kubernetes/">Run on Kubernetes with Helm</a> and the <a href="https://github.com/GeiserX/Pumperly/blob/main/charts/pumperly/README.md">chart README</a>.</p>
 <h3 id="helm-chart-releases">Helm chart releases<a class="headerlink" href="#helm-chart-releases" title="Permanent link">&para;</a></h3>

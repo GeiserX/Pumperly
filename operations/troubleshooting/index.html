@@ -2821,8 +2821,8 @@
 </tr>
 <tr>
 <td>The Helm pod stays in <code>Init</code></td>
-<td><code>wait-for-database</code> cannot reach PostGIS, or the <code>prisma-db-push</code> init container fails. With an external database, <code>wait-for-database</code> probes <code>externalDatabase.host</code>.</td>
-<td>Read the init container's log with <code>-c &lt;name&gt;</code>. Set <code>externalDatabase.host</code>, or <code>waitForDatabase.enabled: false</code>. Set <code>databaseInit.enabled: false</code> and apply the migrations yourself, as in <a href="../../getting-started/kubernetes/">Run on Kubernetes with Helm</a>.</td>
+<td><code>wait-for-database</code> cannot reach PostGIS, or the <code>migrate</code> init container fails. With an external database, <code>wait-for-database</code> probes <code>externalDatabase.host</code>.</td>
+<td>Read the init container's log with <code>-c &lt;name&gt;</code>. Set <code>externalDatabase.host</code>, or <code>waitForDatabase.enabled: false</code>. A failed migration is printed by <code>migrate</code>; fix the database or set <code>databaseInit.enabled: false</code> and apply the migrations yourself, as in <a href="../../getting-started/kubernetes/#the-schema">Run on Kubernetes with Helm</a>.</td>
 </tr>
 </tbody>
 </table>
