@@ -78,7 +78,7 @@ Every charger within the radius is included, because none is left out for lackin
 
 Clicking a charger in the list or on the map adds it to the route as a stop, as on any layer. See [Pick a station as a stop](routes.md#pick-a-station-as-a-stop).
 
-On the EV layer, the fuel stop planner becomes **Plan charging stops**. You set the battery size in kWh, the consumption in kWh/100 km, the car's max charge power, and the battery level at the start and at arrival. The planner then picks the chargers along the route that get you there with the least detour and charging time, since chargers have no prices. Each stop charges to at most 80 %, because charging slows sharply above that. The reserve defaults to 20 %. **Min charger power** (Any, 50 kW or 150 kW) skips slower chargers. It also skips chargers whose power is unknown, because the filter can't vouch for them.
+On the EV layer, the fuel stop planner becomes **Plan charging stops**. You set the battery size in kWh, the consumption in kWh/100 km, the car's max charge power, and the battery level at the start and at arrival. The planner then picks the chargers along the route that get you there with the least detour and charging time, since chargers have no prices. Each stop charges to at most 80 %, because charging slows sharply above that. Charging time uses the lower of the charger's power and the car's max charge power, capped at 22 kW on AC chargers. On DC it averages 75 % of that, because charging tapers as the battery fills. The reserve defaults to 20 %. **Min charger power** (Any, 50 kW or 150 kW) skips slower chargers. It also skips chargers whose power is unknown, because the filter can't vouch for them.
 
 ## Sharing a charger
 

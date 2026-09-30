@@ -17,7 +17,7 @@ export const DEFAULT_VEHICLE: VehicleProfile = { tankL: 50, consumptionL100: 6.5
 export const evProfileSchema = z.object({
   batteryKwh: z.number().finite().min(10).max(200),
   consumptionKwh100: z.number().finite().min(5).max(50),
-  /** Peak DC charging power the car accepts, kW. Defaulted so profiles saved before it existed still load. */
+  /** Peak charging power the car accepts, kW; AC is also capped at 22. Defaulted so profiles saved before it existed still load. */
   maxChargeKw: z.number().finite().min(10).max(500).default(150),
 });
 
@@ -27,8 +27,6 @@ export const DEFAULT_EV: EvProfile = { batteryKwh: 60, consumptionKwh100: 18, ma
 
 /** Assumed for chargers with no published power: slow, so they never beat a known fast one. */
 const UNKNOWN_CHARGER_KW = 11;
-/** Typical onboard AC charger; AC posts can't charge faster than the car's own charger. */
-const CAR_AC_KW = 11;
 /** Highest power still treated as AC. */
 const MAX_AC_KW = 22;
 /** Average over a 10→80 % DC session as a share of peak: charging tapers as the battery fills. */
@@ -37,7 +35,8 @@ const DC_TAPER = 0.75;
 /** Average charging power (kW) at a charger for a car, for planning. */
 export function chargeKw(stationKw: number | null | undefined, carMaxKw: number): number {
   if (stationKw == null || !(stationKw > 0)) return UNKNOWN_CHARGER_KW;
-  if (stationKw <= MAX_AC_KW) return Math.min(stationKw, CAR_AC_KW);
+  // AC posts can't charge faster than the car's onboard charger, at most 22 kW.
+  if (stationKw <= MAX_AC_KW) return Math.min(stationKw, carMaxKw, MAX_AC_KW);
   return Math.min(stationKw, carMaxKw) * DC_TAPER;
 }
 

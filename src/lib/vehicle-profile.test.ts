@@ -42,9 +42,10 @@ describe("chargeKw", () => {
     expect(chargeKw(0, 150)).toBe(11);
   });
 
-  it("limits AC posts to the car's onboard charger", () => {
+  it("limits AC posts to the car's max charge power, at most 22 kW", () => {
     expect(chargeKw(7, 150)).toBe(7);
-    expect(chargeKw(22, 150)).toBe(11);
+    expect(chargeKw(22, 150)).toBe(22);
+    expect(chargeKw(22, 11)).toBe(11);
   });
 
   it("averages DC over the taper, limited by car or station", () => {
