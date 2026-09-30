@@ -2213,7 +2213,7 @@
 <p>There are no long-term support branches. Security fixes land in the next release from <code>main</code>. See <a href="https://github.com/GeiserX/Pumperly/blob/main/SECURITY.md">SECURITY.md</a>.</p>
 </div>
 <h2 id="migrations">The database schema is not migrated on start<a class="headerlink" href="#migrations" title="Permanent link">&para;</a></h2>
-<p>The image starts the web server with <code>node server.js</code> and nothing else. It never changes the database schema. The final build stage copies only the compiled app into the image: <code>public/</code>, <code>.next/standalone</code> and <code>.next/static</code>. It does not copy the <code>prisma/</code> folder, so the migration files are not in the image. See <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/Dockerfile"><code>docker/Dockerfile</code></a>.</p>
+<p>The app starts the web server with <code>node server.js</code> and never changes the database schema. The image does carry the migration files of its release, under <code>prisma/migrations</code>, and <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/migrate.mjs"><code>migrate.mjs</code></a>, the script that applies them. Nothing runs that script unless you do: the shipped compose file runs it as the <code>migrate</code> service before the app starts, and any other setup runs it from the image, as shown <a href="#apply-new-migrations">below</a>. See <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/Dockerfile"><code>docker/Dockerfile</code></a>.</p>
 <p>Schema changes ship as SQL files, one folder per migration, under <a href="https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations"><code>prisma/migrations/</code></a>. A release that adds a folder there needs you to apply it. A release that adds none needs nothing.</p>
 <div class="admonition warning">
 <p class="admonition-title">The migrations are the schema of record, not <code>schema.prisma</code></p>
@@ -2228,33 +2228,40 @@
 <p>No output means there is nothing to apply.</p>
 <h3 id="apply-new-migrations">Apply new migrations<a class="headerlink" href="#apply-new-migrations" title="Permanent link">&para;</a></h3>
 <p>Apply migrations before you start the new image. The new code may rely on them.</p>
-<p>With the shipped <code>docker/docker-compose.yml</code> there is nothing to do here: its <code>migrate</code> service applies new migrations on every <code>up</code>, before the app starts, and records them in <code>_prisma_migrations</code>. See <a href="#upgrade-a-docker-compose-install">Upgrade a Docker Compose install</a>. The rest of this section is for other setups, and for a compose file of your own. The commands follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, run from the repository root: the database service is <code>db</code> and the Pumperly service is <code>app</code>.</p>
+<p>With the shipped <code>docker/docker-compose.yml</code> there is nothing to do here: its <code>migrate</code> service applies new migrations on every <code>up</code>, before the app starts, and records them in <code>_prisma_migrations</code>. See <a href="#upgrade-a-docker-compose-install">Upgrade a Docker Compose install</a>.</p>
+<p>On any other setup, run the same script from the new release's image. It needs <code>DATABASE_URL</code> and a network path to the database:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--network<span class="w"> </span>&lt;network<span class="w"> </span>of<span class="w"> </span>your<span class="w"> </span>database&gt;<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://pumperly:&lt;password&gt;@&lt;database<span class="w"> </span>host&gt;:5432/pumperly<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>drumsergio/pumperly:&lt;release&gt;<span class="w"> </span>node<span class="w"> </span>migrate.mjs
+</code></pre></div>
+<p>It applies every migration the history does not list yet, oldest first, one transaction each, and records each one in <code>_prisma_migrations</code> with the checksum Prisma uses. On a database whose schema was built by hand, with no history, it first checks that <code>0_init</code> is complete (both tables and the <code>geom</code> column) and records it as applied, the same as <code>prisma migrate resolve --applied 0_init</code>. It refuses a partial schema with no history and a history row Prisma left unfinished, and when a migration fails it rolls that one back and exits with an error, so the history never lists a migration that did not run.</p>
+<p>The rest of this section applies the migrations by hand instead. The commands follow the layout of <a href="../../getting-started/docker-compose/">Run with Docker Compose</a>, run from the repository root: the database service is <code>db</code> and the Pumperly service is <code>app</code>.</p>
 <p>First check whether your database keeps a migration history. Prisma records applied migrations in a table called <code>_prisma_migrations</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>psql<span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>-c<span class="w"> </span><span class="s1">'SELECT migration_name FROM _prisma_migrations ORDER BY finished_at'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>psql<span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>-c<span class="w"> </span><span class="s1">'SELECT migration_name FROM _prisma_migrations ORDER BY finished_at'</span>
 </code></pre></div>
 <p>An error saying the relation does not exist means the database has no history. Pick the tab that matches:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">With a migration history</label><label for="__tabbed_1_2">Without a migration history</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p>Run <code>prisma migrate deploy</code> from a checkout of the new release tag. It applies every migration the history does not list yet, in order:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GeiserX/Pumperly.git
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>Pumperly
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>v1.15.1
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>npm<span class="w"> </span>ci
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://pumperly:pumperly@localhost:5433/pumperly<span class="w"> </span>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GeiserX/Pumperly.git
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>Pumperly
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>v1.15.1
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>npm<span class="w"> </span>ci
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://pumperly:pumperly@localhost:5433/pumperly<span class="w"> </span>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
 </code></pre></div>
 <p><code>DATABASE_URL</code> must reach the database from where you run the command. The shipped <a href="https://github.com/GeiserX/Pumperly/blob/main/docker/docker-compose.yml"><code>docker/docker-compose.yml</code></a> publishes PostGIS on host port <code>5433</code>, with the password <code>pumperly</code>. Use your own password if you changed it.</p>
 </div>
 <div class="tabbed-block">
 <p>Run the SQL of each new migration yourself, oldest folder first. The folder names sort in the order they must run. Run this from a checkout of the new release tag, so the files are on hand:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>psql<span class="w"> </span>-v<span class="w"> </span><span class="nv">ON_ERROR_STOP</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>&lt;<span class="w"> </span>prisma/migrations/&lt;migration-folder&gt;/migration.sql
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>psql<span class="w"> </span>-v<span class="w"> </span><span class="nv">ON_ERROR_STOP</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>&lt;<span class="w"> </span>prisma/migrations/&lt;migration-folder&gt;/migration.sql
 </code></pre></div>
 <p><code>ON_ERROR_STOP=1</code> makes <code>psql</code> stop at the first error instead of carrying on.</p>
 <p>To start keeping a history instead, first confirm that <code>stations</code> has a <code>geom</code> column (<code>\d stations</code> in <code>psql</code>). Then, from a checkout of the new release tag with <code>DATABASE_URL</code> set as in the other tab, mark the first migration as already applied and let <code>migrate deploy</code> take over:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>resolve<span class="w"> </span>--applied<span class="w"> </span>0_init
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>resolve<span class="w"> </span>--applied<span class="w"> </span>0_init
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
 </code></pre></div>
 <p>Without this step <code>prisma migrate deploy</code> stops with error <code>P3005</code>, because the database is not empty.</p>
 </div>
@@ -2270,15 +2277,15 @@
 <li>Read the <a href="https://github.com/GeiserX/Pumperly/releases">release notes</a> for every release between yours and the new one.</li>
 <li>Back up the database. See <a href="../backup-and-restore/">Backing up the database</a>.</li>
 <li>
-<p>Update the checkout. The compose file on <code>main</code> pins the newest release, and the checkout brings that release's migrations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>git<span class="w"> </span>pull
+<p>Update the checkout. The compose file on <code>main</code> pins the newest release:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>git<span class="w"> </span>pull
 </code></pre></div>
-<p>To move to a release other than the newest, check out its tag (for example <code>git checkout v1.15.0</code>) and set the <code>app</code> image in <code>docker/docker-compose.yml</code> to the same version.</p>
+<p>To move to a release other than the newest, check out its tag (for example <code>git checkout v1.15.0</code>) and set the image pin at the top of <code>docker/docker-compose.yml</code> to the same version. Both <code>migrate</code> and <code>app</code> use that one pin, so the migrations applied are always the ones of the image that runs.</p>
 </li>
 <li>
 <p>Pull the new image and recreate the stack:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>pull<span class="w"> </span>app
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>pull<span class="w"> </span>app
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div>
 <p><code>migrate</code> runs first and applies any new migration; the app restarts on the new image only if that succeeds. <code>docker compose -f docker/docker-compose.yml logs migrate</code> shows what it applied.</p>
 </li>
@@ -2289,15 +2296,15 @@
 <p>If you changed <code>docker/docker-compose.yml</code> yourself, <code>git pull</code> may stop on a conflict. Keep your changes in a second compose file passed with another <code>-f</code>, so the shipped file stays as released.</p>
 <h2 id="helm">Upgrade a Helm install<a class="headerlink" href="#helm" title="Permanent link">&para;</a></h2>
 <p>The chart installs from the Helm repository published with this project:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>helm<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>pumperly<span class="w"> </span>https://geiserx.github.io/Pumperly
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>helm<span class="w"> </span>repo<span class="w"> </span>update
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>helm<span class="w"> </span>search<span class="w"> </span>repo<span class="w"> </span>pumperly/pumperly<span class="w"> </span>--versions
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>helm<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>pumperly<span class="w"> </span>https://geiserx.github.io/Pumperly
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>helm<span class="w"> </span>repo<span class="w"> </span>update
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>helm<span class="w"> </span>search<span class="w"> </span>repo<span class="w"> </span>pumperly/pumperly<span class="w"> </span>--versions
 </code></pre></div>
 <p>Set <code>image.tag</code> in your values file to the release you want, then upgrade:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">image</span><span class="p">:</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="s">"1.15.1"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">image</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="s">"1.15.1"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>pumperly<span class="w"> </span>pumperly/pumperly<span class="w"> </span>-f<span class="w"> </span>my-values.yaml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>pumperly<span class="w"> </span>pumperly/pumperly<span class="w"> </span>-f<span class="w"> </span>my-values.yaml
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Always set <code>image.tag</code></p>
@@ -2320,10 +2327,10 @@
 <p>A running container and passing health probes do not prove the site works. The Helm probes call <code>/api/config</code>, which answers from configuration alone and never touches the database. Work through these checks after every upgrade.</p>
 <h3 id="1-the-scrapers-started">1. The scrapers started<a class="headerlink" href="#1-the-scrapers-started" title="Permanent link">&para;</a></h3>
 <p>Read the app's logs. At start, the scheduler prints one line per enabled source:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>[scraper] ES: scraping every 12h
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>[scraper] ES: scraping every 12h
 </code></pre></div>
 <p>The first runs start 10 seconds after boot and are spaced 5 seconds apart. Each one ends with a summary line:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>[scraper] ES: OK — &lt;n&gt; stations, &lt;n&gt; prices in &lt;s&gt;s
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>[scraper] ES: OK — &lt;n&gt; stations, &lt;n&gt; prices in &lt;s&gt;s
 </code></pre></div>
 <p>A line with <code>error(s)</code> instead of <code>OK</code> points to a problem with that source. See <a href="../troubleshooting/">Monitoring and troubleshooting</a>.</p>
 <h3 id="map-check">2. The map shows stations<a class="headerlink" href="#map-check" title="Permanent link">&para;</a></h3>
@@ -2337,8 +2344,8 @@
 <li>Open the browser's developer tools and look for a failed request for <code>maplibre-gl-worker.mjs</code> or <code>maplibre-gl-shared.mjs</code>.</li>
 <li>
 <p>Check that both worker files answer with HTTP 200 and a JavaScript content type:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-sI<span class="w"> </span>https://pumperly.example.com/maplibre/maplibre-gl-worker.mjs
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>curl<span class="w"> </span>-sI<span class="w"> </span>https://pumperly.example.com/maplibre/maplibre-gl-shared.mjs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-sI<span class="w"> </span>https://pumperly.example.com/maplibre/maplibre-gl-worker.mjs
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>curl<span class="w"> </span>-sI<span class="w"> </span>https://pumperly.example.com/maplibre/maplibre-gl-shared.mjs
 </code></pre></div>
 <p>A 404, or an HTML content type, means the worker cannot start. Check whether a reverse proxy or cache in front of Pumperly rewrites or blocks <code>/maplibre/</code>.</p>
 </li>
@@ -2348,11 +2355,11 @@
 </ul>
 <h3 id="3-the-data-is-fresh">3. The data is fresh<a class="headerlink" href="#3-the-data-is-fresh" title="Permanent link">&para;</a></h3>
 <p><code>/api/stats</code> queries the database and returns, per country, the station count, the price count and the time of the newest price:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>https://pumperly.example.com/api/stats
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>https://pumperly.example.com/api/stats
 </code></pre></div>
 <p>After the first scrape cycle, <code>lastUpdate</code> for each country with fuel prices should be later than the time of the upgrade. A country with only charging stations has no prices, so its <code>lastUpdate</code> is <code>null</code>. An answer of HTTP 500 means the app cannot query the database. The response lets shared caches keep it for 5 minutes and serve it stale for 10 more while they refresh it, so a caching proxy may show an answer up to 15 minutes old.</p>
 <p>To test the endpoint the map uses, ask for the stations in a small box. The box is <code>minLon,minLat,maxLon,maxLat</code>, and <code>fuel</code> is a fuel code such as <code>B7</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s1">'https://pumperly.example.com/api/stations?bbox=-3.75,40.38,-3.65,40.45&amp;fuel=B7'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s1">'https://pumperly.example.com/api/stations?bbox=-3.75,40.38,-3.65,40.45&amp;fuel=B7'</span>
 </code></pre></div>
 <p>The answer is a GeoJSON <code>FeatureCollection</code>. Its <code>features</code> list must not be empty for an area with stations. See <a href="../../reference/api/">HTTP API</a> for the parameters.</p>
 <h3 id="4-routing-and-search-work">4. Routing and search work<a class="headerlink" href="#4-routing-and-search-work" title="Permanent link">&para;</a></h3>
