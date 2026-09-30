@@ -22,7 +22,7 @@ Pumperly has been deployed successfully!
 2. PostGIS is disabled. The chart expects an external database via existingSecret or externalDatabase values.
 {{- end }}
 {{- if .Values.databaseInit.enabled }}
-   Prisma schema sync is enabled through an initContainer on the web Deployment.
+   The migrate init container applies the SQL migrations shipped in the image before the app starts.
 {{- end }}
 
 {{- if .Values.valhalla.enabled }}

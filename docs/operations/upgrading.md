@@ -189,10 +189,10 @@ What the chart does during an upgrade:
 
 - **Downtime.** The web Deployment uses the `Recreate` strategy by default. Kubernetes stops the old pod before it starts the new one, so the site is down for the length of a start. This is on purpose: every pod runs the scrapers, and two overlapping pods would scrape the same sources twice. Keep `replicaCount: 1`.
 - **Secrets.** When the chart manages the Secret, a change to it rolls the web pod.
-- **Database init step.** With `databaseInit.enabled: true`, the default, an init container runs `npx prisma db push` before the app starts. The chart refuses to render if you combine it with `replicaCount` above 1.
+- **Migrations.** With `databaseInit.enabled: true`, the default since chart 0.2.0, the `migrate` init container runs `node migrate.mjs` from the new image before the app starts, so the migrations a release adds are applied by the upgrade itself. The chart refuses to render if you combine it with `replicaCount` above 1.
 
-!!! warning "Apply migrations yourself on Kubernetes too"
-    `prisma db push` syncs the database to `schema.prisma`, which does not declare the `geom` column. See [the schema warning](#migrations). Set `databaseInit.enabled: false` and apply new migrations from a checkout of the release tag, as [above](#migrations). Reach the database with `kubectl port-forward` to the PostGIS service, or run `psql` inside the PostGIS pod.
+!!! warning "Chart versions before 0.2.0 ran `prisma db push`"
+    That init container never worked: the image has neither the Prisma CLI nor `schema.prisma`, and `schema.prisma` does not declare the `geom` column. See [the schema warning](#migrations). Upgrade the chart to 0.2.0 or newer, or set `databaseInit.enabled: false` and run the script from the image yourself, as [above](#apply-new-migrations).
 
 For the chart's other values, see [Run on Kubernetes with Helm](../getting-started/kubernetes.md) and the [chart README](https://github.com/GeiserX/Pumperly/blob/main/charts/pumperly/README.md).
 
