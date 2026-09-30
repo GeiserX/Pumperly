@@ -134,7 +134,7 @@ Clustering is on by default. The operator turns it off with [`PUMPERLY_CLUSTER_S
 
 Click a station to open its popup. Click the same station again, or the popup's close button, to close it.
 
-![A diesel station popup with the price converted from euros to US dollars. The price legend and the max-price slider sit in the bottom-left corner.](../images/screenshots/station-popup.png)
+![A diesel station popup in Lisbon: brand, address, the price per litre, when it was last updated, and the directions, pin, copy and share buttons. The price legend and the max-price slider sit in the bottom-left corner.](../images/screenshots/station-popup.png)
 
 From top to bottom the popup shows:
 
