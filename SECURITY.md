@@ -33,7 +33,7 @@ You can expect an initial response within 72 hours. Critical vulnerabilities aff
 | Geocoding | Photon (OpenSearch) | Internal network only |
 | Routing | Valhalla | Internal network only |
 | Reverse Proxy | Caddy + Cloudflare | TLS termination, DDoS protection |
-| Container Runtime | Docker (Portainer) | Non-root containers, read-only where possible |
+| Container Runtime | Docker Compose (GitOps) | Non-root containers, read-only where possible |
 
 ### Network Boundaries
 

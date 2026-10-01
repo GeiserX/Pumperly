@@ -17,7 +17,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 - [x] MapLibre GL JS + react-map-gl integration
 - [x] OpenFreeMap as tile provider (Liberty style)
 - [x] Basic responsive layout (map fills viewport)
-- [x] Docker Compose for production (PostGIS + app via Portainer GitOps)
+- [x] Docker Compose for production (PostGIS + app via GitOps)
 
 ### 0.2 — Database + Spain Scraper
 - [x] PostGIS schema via Prisma (stations, fuel_prices tables)
