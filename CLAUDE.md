@@ -47,7 +47,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 - Self-hosted solutions over SaaS
 - Privacy-focused (cookieless analytics, minimal data collection)
 - Semver versioning for Docker images (never `:latest`)
-- GitOps with Portainer for infrastructure
+- GitOps for infrastructure (a Gitea repo per server, redeployed by a webhook on push)
 - Docker Hub for images (`drumsergio/pumperly`)
 - Tailwind CSS for styling
 - TypeScript strict mode
@@ -86,7 +86,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 | Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (31 regions covering 32+ countries, ~132.7M documents). Single-pass concatenated import: all dumps downloaded in parallel, decompressed and concatenated into one file, then imported in a single `java -jar photon.jar import` invocation. |
 | Caddy | Reverse proxy (existing on watchtower) |
 | Docker | Multi-stage builds, images on Docker Hub |
-| Portainer | Container management with GitOps |
+| Gitea + deploy webhook | GitOps: a push to a server's repo redeploys the stacks it changed |
 
 ### External Data Sources (All Free, No Auth Unless Noted)
 
@@ -416,12 +416,12 @@ pumperly/
 - Local `docker buildx --platform linux/amd64` is only for emergency hotfixes
 - GitHub Actions handles: lint, typecheck, Docker build+push, releases, CodeQL
 - Docker Hub secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) are configured in GitHub repo settings
-- **Deployment flow**: commit → push → **wait for GitHub Actions Docker Publish workflow to finish** → then `docker pull` and redeploy on watchtower. Never pull before the workflow completes
+- **Deployment flow**: commit → push → **wait for GitHub Actions Docker Publish workflow to finish** → Renovate moves the image pin in the GitOps repo (usually within 30 minutes of the publish) and the webhook redeploys. Never `docker pull` or run compose by hand on watchtower
 - **Never restart Caddy** — always use `caddy reload` (Unraid FUSE causes stale file handles on restart)
 
 ### Infrastructure & Backups
 
-- **Portainer stack**: ID 225 ("pumperly"), endpoint 2 on watchtower. Auto-update every 5 minutes from Gitea. Config path: `pumperly/docker-compose.yml`. The Gitea repo (`giteaer/watchtower`) is private — manual redeploy via API may fail with auth errors; auto-update handles it.
+- **Stack**: `pumperly/docker-compose.yml` in the private `giteaer/watchtower` Gitea repo, image pinned by tag and digest. A push that changes it makes the deploy webhook on watchtower redeploy the stack. Renovate opens and automerges the pin bump after each release. To ship sooner, set the pin yourself to `drumsergio/pumperly:vX.Y.Z@sha256:<digest>` (digest from `docker buildx imagetools inspect drumsergio/pumperly:vX.Y.Z --format '{{.Manifest.Digest}}'`), commit and push. Changing only the tag deploys nothing new, because Docker resolves the image by digest.
 - **Data volumes** (all under `/mnt/user/appdata/pumperly/`):
   - `pgdata/` (~600 MB) — PostGIS database. Quick to rebuild via scrapers.
   - `valhalla/` (~60+ GB) — Pre-built routing tiles + source PBF (~25GB, 31 European countries). Self-healing: Valhalla rebuilds tiles from PBF on start if missing. Rebuild takes 3-6 hours.
