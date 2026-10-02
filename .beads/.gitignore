@@ -62,6 +62,10 @@ backup/
 # Per-project environment file (Dolt connection config, GH#2520)
 .env
 
+# Tracker data (lives in the Dolt remote named by sync.remote, never in git)
+issues.jsonl
+interactions.jsonl
+
 # Legacy files (from pre-Dolt versions)
 *.db
 *.db?*
