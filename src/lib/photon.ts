@@ -163,6 +163,11 @@ export async function geocode(
   lat?: number,
   lon?: number,
 ): Promise<PhotonResult[]> {
+  const coords = parseCoordinates(query);
+  if (coords) {
+    return [{ name: query.trim(), city: null, state: null, country: null, coordinates: coords }];
+  }
+
   if (!PHOTON_URL) return [];
 
   const params = new URLSearchParams({ q: query, limit: "5" });

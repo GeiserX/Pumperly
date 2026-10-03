@@ -16,6 +16,15 @@ describe("photon geocode", () => {
     vi.resetModules();
   });
 
+  it("returns typed coordinates directly without calling Photon", async () => {
+    const { geocode } = await import("./photon");
+    const results = await geocode("40.741895, -73.989308");
+    expect(results).toEqual([
+      { name: "40.741895, -73.989308", city: null, state: null, country: null, coordinates: [-73.989308, 40.741895] },
+    ]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["40.741895, -73.989308", [-73.989308, 40.741895]],
     ["40.4168 -3.7038", [-3.7038, 40.4168]],
