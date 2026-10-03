@@ -77,7 +77,7 @@ function splitComponents(tokens: CoordToken[]): [CoordToken[], CoordToken[]] | n
 }
 
 // A single unitless whole number ("28") is too weak to be a coordinate on its own;
-// rejecting it keeps "28, 3" for Photon
+// rejecting it keeps "28, 3" for Photon and lets "40,74" fall through to the decimal-comma retry
 function isLoneInteger(tokens: CoordToken[]): boolean {
   const t = tokens[0];
   return tokens.length === 1 && t.kind === "num" && !t.unit && !t.text.includes(".");
@@ -140,8 +140,8 @@ function parseNormalized(input: string): [number, number] | null {
 
 /**
  * Parses typed coordinates (latitude first) into [lon, lat]. Accepts decimal degrees,
- * DMS (40°44'30.8"N 73°59'21.5"W), DDM (40° 44.514' N), and N/S/E/W letters before or
- * after the number.
+ * DMS (40°44'30.8"N 73°59'21.5"W), DDM (40° 44.514' N), N/S/E/W letters before or
+ * after the number, and decimal commas when unambiguous (40,7419; -73,9893).
  */
 export function parseCoordinates(query: string): [number, number] | null {
   const normalized = query
@@ -152,7 +152,10 @@ export function parseCoordinates(query: string): [number, number] | null {
     .trim();
   if (!normalized) return null;
 
-  return parseNormalized(normalized);
+  const result = parseNormalized(normalized);
+  if (result || normalized.includes(".")) return result;
+  // European decimal commas: 40,7419, -73,9893 or 40,7419 -73,9893
+  return parseNormalized(normalized.replace(/(\d),(\d)/g, "$1.$2"));
 }
 
 export async function geocode(
