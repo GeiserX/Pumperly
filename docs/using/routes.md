@@ -2,7 +2,7 @@
 
 This page explains how to plan a trip in Pumperly and how it finds and ranks the stations along it. It covers search, stops, alternative routes, the search radius, detour times, sorting and filters.
 
-A route needs two self-hosted services. [Valhalla](../configuration/routing-valhalla.md) computes routes and detour times. [Photon](../configuration/geocoding-photon.md) turns what you type into places. Without Valhalla every route fails. Without Photon the search box finds nothing.
+A route needs two self-hosted services. [Valhalla](../configuration/routing-valhalla.md) computes routes and detour times. [Photon](../configuration/geocoding-photon.md) turns what you type into places. Without Valhalla every route fails. Without Photon the search box only accepts [typed coordinates](#typing-coordinates).
 
 ![A diesel route from Lisbon to Porto. The corridor stations are coloured by price along the route line, and the side panel lists them with their detour minutes and badges.](../images/screenshots/route-stations.png)
 
@@ -46,7 +46,23 @@ Suggestions come from Photon.
 - Use <kbd>Up</kbd> and <kbd>Down</kbd> to move through them and <kbd>Enter</kbd> to pick one. <kbd>Esc</kbd> closes the list.
 - <kbd>Enter</kbd> with no list open searches for what you typed and takes the first match.
 
-When nothing matches, the box says "No results found". A Pumperly with no `PHOTON_URL` set shows this for every search.
+When nothing matches, the box says "No results found". A Pumperly with no `PHOTON_URL` set shows this for every search except typed coordinates.
+
+### Typing coordinates
+
+You can type or paste coordinates instead of a place name. Pumperly reads them itself and doesn't ask Photon. The only suggestion is that exact point.
+
+Put the latitude first. These formats work:
+
+| Format | Example |
+|---|---|
+| Decimal degrees | `40.4168, -3.7038` or `40.4168 -3.7038` |
+| With hemisphere letters, before or after the number | `40.4168 N, 3.7038 W` or `N 40.4168 W 3.7038` |
+| Degrees, minutes, seconds | `40°25'0.5"N 3°42'13.7"W` |
+| Degrees, decimal minutes | `40° 25.008' N, 3° 42.228' W` |
+| Decimal commas | `40,4168; -3,7038` or `40,4168 -3,7038` |
+
+With hemisphere letters, the order does not matter: `3.7038 W 40.4168 N` works too. Pumperly searches Photon as usual for text that is out of range or ambiguous. That includes two plain whole numbers like `28, 3`.
 
 ### Stops
 
