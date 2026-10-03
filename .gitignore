@@ -68,6 +68,7 @@ bun.lockb
 # remote (see .beads/config.yaml sync.remote); only the scaffolding under .beads/ is committed.
 .beads/issues.jsonl
 .beads/interactions.jsonl
+.beads/events.jsonl
 .beads/dolt/
 .beads/embeddeddolt/
 .beads/backup/

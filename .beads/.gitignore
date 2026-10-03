@@ -65,6 +65,7 @@ backup/
 # Tracker data (lives in the Dolt remote named by sync.remote, never in git)
 issues.jsonl
 interactions.jsonl
+events.jsonl
 
 # Legacy files (from pre-Dolt versions)
 *.db
