@@ -16,6 +16,46 @@ describe("photon geocode", () => {
     vi.resetModules();
   });
 
+  it.each([
+    ["40.741895, -73.989308", [-73.989308, 40.741895]],
+    ["40.4168 -3.7038", [-3.7038, 40.4168]],
+    ["40.7419°, -73.9893°", [-73.9893, 40.7419]],
+    ["40.7419 N, 73.9893 W", [-73.9893, 40.7419]],
+    ["N 40.7419 W 73.9893", [-73.9893, 40.7419]],
+    ["40.7419°N 73.9893°W", [-73.9893, 40.7419]],
+    [`40°44'30.8"N 73°59'21.5"W`, [-(73 + 59 / 60 + 21.5 / 3600), 40 + 44 / 60 + 30.8 / 3600]],
+    ["40°44′30.8″N 73°59′21.5″W", [-(73 + 59 / 60 + 21.5 / 3600), 40 + 44 / 60 + 30.8 / 3600]],
+    ["40 44 30.8 N 73 59 21.5 W", [-(73 + 59 / 60 + 21.5 / 3600), 40 + 44 / 60 + 30.8 / 3600]],
+    [`40°44'30" 73°59'21"`, [73 + 59 / 60 + 21 / 3600, 40 + 44 / 60 + 30 / 3600]],
+    ["40° 44.514' N, 73° 59.359' W", [-(73 + 59.359 / 60), 40 + 44.514 / 60]],
+    ["N 40° 44.514 W 073° 59.359", [-(73 + 59.359 / 60), 40 + 44.514 / 60]],
+    ["33°52'S 151°12'E", [151.2, -(33 + 52 / 60)]],
+    ["73.9893 W 40.7419 N", [-73.9893, 40.7419]],
+  ])("parses %s", async (input, expected) => {
+    const { parseCoordinates } = await import("./photon");
+    const result = parseCoordinates(input);
+    expect(result).not.toBeNull();
+    expect(result![0]).toBeCloseTo(expected[0], 6);
+    expect(result![1]).toBeCloseTo(expected[1], 6);
+  });
+
+  it.each([
+    "95.0, 10.0",
+    "40.4, 190",
+    "Madrid 28",
+    "N 340",
+    "28 3",
+    "28, 3",
+    "28,3",
+    "40 70 N 3 W",
+    "-40.7 S, 73.9 W",
+    "40.7 E, 73.9 E",
+    "1, 2, 3",
+  ])("rejects %s", async (input) => {
+    const { parseCoordinates } = await import("./photon");
+    expect(parseCoordinates(input)).toBeNull();
+  });
+
   it("returns empty array when PHOTON_URL is not set", async () => {
     delete process.env.PHOTON_URL;
     const { geocode } = await import("./photon");
