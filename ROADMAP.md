@@ -387,7 +387,7 @@ The world's first open-source energy route planner that works for ALL vehicle ty
 ### Future Infrastructure
 - [ ] CDN for static assets (Cloudflare)
 - [ ] Protomaps PMTiles on Cloudflare R2 for global tile delivery
-- [ ] Consider Hetzner VPS if watchtower becomes resource-constrained
+- [ ] Consider Hetzner VPS if the deploy host becomes resource-constrained
 - [ ] Rate limiting on API routes (middleware)
 
 ---
