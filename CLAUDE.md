@@ -47,7 +47,7 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 - Self-hosted solutions over SaaS
 - Privacy-focused (cookieless analytics, minimal data collection)
 - Semver versioning for Docker images (never `:latest`)
-- GitOps for infrastructure (a Gitea repo per server, redeployed by a webhook on push)
+- GitOps for infrastructure (a private GitOps repo per server, redeployed by a webhook on push)
 - Docker Hub for images (`drumsergio/pumperly`)
 - Tailwind CSS for styling
 - TypeScript strict mode
@@ -84,9 +84,9 @@ The closest analog is **A Better Route Planner (ABRP)** for EVs — Pumperly doe
 | Protomaps PMTiles | Self-hosted vector map tiles on NVMe |
 | OpenFreeMap | Primary tile provider (free, no API key, no rate limits) |
 | Photon 1.0.1 | Geocoding / address autocomplete. Runs on `eclipse-temurin:21-jre` with official JAR. Uses OpenSearch backend (NOT old Elasticsearch). Data imported from **per-country JSONL dumps** (31 regions covering 32+ countries, ~132.7M documents). Single-pass concatenated import: all dumps downloaded in parallel, decompressed and concatenated into one file, then imported in a single `java -jar photon.jar import` invocation. |
-| Caddy | Reverse proxy (existing on watchtower) |
+| Caddy | Reverse proxy (existing on the deploy host) |
 | Docker | Multi-stage builds, images on Docker Hub |
-| Gitea + deploy webhook | GitOps: a push to a server's repo redeploys the stacks it changed |
+| Private GitOps repo + deploy webhook | GitOps: a push to a server's repo redeploys the stacks it changed |
 
 ### External Data Sources (All Free, No Auth Unless Noted)
 
@@ -155,7 +155,7 @@ Mix of Fuelo.net scrapers (`src/scrapers/fuelo.ts`), dedicated scrapers (ANWB, P
 ### System Architecture
 
 ```
-pumperly.com (Caddy reverse proxy on watchtower)
+pumperly.com (Caddy reverse proxy on the deploy host)
     |
     +-- Next.js App (SSR + API routes)         [Port 3200, ~512MB RAM]
     |       |
@@ -287,7 +287,7 @@ These env vars allow self-hosters to scope the app to their country/region. For 
 - **`src/components/map/map-view.tsx`** — Uses `forwardRef` to expose MapRef. Switches between bbox station fetch and corridor station fetch based on active route.
 
 ### Infrastructure
-- **Valhalla**: 31 European countries merged PBF (~25GB, merged with `osmium merge`). Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit**. No `tile_urls` env var — uses local PBF in `/custom_files/`. **CRITICAL: Valhalla crashes (SIGABRT) in two known scenarios**: (1) building from multiple PBFs (`vector::_M_range_check`) — always merge with osmium first, (2) malformed OSM `level` tags (`level=*`, `level=LG`) on `highway=corridor` ways cause `double free or corruption (fasttop)` — crash-loops every ~4h at the same build point. **Fix**: filter corridors before building: `osmium tags-filter -i input.pbf w/highway=corridor -o output.pbf` (do NOT use `-R` flag — it drops referenced nodes and shrinks the file to 9GB). — always merge with osmium first. To add a country: download new PBF from Geofabrik, re-merge all PBFs, delete `valhalla_tiles.tar` + `file_hashes.txt` + `admin_data/` + `timezone_data/`, restart. Also delete old PBF before restart (Valhalla auto-discovers ALL `.pbf` files in `/custom_files/` and tries to build from all of them). **Warmup**: After container restart, Valhalla needs time to load tiles into memory. Short routes work quickly; cross-continent routes may fail for ~30-60s after start. Steady-state ~2GB RAM. **Osmium merge on watchtower**: `docker run --rm -v /mnt/user/appdata/pumperly/valhalla:/data stefda/osmium-tool osmium merge /data/*.osm.pbf -o /data/merged.osm.pbf` (osmium 1.7.1, uses ~4.4GB RAM for 25GB merge).
+- **Valhalla**: 31 European countries merged PBF (~25GB, merged with `osmium merge`). Image: `ghcr.io/gis-ops/docker-valhalla/valhalla:3.5.1`. **Needs 24GB RAM limit**. No `tile_urls` env var — uses local PBF in `/custom_files/`. **CRITICAL: Valhalla crashes (SIGABRT) in two known scenarios**: (1) building from multiple PBFs (`vector::_M_range_check`) — always merge with osmium first, (2) malformed OSM `level` tags (`level=*`, `level=LG`) on `highway=corridor` ways cause `double free or corruption (fasttop)` — crash-loops every ~4h at the same build point. **Fix**: filter corridors before building: `osmium tags-filter -i input.pbf w/highway=corridor -o output.pbf` (do NOT use `-R` flag — it drops referenced nodes and shrinks the file to 9GB). — always merge with osmium first. To add a country: download new PBF from Geofabrik, re-merge all PBFs, delete `valhalla_tiles.tar` + `file_hashes.txt` + `admin_data/` + `timezone_data/`, restart. Also delete old PBF before restart (Valhalla auto-discovers ALL `.pbf` files in `/custom_files/` and tries to build from all of them). **Warmup**: After container restart, Valhalla needs time to load tiles into memory. Short routes work quickly; cross-continent routes may fail for ~30-60s after start. Steady-state ~2GB RAM. **Osmium merge on the deploy host**: `docker run --rm -v /mnt/user/appdata/pumperly/valhalla:/data stefda/osmium-tool osmium merge /data/*.osm.pbf -o /data/merged.osm.pbf` (osmium 1.7.1, uses ~4.4GB RAM for 25GB merge).
 - **Photon**: No official Docker image. Uses `eclipse-temurin:21-jre` (do NOT use JRE 25 — causes issues) with custom entrypoint. Downloads Photon 1.0.1 JAR + per-country JSONL dumps from `download1.graphhopper.com/public/europe/{country}/photon-dump-{country}-1.0-latest.jsonl.zst`. **Single-pass concatenated import**: All 31 country dumps are downloaded in parallel, verified, decompressed and concatenated into a single `all.jsonl` file, then imported in ONE `java -jar photon.jar import` invocation. Uses `.import_complete` sentinel file — if present, skips straight to serving. Must bind to `0.0.0.0` (`-listen-ip 0.0.0.0`). To add a country: add it to the COUNTRIES list in the compose entrypoint, increment EXPECTED count, delete `.import_complete` + `photon_data/`, restart. 12GB container memory limit, 4GB Java heap (`-Xmx4g`).
 - **Photon regions vs scraper countries**: 31 Photon geocoding regions cover 32+ European countries. Some regions bundle multiple countries (e.g. `british-islands` = UK+IE, `france-monacco` = FR+MC, `baltics` = EE+LV+LT, `switzerland-liechtenstein` = CH+LI). All 31 active European scraper countries have geocoding coverage. Non-European countries (AR, AU, MX) would need Photon dumps from other continents.
 - **CRITICAL Photon lessons learned**:
@@ -397,7 +397,7 @@ pumperly/
 
 | Environment | URL | Server |
 |---|---|---|
-| Production | pumperly.com | watchtower |
+| Production | pumperly.com | deploy host |
 | Development | localhost:3000 | Mac |
 
 ### Docker Compose Services
@@ -416,18 +416,18 @@ pumperly/
 - Local `docker buildx --platform linux/amd64` is only for emergency hotfixes
 - GitHub Actions handles: lint, typecheck, Docker build+push, releases, CodeQL
 - Docker Hub secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`) are configured in GitHub repo settings
-- **Deployment flow**: commit → push → **wait for GitHub Actions Docker Publish workflow to finish** → Renovate moves the image pin in the GitOps repo (usually within 30 minutes of the publish) and the webhook redeploys. Never `docker pull` or run compose by hand on watchtower
-- **Never restart Caddy** — always use `caddy reload` (Unraid FUSE causes stale file handles on restart)
+- **Deployment flow**: commit → push → **wait for GitHub Actions Docker Publish workflow to finish** → Renovate moves the image pin in the GitOps repo (usually within 30 minutes of the publish) and the webhook redeploys. Never `docker pull` or run compose by hand on the deploy host
+- **Never restart Caddy** — always use `caddy reload` (the host's FUSE filesystem causes stale file handles on restart)
 
 ### Infrastructure & Backups
 
-- **Stack**: `pumperly/docker-compose.yml` in the private `giteaer/watchtower` Gitea repo, image pinned by tag and digest. A push that changes it makes the deploy webhook on watchtower redeploy the stack. Renovate opens and automerges the pin bump after each release. To ship sooner, set the pin yourself to `drumsergio/pumperly:vX.Y.Z@sha256:<digest>` (digest from `docker buildx imagetools inspect drumsergio/pumperly:vX.Y.Z --format '{{.Manifest.Digest}}'`), commit and push. Changing only the tag deploys nothing new, because Docker resolves the image by digest.
+- **Stack**: `pumperly/docker-compose.yml` in the deploy host's private GitOps repo, image pinned by tag and digest. A push that changes it makes the deploy webhook on the deploy host redeploy the stack. Renovate opens and automerges the pin bump after each release. To ship sooner, set the pin yourself to `drumsergio/pumperly:vX.Y.Z@sha256:<digest>` (digest from `docker buildx imagetools inspect drumsergio/pumperly:vX.Y.Z --format '{{.Manifest.Digest}}'`), commit and push. Changing only the tag deploys nothing new, because Docker resolves the image by digest.
 - **Data volumes** (all under `/mnt/user/appdata/pumperly/`):
   - `pgdata/` (~600 MB) — PostGIS database. Quick to rebuild via scrapers.
   - `valhalla/` (~60+ GB) — Pre-built routing tiles + source PBF (~25GB, 31 European countries). Self-healing: Valhalla rebuilds tiles from PBF on start if missing. Rebuild takes 3-6 hours.
   - `photon/` — OpenSearch index + JAR. Most expensive to rebuild (12-20 hours for 31 regions, 132.7M docs). Uses `.import_complete` sentinel for skip-on-restart.
-- **Backups**: All Pumperly data is covered by the existing Duplicacy appdata backup (daily at 1 AM to geiserback Garage, encrypted, deduplicated). No additional backup config needed.
-- **Caddy**: Site block serves `pumperly.com, www.pumperly.com`. Uses `dynamic_dns` for `pumperly.com`. Always `caddy reload`, never restart (Unraid FUSE stale file handle issue).
+- **Backups**: All Pumperly data is covered by the existing Duplicacy appdata backup (daily at 1 AM to a private S3 backup target, encrypted, deduplicated). No additional backup config needed.
+- **Caddy**: Site block serves `pumperly.com, www.pumperly.com`. Uses `dynamic_dns` for `pumperly.com`. Always `caddy reload`, never restart (FUSE stale file handle issue on the host).
 - **DB credentials**: DB user/name all use `pumperly`.
 
 ### Git Workflow
@@ -525,3 +525,7 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 - Do not commit or push without clear authority from the active profile or the current user request.
 - If a required sync or push is blocked, stop and report the exact command and error.
 <!-- END BEADS INTEGRATION -->
+
+## Where the tracker syncs
+
+This repo is public, so its tracker syncs only to the private remote named by `sync.remote` in `.beads/config.yaml`. The block above says sync uses "your git remote". Here that never means this GitHub repo. Don't add it as a Dolt remote and don't push `refs/dolt/*` to it.

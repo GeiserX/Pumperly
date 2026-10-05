@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["624WUVM8B4.com.pumperly.app"],
+        "components": [
+          { "/": "/api/*", "exclude": true, "comment": "API responses never open the app" },
+          { "/": "/_next/*", "exclude": true, "comment": "Build assets never open the app" },
+          { "/": "/*", "comment": "Every page opens in the iOS app when it is installed" }
+        ]
+      }
+    ]
+  }
+}
