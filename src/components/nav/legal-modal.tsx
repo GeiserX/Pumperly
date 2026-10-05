@@ -43,7 +43,7 @@ export function LegalModal({ page, onClose }: LegalModalProps) {
         </div>
 
         <p className="mt-4 text-[11px] text-gray-400">
-          Last updated: March 2026 &middot; Contact: <a href="mailto:support@pumperly.com" className="underline">support@pumperly.com</a>
+          Last updated: October 2026 &middot; Contact: <a href="mailto:support@pumperly.com" className="underline">support@pumperly.com</a>
         </p>
       </div>
     </div>
