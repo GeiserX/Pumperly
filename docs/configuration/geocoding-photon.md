@@ -1,6 +1,6 @@
 # Geocoding with Photon
 
-This page explains how Pumperly turns typed place names into map positions, and how to run the search engine behind it. Geocoding is optional. Without it, the search boxes find nothing, and everything else keeps working.
+This page explains how Pumperly turns typed place names into map positions, and how to run the search engine behind it. Geocoding is optional. Without it, the search boxes only accept [typed coordinates](../using/routes.md#typing-coordinates), and everything else keeps working.
 
 Geocoding means turning a place name or address into coordinates. [Photon](https://github.com/komoot/photon) is an open-source geocoder built on [OpenStreetMap](https://www.openstreetmap.org) data. It is made for search-as-you-type. You run it yourself, next to the app.
 
@@ -33,7 +33,7 @@ Pumperly does not send a language to Photon. Each result's name comes back in Ph
 
 Leave [`PHOTON_URL`](../reference/environment-variables.md#photon_url) unset. Then:
 
-- `/api/geocode` returns an empty list, and the search boxes show no matches.
+- `/api/geocode` returns an empty list, and the search boxes show no matches. Typed coordinates still work.
 - Visitors cannot pick a place by typing its name.
 - A [share link](../using/links.md) for a route already holds coordinates, so it still opens the route, as long as [Valhalla](routing-valhalla.md) runs.
 - The map, prices and scrapers work as normal.
