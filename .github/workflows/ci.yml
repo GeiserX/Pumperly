@@ -14,18 +14,11 @@ on:
       - 'vitest.config.*'
       - 'docker/**'
       - '.github/workflows/ci.yml'
+  # Every PR runs this workflow, so "CI Summary" can be a required check. The
+  # changes job decides whether the heavy jobs run; on a docs-only PR they are
+  # skipped and the summary passes in seconds.
   pull_request:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'prisma/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'tsconfig.json'
-      - 'next.config.*'
-      - 'vitest.config.*'
-      - 'docker/**'
-      - '.github/workflows/ci.yml'
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
@@ -38,8 +31,39 @@ env:
   NODE_VERSION: "22"
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      # Same list as the push trigger above. On a PR the filter reads the
+      # changed files from the API, so no checkout is needed. Outside a PR
+      # (push, manual run) everything runs.
+      - name: Filter paths
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            code:
+              - 'src/**'
+              - 'prisma/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'next.config.*'
+              - 'vitest.config.*'
+              - 'docker/**'
+              - '.github/workflows/ci.yml'
+
   lint:
     name: Lint & Type Check
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -69,6 +93,8 @@ jobs:
 
   test:
     name: Test
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -101,6 +127,8 @@ jobs:
 
   build:
     name: Build
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -131,15 +159,27 @@ jobs:
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [lint, test, build]
+    needs: [changes, lint, test, build]
     if: always()
     steps:
       - name: Check results
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          RUN_ALL: ${{ github.event_name != 'pull_request' || needs.changes.outputs.code == 'true' }}
+          LINT: ${{ needs.lint.result }}
+          TEST: ${{ needs.test.result }}
+          BUILD: ${{ needs.build.result }}
         run: |
-          if [ "${{ needs.lint.result }}" != "success" ] || \
-             [ "${{ needs.test.result }}" != "success" ] || \
-             [ "${{ needs.build.result }}" != "success" ]; then
-            echo "CI failed"
+          if [ "$CHANGES" != "success" ]; then
+            echo "Detect changes: $CHANGES"
+            exit 1
+          fi
+          if [ "$RUN_ALL" != "true" ]; then
+            echo "No code changed: lint, test and build skipped"
+            exit 0
+          fi
+          if [ "$LINT" != "success" ] || [ "$TEST" != "success" ] || [ "$BUILD" != "success" ]; then
+            echo "CI failed: lint=$LINT test=$TEST build=$BUILD"
             exit 1
           fi
           echo "All checks passed"
