@@ -811,6 +811,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#typing-coordinates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typing coordinates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#stops" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2046,6 +2057,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#typing-coordinates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typing coordinates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#stops" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2254,7 +2276,7 @@
 
 <h1 id="planning-a-route">Planning a route<a class="headerlink" href="#planning-a-route" title="Permanent link">&para;</a></h1>
 <p>This page explains how to plan a trip in Pumperly and how it finds and ranks the stations along it. It covers search, stops, alternative routes, the search radius, detour times, sorting and filters.</p>
-<p>A route needs two self-hosted services. <a href="../../configuration/routing-valhalla/">Valhalla</a> computes routes and detour times. <a href="../../configuration/geocoding-photon/">Photon</a> turns what you type into places. Without Valhalla every route fails. Without Photon the search box finds nothing.</p>
+<p>A route needs two self-hosted services. <a href="../../configuration/routing-valhalla/">Valhalla</a> computes routes and detour times. <a href="../../configuration/geocoding-photon/">Photon</a> turns what you type into places. Without Valhalla every route fails. Without Photon the search box only accepts <a href="#typing-coordinates">typed coordinates</a>.</p>
 <p><img alt="A diesel route from Lisbon to Porto. The corridor stations are coloured by price along the route line, and the side panel lists them with their detour minutes and badges." src="../../images/screenshots/route-stations.png" /></p>
 <h2 id="how-a-route-is-built">How a route is built<a class="headerlink" href="#how-a-route-is-built" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR
@@ -2288,7 +2310,41 @@
 <li>Use <kbd>Up</kbd> and <kbd>Down</kbd> to move through them and <kbd>Enter</kbd> to pick one. <kbd>Esc</kbd> closes the list.</li>
 <li><kbd>Enter</kbd> with no list open searches for what you typed and takes the first match.</li>
 </ul>
-<p>When nothing matches, the box says "No results found". A Pumperly with no <code>PHOTON_URL</code> set shows this for every search.</p>
+<p>When nothing matches, the box says "No results found". A Pumperly with no <code>PHOTON_URL</code> set shows this for every search except typed coordinates.</p>
+<h3 id="typing-coordinates">Typing coordinates<a class="headerlink" href="#typing-coordinates" title="Permanent link">&para;</a></h3>
+<p>You can type or paste coordinates instead of a place name. Pumperly reads them itself and doesn't ask Photon. The only suggestion is that exact point.</p>
+<p>Put the latitude first. These formats work:</p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Decimal degrees</td>
+<td><code>40.4168, -3.7038</code> or <code>40.4168 -3.7038</code></td>
+</tr>
+<tr>
+<td>With hemisphere letters, before or after the number</td>
+<td><code>40.4168 N, 3.7038 W</code> or <code>N 40.4168 W 3.7038</code></td>
+</tr>
+<tr>
+<td>Degrees, minutes, seconds</td>
+<td><code>40°25'0.5"N 3°42'13.7"W</code></td>
+</tr>
+<tr>
+<td>Degrees, decimal minutes</td>
+<td><code>40° 25.008' N, 3° 42.228' W</code></td>
+</tr>
+<tr>
+<td>Decimal commas</td>
+<td><code>40,4168; -3,7038</code> or <code>40,4168 -3,7038</code></td>
+</tr>
+</tbody>
+</table>
+<p>With hemisphere letters, the order does not matter: <code>3.7038 W 40.4168 N</code> works too. Pumperly searches Photon as usual for text that is out of range or ambiguous. That includes two plain whole numbers like <code>28, 3</code>.</p>
 <h3 id="stops">Stops<a class="headerlink" href="#stops" title="Permanent link">&para;</a></h3>
 <p>Once the start box shows, <strong>Add stop</strong> adds an intermediate stop between the start and the destination. You can add up to five. Stops are numbered in route order.</p>
 <ul>

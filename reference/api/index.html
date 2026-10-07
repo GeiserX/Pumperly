@@ -2522,6 +2522,7 @@
 <p><strong>Errors:</strong> <code>400</code> for bad parameters, <code>500</code> when the query fails.</p>
 <h2 id="geocode">GET /api/geocode<a class="headerlink" href="#geocode" title="Permanent link">&para;</a></h2>
 <p>Searches for places by name through <a href="../../configuration/geocoding-photon/">Photon</a>. The search box on the map uses it for autocomplete.</p>
+<p>When <code>q</code> is a coordinate pair, latitude first, the endpoint skips Photon. It returns one result, with <code>name</code> set to the trimmed query, <code>city</code>, <code>state</code> and <code>country</code> set to <code>null</code>, and the parsed <code>coordinates</code>. See <a href="../../using/routes/#typing-coordinates">Typing coordinates</a> for the accepted formats.</p>
 <p><strong>Query parameters:</strong></p>
 <table>
 <thead>
@@ -2597,7 +2598,7 @@
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">An empty list is not always \"nothing found\"</p>
-<p>The endpoint returns <code>200</code> with <code>[]</code> when <a href="../environment-variables/#photon_url"><code>PHOTON_URL</code></a> is not set, when Photon answers with an error status, or when Photon's body is not JSON. Only a failed connection or a timeout (5 seconds) returns <code>502</code> with <code>Geocoding failed</code>.</p>
+<p>Unless <code>q</code> is a coordinate pair, the endpoint returns <code>200</code> with <code>[]</code> when <a href="../environment-variables/#photon_url"><code>PHOTON_URL</code></a> is not set, when Photon answers with an error status, or when Photon's body is not JSON. Only a failed connection or a timeout (5 seconds) returns <code>502</code> with <code>Geocoding failed</code>.</p>
 </div>
 <p><strong>Errors:</strong> <code>400</code> for bad parameters, <code>502</code> with <code>Geocoding failed</code>.</p>
 <h2 id="exchange-rates">GET /api/exchange-rates<a class="headerlink" href="#exchange-rates" title="Permanent link">&para;</a></h2>

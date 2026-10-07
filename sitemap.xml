@@ -2,126 +2,126 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://geiserx.github.io/Pumperly/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/development/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/related/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/roadmap/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/configuration/api-keys/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/configuration/geocoding-photon/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/configuration/routing-valhalla/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/data/adding-a-country/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/data/coverage/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/data/ev-sources/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/data/fuel-sources/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/data/how-scrapers-work/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/data/sources-at-a-glance/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/getting-started/docker-compose/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/getting-started/first-start/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/getting-started/full-stack/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/getting-started/kubernetes/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/operations/backup-and-restore/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/operations/troubleshooting/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/operations/upgrading/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/reference/api/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/reference/currencies/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/reference/data-model/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/reference/environment-variables/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/reference/fuel-types/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/reference/glossary/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/using/ev-charging/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/using/links/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/using/map/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
     <url>
          <loc>https://geiserx.github.io/Pumperly/using/routes/</loc>
-         <lastmod>2026-09-30</lastmod>
+         <lastmod>2026-10-07</lastmod>
     </url>
 </urlset>

@@ -2053,7 +2053,7 @@
 
 
 <h1 id="geocoding-with-photon">Geocoding with Photon<a class="headerlink" href="#geocoding-with-photon" title="Permanent link">&para;</a></h1>
-<p>This page explains how Pumperly turns typed place names into map positions, and how to run the search engine behind it. Geocoding is optional. Without it, the search boxes find nothing, and everything else keeps working.</p>
+<p>This page explains how Pumperly turns typed place names into map positions, and how to run the search engine behind it. Geocoding is optional. Without it, the search boxes only accept <a href="../../using/routes/#typing-coordinates">typed coordinates</a>, and everything else keeps working.</p>
 <p>Geocoding means turning a place name or address into coordinates. <a href="https://github.com/komoot/photon">Photon</a> is an open-source geocoder built on <a href="https://www.openstreetmap.org">OpenStreetMap</a> data. It is made for search-as-you-type. You run it yourself, next to the app.</p>
 <h2 id="what-pumperly-uses-photon-for">What Pumperly uses Photon for<a class="headerlink" href="#what-pumperly-uses-photon-for" title="Permanent link">&para;</a></h2>
 <p>Photon powers the origin, destination and stop boxes of the route planner. Nothing else in Pumperly uses it. The scrapers do not geocode stations.</p>
@@ -2077,7 +2077,7 @@
 <h2 id="running-without-photon">Running without Photon<a class="headerlink" href="#running-without-photon" title="Permanent link">&para;</a></h2>
 <p>Leave <a href="../../reference/environment-variables/#photon_url"><code>PHOTON_URL</code></a> unset. Then:</p>
 <ul>
-<li><code>/api/geocode</code> returns an empty list, and the search boxes show no matches.</li>
+<li><code>/api/geocode</code> returns an empty list, and the search boxes show no matches. Typed coordinates still work.</li>
 <li>Visitors cannot pick a place by typing its name.</li>
 <li>A <a href="../../using/links/">share link</a> for a route already holds coordinates, so it still opens the route, as long as <a href="../routing-valhalla/">Valhalla</a> runs.</li>
 <li>The map, prices and scrapers work as normal.</li>
