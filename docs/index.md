@@ -168,3 +168,4 @@ flowchart LR
 ## License
 
 Pumperly is released under the [AGPL-3.0-or-later](https://github.com/GeiserX/Pumperly/blob/main/LICENSE) license. Price and charger data keep the licence of their source; [Fuel price sources](data/fuel-sources.md) and [EV charging sources](data/ev-sources.md) list them, and some allow only non-commercial use. If you run a public instance, read [Data licences on a public instance](getting-started/docker-compose.md#data-licences-on-a-public-instance) first.
+
