@@ -208,6 +208,8 @@ curl -s "https://pumperly.com/api/stations/nearest?lat=40.4168&lon=-3.7038&radiu
 
 Searches for places by name through [Photon](../configuration/geocoding-photon.md). The search box on the map uses it for autocomplete.
 
+When `q` is a coordinate pair, latitude first, the endpoint skips Photon. It returns one result, with `name` set to the trimmed query, `city`, `state` and `country` set to `null`, and the parsed `coordinates`. See [Typing coordinates](../using/routes.md#typing-coordinates) for the accepted formats.
+
 **Query parameters:**
 
 | Name | Required | Validation |
@@ -243,7 +245,7 @@ Shape of the response, with illustrative values:
 ```
 
 !!! note "An empty list is not always \"nothing found\""
-    The endpoint returns `200` with `[]` when [`PHOTON_URL`](environment-variables.md#photon_url) is not set, when Photon answers with an error status, or when Photon's body is not JSON. Only a failed connection or a timeout (5 seconds) returns `502` with `Geocoding failed`.
+    Unless `q` is a coordinate pair, the endpoint returns `200` with `[]` when [`PHOTON_URL`](environment-variables.md#photon_url) is not set, when Photon answers with an error status, or when Photon's body is not JSON. Only a failed connection or a timeout (5 seconds) returns `502` with `Geocoding failed`.
 
 **Errors:** `400` for bad parameters, `502` with `Geocoding failed`.
 
