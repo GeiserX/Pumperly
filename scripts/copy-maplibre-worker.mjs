@@ -11,9 +11,12 @@
 // feature keeps working. That shipped undetected for four releases (v1.10.7 →
 // v1.10.11) the last time maplibre-gl went to v6.
 //
-// Serving both files ourselves, under their ORIGINAL names in one directory,
-// makes the relative import resolve. `setWorkerUrl()` in map-view.tsx points at
-// the copy. See also the `maplibre-worker-assets` test.
+// Since maplibre-gl 6.13 the worker is self-contained again: it imports nothing
+// relatively, and `maplibre-gl-shared.mjs` ships as an empty, deprecated
+// placeholder (removed in the next major). So we copy the worker alone. We still
+// serve it ourselves so its URL stays under our control; `setWorkerUrl()` in
+// map-view.tsx points at the copy. If a release splits the worker again, the
+// `maplibre-worker-assets` test names the file this list must add.
 import { copyFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,8 +25,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = join(root, "node_modules", "maplibre-gl", "dist");
 const dest = join(root, "public", "maplibre");
 
-// The worker entry plus the chunk it imports. Both must keep their exact names.
-const FILES = ["maplibre-gl-worker.mjs", "maplibre-gl-shared.mjs"];
+// The worker entry plus any chunk it imports relatively. Each keeps its exact name.
+const FILES = ["maplibre-gl-worker.mjs"];
 
 const missing = FILES.filter((f) => !existsSync(join(src, f)));
 if (missing.length > 0) {

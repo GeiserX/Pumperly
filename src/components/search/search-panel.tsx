@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PhotonResult } from "@/lib/photon";
 import type { Route } from "@/components/map/route-layer";
 import type { StationsGeoJSONCollection } from "@/types/station";
@@ -162,6 +162,17 @@ export function SearchPanel({
   // When a station-leg preview is active, show its duration/distance instead
   const displayRoute = displayRoutes?.[0] ?? primaryRoute;
 
+  // Calculate route with current state
+  const calculateRoute = useCallback(
+    (o: Location, d: Location, wps: WaypointEntry[], options?: { isStationLeg?: boolean }) => {
+      const wpCoords = wps
+        .filter((wp) => wp.location != null)
+        .map((wp) => wp.location!.coordinates);
+      onRoute(o.coordinates, d.coordinates, wpCoords.length > 0 ? wpCoords : undefined, options);
+    },
+    [onRoute],
+  );
+
   // "My location" handler — triggers geolocation and sets it as the origin.
   // In the destination-first flow, if a destination is already set we route
   // straight away; otherwise we keep both boxes open and focus the destination.
@@ -196,19 +207,7 @@ export function SearchPanel({
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- calculateRoute defined below; stable
-  }, [t, onFlyTo, origin, destination, waypoints]);
-
-  // Calculate route with current state
-  const calculateRoute = useCallback(
-    (o: Location, d: Location, wps: WaypointEntry[], options?: { isStationLeg?: boolean }) => {
-      const wpCoords = wps
-        .filter((wp) => wp.location != null)
-        .map((wp) => wp.location!.coordinates);
-      onRoute(o.coordinates, d.coordinates, wpCoords.length > 0 ? wpCoords : undefined, options);
-    },
-    [onRoute],
-  );
+  }, [t, onFlyTo, origin, destination, waypoints, calculateRoute]);
 
   // Deep-link route prefill (one-shot). When a shared route URL was parsed by
   // HomeClient, it passes the coords here; we resolve them into generic-labelled
@@ -528,10 +527,15 @@ export function SearchPanel({
   // Auto-trigger station-leg when a station is selected (from map click or sidebar).
   // Uses refs so the effect only fires on selectedStationId changes, not when
   // handleStationLeg's closure deps (origin/destination/waypoints) change.
+  // The refs are refreshed in a layout effect, not during render: layout effects
+  // of a commit run before its passive effects, so the effect below still reads
+  // the latest values.
   const handleStationLegRef = useRef(handleStationLeg);
-  handleStationLegRef.current = handleStationLeg;
   const primaryStationsRef = useRef(primaryStations);
-  primaryStationsRef.current = primaryStations;
+  useLayoutEffect(() => {
+    handleStationLegRef.current = handleStationLeg;
+    primaryStationsRef.current = primaryStations;
+  });
   const prevSelectedRef = useRef(selectedStationId);
 
   useEffect(() => {
