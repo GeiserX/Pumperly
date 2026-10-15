@@ -16,13 +16,13 @@ import { CountryMarkers } from "./country-markers";
 import { useConvertedStations } from "@/lib/currency";
 import { useTheme } from "@/lib/theme";
 import type { PlannedStopMarker } from "@/components/search/refuel-planner";
-// Serve MapLibre's module worker ourselves. Left to the bundler, the worker is
-// emitted as a static asset whose relative `./maplibre-gl-shared.mjs` import is
-// NOT rewritten to the content-hashed filename, so it 404s, the worker never
-// boots and the map paints only its background — with a green build and no
-// console error loud enough to notice. `public/maplibre/` keeps both files side
-// by side under their original names (see scripts/copy-maplibre-worker.mjs), so
-// the relative import resolves. Module scope, browser-only: it must be set
+// Serve MapLibre's module worker ourselves. Before maplibre-gl 6.13 the bundler
+// emitted the worker as a static asset whose relative `./maplibre-gl-shared.mjs`
+// import was NOT rewritten to the content-hashed filename, so it 404'd, the
+// worker never booted and the map painted only its background — with a green
+// build and no console error loud enough to notice. 6.13 made the worker
+// self-contained again; `public/maplibre/` holds it under its original name (see
+// scripts/copy-maplibre-worker.mjs). Module scope, browser-only: it must be set
 // before the first Map mounts, and there is no worker to configure during SSR.
 if (typeof window !== "undefined") {
   setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
