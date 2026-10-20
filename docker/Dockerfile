@@ -1,4 +1,6 @@
 FROM node:22-alpine AS base
+# The base image's CA bundle predates the eMudhra distrust (2026-10-20).
+RUN apk upgrade --no-cache ca-certificates-bundle
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -30,6 +32,9 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Trust the system CA bundle instead of Node's built-in roots, which still trust
+# the compromised eMudhra intermediates.
+ENV NODE_OPTIONS=--use-openssl-ca
 
 LABEL org.opencontainers.image.title="Pumperly" \
       org.opencontainers.image.description="Open-source energy route planner for fuel and electric vehicles. Self-hostable." \
