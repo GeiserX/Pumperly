@@ -415,6 +415,34 @@ describe("RefuelPlanner", () => {
       expect(screen.getAllByText(/^\d+ (h \d+ )?min · /).length).toBeGreaterThan(0);
     });
 
+    it("plans by price when chargers have one, with the session fee per stop", async () => {
+      const chargers = [
+        makeStation("x", { brand: "Ionity", price: 0.69, fuelType: "EV", routeFraction: 0.3, detourMin: 0, evFees: { sessionFee: 1.5 } }),
+        makeStation("y", { brand: "Tesla", price: 0.49, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+        makeStation("z", { brand: "Unpriced", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.45, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const input = planSpy.mock.lastCall![0];
+      // Priced chargers only, at their price, with the real value of time.
+      expect(input.stations.map((s: { id: string }) => s.id)).toEqual(["x", "y"]);
+      expect(input.stations[0]).toMatchObject({ price: 0.69, stopFee: 1.5 });
+      expect(input.stations[1].stopFee).toBeUndefined();
+      expect(input.timeValuePerHour).toBe(15);
+      expect(screen.getByText(/planner.timeValue/)).toBeInTheDocument();
+      expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(2);
+    });
+
+    it("converts the session fee from the tariff's currency", async () => {
+      Object.assign(currencyState, { currency: "HUF", symbol: "Ft", decimals: 0, rate: 400, rates: { base: "EUR", rates: { HUF: 400 }, date: "2026-10-22" } });
+      const chargers = [
+        makeStation("x", { price: 276, currency: "HUF", originalPrice: 0.69, originalCurrency: "EUR", fuelType: "EV", routeFraction: 0.3, detourMin: 0, evFees: { sessionFee: 1.5 } }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy.mock.lastCall![0].stations[0]).toMatchObject({ price: 276, stopFee: 600 });
+    });
+
     it("drops slower and unknown-power chargers under a minimum power", async () => {
       const chargers = [
         makeStation("fast", { price: null, fuelType: "EV", routeFraction: 0.3, powerKw: 150 }),

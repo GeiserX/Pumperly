@@ -431,6 +431,21 @@ describe("planRefuel with charge time (EV)", () => {
     expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
   });
 
+  it("adds a stop fee to the stop's cost and weighs it when choosing", () => {
+    const priced = (id: string, price: number, stopFee?: number): PlannerStation => ({ id, km: 100, price, detourMin: 0, minutesPerPct: 0.5, ...(stopFee != null ? { stopFee } : {}) });
+    // 45 % of 60 kWh = 27 kWh: 0.39 × 27 + 10 = 20.53 loses to 0.45 × 27 = 12.15.
+    const r = planRefuel({ ...ev, routeKm: 250, stations: [priced("fee", 0.39, 10), priced("plain", 0.45)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["plain"]);
+    const only = planRefuel({ ...ev, routeKm: 250, stations: [priced("fee", 0.39, 10)] });
+    expect(only.stops[0].cost).toBeCloseTo(0.39 * 27 + 10);
+    expect(only.totalFuelCost).toBeCloseTo(0.39 * 27 + 10);
+  });
+
+  it("ignores a station with an invalid stop fee", () => {
+    const r = planRefuel({ ...ev, routeKm: 250, stations: [{ ...at("bad", 100, 0, 1), stopFee: -1 }, at("ok", 100, 0, 1)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
+  });
+
   it("keeps the fastest charger in each bucket when pruning ties on price", () => {
     const stations = Array.from({ length: 400 }, (_, i) => at(`S${i}`, i * 5, 5, i === 201 ? 0.1 : 3));
     expect(pruneCandidates(stations, 2000).map((s) => s.id)).toContain("S201");
