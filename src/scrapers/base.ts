@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import type { FuelType } from "../types/station";
+import type { EvFees, FuelType } from "../types/station";
 
 /**
  * Transaction client type — Prisma's interactive transaction callback receives
@@ -66,8 +66,17 @@ export interface RawFuelPrice {
   /** Must match a RawStation.externalId in the same batch */
   stationExternalId: string;
   fuelType: FuelType;
-  price: number; // per litre in local currency
+  price: number; // per litre in local currency (per kWh for EV)
   currency: string; // ISO 4217
+  /** EV only: fees on top of the per-kWh price. */
+  evFees?: EvFees;
+  /** When the upstream last vouched for this price. Unset = now. */
+  reportedAt?: Date;
+}
+
+/** A charger price per kWh the map can show. Only EUR chargers are priced today. */
+export function isPlausibleEvPrice(price: number, currency: string): boolean {
+  return currency === "EUR" && price >= 0.1 && price <= 2;
 }
 
 // A sweep deletes rows not touched within the run plus this margin.
@@ -192,6 +201,8 @@ export abstract class BaseScraper {
       const badPriceBefore = prices.length;
       const validPrices = prices.filter((p) => {
         if (p.price <= 0) return false;
+        // Per kWh, not per litre.
+        if (p.fuelType === "EV") return isPlausibleEvPrice(p.price, p.currency);
         if (ALT_FUELS.has(p.fuelType)) return p.price >= 0.05 && p.price < 100;
         if (p.currency === "EUR" || p.currency === "GBP" || p.currency === "CHF")
           return p.price >= priceMin && p.price <= priceMax;
@@ -283,6 +294,8 @@ export abstract class BaseScraper {
             price: p.price,
             currency: p.currency,
             source: this.source,
+            evFees: p.evFees,
+            reportedAt: p.reportedAt,
           },
         ];
       });
@@ -438,25 +451,41 @@ export abstract class BaseScraper {
       price: number;
       currency: string;
       source: string;
+      evFees?: EvFees;
+      reportedAt?: Date;
     }>,
   ): Promise<number> {
     if (batch.length === 0) return 0;
 
-    // Each price needs 5 params: stationId, fuelType, price, currency, source
+    // Like max_power_kw: only batches that carry fees write ev_fees, so fuel
+    // scrapers keep working on a database without the column.
+    const withFees = batch.some((p) => p.evFees != null);
+    // Only batches that carry an upstream timestamp bind one; the rest keep NOW().
+    const withReported = batch.some((p) => p.reportedAt != null);
+    const perRow = 5 + (withFees ? 1 : 0) + (withReported ? 1 : 0);
+
+    // Each price needs 5 params: stationId, fuelType, price, currency, source,
+    // plus evFees and reportedAt for batches that carry them.
     const params: unknown[] = [];
     const valueClauses: string[] = [];
 
     for (let i = 0; i < batch.length; i++) {
       const p = batch[i];
-      const offset = i * 5;
+      const offset = i * perRow;
+      let n = offset + 5;
+      const reported = withReported ? `COALESCE($${++n}::timestamptz, NOW())` : "NOW()";
       valueClauses.push(
-        `($${offset + 1}::uuid, $${offset + 2}, $${offset + 3}, $${offset + 4}, NOW(), $${offset + 5})`,
+        `($${offset + 1}::uuid, $${offset + 2}, $${offset + 3}, $${offset + 4}, ${reported}, $${offset + 5}` +
+          (withFees ? `, $${++n}::jsonb` : "") +
+          `)`,
       );
       params.push(p.stationId, p.fuelType, p.price, p.currency, p.source);
+      if (withReported) params.push(p.reportedAt ? p.reportedAt.toISOString() : null);
+      if (withFees) params.push(p.evFees ? JSON.stringify(p.evFees) : null);
     }
 
     const sql = `
-      INSERT INTO fuel_prices (station_id, fuel_type, price, currency, reported_at, source)
+      INSERT INTO fuel_prices (station_id, fuel_type, price, currency, reported_at, source${withFees ? ", ev_fees" : ""})
       VALUES ${valueClauses.join(",\n")}
     `;
 

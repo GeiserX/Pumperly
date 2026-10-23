@@ -38,6 +38,8 @@ model FuelPrice {
   currency   String   @default("EUR") @db.VarChar(3)
   reportedAt DateTime @default(now()) @map("reported_at") @db.Timestamptz
   source     String   @db.VarChar(50)
+  /// EV only: fees on top of the per-kWh price, shaped as EvFees (src/types/station.ts).
+  evFees     Json?    @map("ev_fees")
 
   station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
 
