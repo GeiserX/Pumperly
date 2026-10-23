@@ -70,6 +70,21 @@ export interface RawFuelPrice {
   currency: string; // ISO 4217
 }
 
+// A sweep deletes rows not touched within the run plus this margin.
+const SWEEP_MARGIN_SECONDS = 300;
+
+export interface EvSweepOptions {
+  /** externalId prefix this scraper writes, e.g. "bnetza-". */
+  ownPrefix: string;
+  /** Prefixes of the sources this one replaces in the same country. */
+  retirePrefixes: string[];
+  /** Fewer rows refreshed by this run than this, and nothing is deleted. */
+  minStations: number;
+  runDurationMs: number;
+  /** For the log lines, e.g. "the register". */
+  label: string;
+}
+
 // ---------------------------------------------------------------------------
 // Per-currency price validation bands
 // ---------------------------------------------------------------------------
@@ -447,5 +462,98 @@ export abstract class BaseScraper {
 
     await tx.$executeRawUnsafe(sql, ...params);
     return batch.length;
+  }
+
+  // ---------------------------------------------------------------------------
+  // EV sweep
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Take out the EV rows nothing else will. `run()` only orphan-cleans
+   * price-less `fuel` stations, so EV rows accumulate forever:
+   *
+   *   1. Own rows this run didn't touch: chargers that left the upstream, or
+   *      whose derived ID churned because coordinates were corrected.
+   *   2. The rows of the sources this one replaces (`retirePrefixes`). A
+   *      country is served by exactly one EV source at a time, so once this
+   *      one has landed those are pure duplicates.
+   *
+   * Both are gated on a DB-counted floor rather than on the `stationsUpserted`
+   * the pipeline reports, because that figure is `batch.length` regardless of
+   * what the database did. The count covers only rows this run touched:
+   * yesterday's 74k rows must not vouch for a degraded fetch that refreshed 42
+   * of them.
+   */
+  protected async sweepEvRows(opts: EvSweepOptions): Promise<void> {
+    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+    const prisma = new PrismaClient({ adapter });
+    try {
+      // Cutoff expressed as a duration back from the database clock rather than
+      // as an app-side timestamp, so clock skew between app and DB cannot make
+      // this delete rows that were just written. The same cutoff separates
+      // "refreshed by this run" from "stale", so a row is always on exactly
+      // one side of it.
+      const staleSeconds = opts.runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
+      const own = `${opts.ownPrefix}%`;
+
+      const counts: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `SELECT count(*) FROM stations
+         WHERE country = $2 AND station_type = 'ev_charger'
+           AND external_id LIKE $3
+           AND updated_at >= NOW() - make_interval(secs => $1::float8)`,
+        staleSeconds,
+        this.country,
+        own,
+      );
+      const refreshed = Number(counts[0]?.count ?? 0);
+      if (refreshed < opts.minStations) {
+        console.warn(
+          `[${this.source}] Only ${refreshed} station(s) refreshed by this run ` +
+            `(floor ${opts.minStations}) — skipping cleanup`,
+        );
+        return;
+      }
+
+      const stale: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `WITH deleted AS (
+           DELETE FROM stations
+           WHERE country = $2
+             AND station_type = 'ev_charger'
+             AND external_id LIKE $3
+             AND updated_at < NOW() - make_interval(secs => $1::float8)
+           RETURNING id
+         ) SELECT count(*) FROM deleted`,
+        staleSeconds,
+        this.country,
+        own,
+      );
+      const staleCount = Number(stale[0]?.count ?? 0);
+      if (staleCount > 0) {
+        console.log(`[${this.source}] Removed ${staleCount} station(s) no longer in ${opts.label}`);
+      }
+
+      if (opts.retirePrefixes.length === 0) return;
+      const retired: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `WITH deleted AS (
+           DELETE FROM stations
+           WHERE country = $1
+             AND station_type = 'ev_charger'
+             AND external_id LIKE ANY($2::text[])
+           RETURNING id
+         ) SELECT count(*) FROM deleted`,
+        this.country,
+        opts.retirePrefixes.map((p) => `${p}%`),
+      );
+      const retiredCount = Number(retired[0]?.count ?? 0);
+      if (retiredCount > 0) {
+        console.log(
+          `[${this.source}] Retired ${retiredCount} superseded row(s) ` +
+            `(${opts.retirePrefixes.join(", ")}) for ${this.country} ` +
+            `(${refreshed} ${opts.label} stations refreshed this run)`,
+        );
+      }
+    } finally {
+      await prisma.$disconnect().catch(() => {});
+    }
   }
 }

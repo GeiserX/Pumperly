@@ -21,6 +21,16 @@
 // fills up with duplicates again.
 // ---------------------------------------------------------------------------
 
+// The externalId prefix each source writes. A source's sweep retires every
+// other prefix in this list, so a new source only needs adding here.
+const GERMANY_EV_PREFIXES = ["ocm-", "bnetza-"] as const;
+export type GermanyEvPrefix = (typeof GERMANY_EV_PREFIXES)[number];
+
+/** The prefixes of the German EV sources that `own` replaces. */
+export function otherGermanyEvPrefixes(own: GermanyEvPrefix): string[] {
+  return GERMANY_EV_PREFIXES.filter((p) => p !== own);
+}
+
 /**
  * Collapse Germany's two EV scrapers down to whichever one is configured.
  *
