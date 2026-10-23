@@ -419,18 +419,47 @@ describe("RefuelPlanner", () => {
       const chargers = [
         makeStation("x", { brand: "Ionity", price: 0.69, fuelType: "EV", routeFraction: 0.3, detourMin: 0, evFees: { sessionFee: 1.5 } }),
         makeStation("y", { brand: "Tesla", price: 0.49, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
-        makeStation("z", { brand: "Unpriced", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.45, detourMin: 0 }),
       ];
       renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
       await userEvent.click(screen.getByText("planner.titleEv"));
       const input = planSpy.mock.lastCall![0];
-      // Priced chargers only, at their price, with the real value of time.
+      // At their price, with the real value of time.
       expect(input.stations.map((s: { id: string }) => s.id)).toEqual(["x", "y"]);
       expect(input.stations[0]).toMatchObject({ price: 0.69, stopFee: 1.5 });
       expect(input.stations[1].stopFee).toBeUndefined();
       expect(input.timeValuePerHour).toBe(15);
       expect(screen.getByText(/planner.timeValue/)).toBeInTheDocument();
       expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(2);
+    });
+
+    // Munich to Vienna: German chargers carry OCPDB prices, Austrian ones none.
+    it("keeps unpriced chargers in a priced plan, at 0 and with no cost shown", async () => {
+      const chargers = [
+        makeStation("de", { brand: "EnBW", price: 0.79, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("at", { brand: "Smatrics", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+      ];
+      const { onPlanChange } = renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const input = planSpy.mock.lastCall![0];
+      expect(input.stations).toEqual([
+        expect.objectContaining({ id: "de", price: 0.79 }),
+        expect.objectContaining({ id: "at", price: 0 }),
+      ]);
+      expect(input.timeValuePerHour).toBe(15);
+      expect(onPlanChange.mock.lastCall![0].map((s: { id: string }) => s.id)).toEqual(["de", "at"]);
+      expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(1);
+      expect(screen.getAllByText(/^\+\d+\.\d kWh$/)).toHaveLength(1);
+    });
+
+    it("still drops chargers priced in another currency or above the price filter", async () => {
+      const chargers = [
+        makeStation("ok", { price: 0.59, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("chf", { price: 0.6, currency: "CHF", fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("dear", { price: 0.99, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300, maxPrice: 0.8 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy.mock.lastCall![0].stations.map((s: { id: string }) => s.id)).toEqual(["ok"]);
     });
 
     it("converts the session fee from the tariff's currency", async () => {

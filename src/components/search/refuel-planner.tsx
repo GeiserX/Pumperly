@@ -100,8 +100,9 @@ export function RefuelPlanner({
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
   // EV plans use money only when some charger on the route has a price in the
-  // display currency; then only priced chargers compete. Otherwise (no feed
-  // prices the chargers there) they compete on detour and charging time only.
+  // display currency. Chargers without a price still compete, at 0: most
+  // countries publish none, and dropping them could leave a cross-border route
+  // with no plan. With no priced charger at all, only detour and charging time count.
   const evPriced = ev && stations.some((s) => s.properties.price != null && s.properties.price > 0 && s.properties.currency === currency);
   const usesMoney = !ev || evPriced;
 
@@ -120,9 +121,9 @@ export function RefuelPlanner({
 
   // Usable stations exist but every detour request failed: filters are not the cause.
   const detoursFailed = useMemo(() => {
-    const usable = ev && !evPriced ? stations : stations.filter((s) => s.properties.price != null);
+    const usable = ev ? stations : stations.filter((s) => s.properties.price != null);
     return usable.length > 0 && usable.every((s) => s.properties.detourMin != null && s.properties.detourMin < 0);
-  }, [ev, evPriced, stations]);
+  }, [ev, stations]);
 
   const plan: PlanResult | null = useMemo(() => {
     if (!open || ratesMissing || detoursPending || routeKm <= 0) return null;
@@ -133,8 +134,8 @@ export function RefuelPlanner({
         // A power filter can't vouch for a charger whose power is unknown.
         if (minChargerKw > 0 && !((p.powerKw ?? 0) >= minChargerKw)) return [];
         const base = { id: p.id, km: (p.routeFraction ?? 0) * routeKm, detourMin: p.detourMin, minutesPerPct: minutesPerPct(evProfile, p.powerKw) };
-        if (!evPriced) return [{ ...base, price: 0 }];
-        if (p.price == null || p.price <= 0 || p.currency !== currency || (maxPrice != null && p.price > maxPrice)) return [];
+        if (!evPriced || p.price == null || p.price <= 0) return [{ ...base, price: 0 }];
+        if (p.currency !== currency || (maxPrice != null && p.price > maxPrice)) return [];
         // The session fee is in the tariff's own currency; the price is already converted.
         const fee = p.evFees?.sessionFee;
         return [{ ...base, price: p.price, ...(fee != null ? { stopFee: convert(fee, p.originalCurrency ?? p.currency) } : {}) }];
@@ -355,7 +356,7 @@ export function RefuelPlanner({
                         {ev ? (
                           <>
                             <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">
-                              {evPriced ? `${money(stop.cost)} · ` : ""}+{kwh(stop.litres)}
+                              {evPriced && (f.properties.price ?? 0) > 0 ? `${money(stop.cost)} · ` : ""}+{kwh(stop.litres)}
                             </p>
                             <p className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
                               {minutes(stop.chargeMin)} · {f.properties.powerKw != null ? `${f.properties.powerKw} kW` : t("popup.powerUnknown")}
