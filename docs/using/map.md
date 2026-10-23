@@ -70,7 +70,7 @@ Each fuel has a code, such as `B7` for regular diesel or `EV` for charging. The 
 
 The first fuel you see is the instance default. The operator sets it with [`PUMPERLY_DEFAULT_FUEL`](../reference/environment-variables.md#pumperly_default_fuel). Without it, Pumperly uses the default fuel of the country in [`PUMPERLY_DEFAULT_COUNTRY`](../reference/environment-variables.md#pumperly_default_country).
 
-On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, and chargers carry no price. See [EV charging](ev-charging.md).
+On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, priced or not. Only German chargers have prices. See [EV charging](ev-charging.md).
 
 Changing the fuel clears the max-price filter and resets the max detour to 5 minutes.
 
@@ -154,7 +154,7 @@ From top to bottom the popup shows:
 | Copy link | Copies a link to this station to the clipboard. The icon turns into a check mark when it worked. |
 | Share | Opens your device's share sheet. Where the browser has none, it copies the link instead. |
 
-When the station has no price for the chosen fuel, the price block reads "No price for" and the fuel name. This is what an EV charger shows.
+When the station has no price for the chosen fuel, the price block reads "No price for" and the fuel name. An EV charger shows its price per kWh when it has one, and its power otherwise. See [What a charger shows](ev-charging.md#what-a-charger-shows).
 
 The two link buttons are described in [Share links and deep links](links.md).
 

@@ -26,7 +26,7 @@ The core codes, such as `E5`, `E10`, `B7`, `B10`, `LPG`, `CNG`, `LNG` and `H2`, 
 | `CNG` | GNC | gas | Compressed natural gas, including biomethane sold as CNG. |
 | `LNG` | GNL | gas | Liquefied natural gas, mostly for trucks. |
 | `H2` | Hidrógeno | hydrogen | Hydrogen for fuel-cell vehicles. |
-| `EV` | EV Charging | electric | Electric vehicle charge points. Has no price. See [below](#ev). |
+| `EV` | EV Charging | electric | Electric vehicle charge points. Priced per kWh where the source publishes it. See [below](#ev). |
 | `ADBLUE` | AdBlue | other | Diesel exhaust fluid, the urea solution diesel engines inject into their exhaust. |
 
 The labels are fixed strings. They show as written in every language the app supports. Only the category headings in the fuel picker are translated.
@@ -75,16 +75,17 @@ Many sources price CNG, LNG and hydrogen per kilogram. Sweden's feed, for exampl
 
 Every price a scraper produces goes through a sanity check before it is stored. Most fuels are checked against a range that depends on the currency. [Currencies and exchange rates](currencies.md#price-bands) has the table.
 
-`CNG`, `LNG`, `H2` and `ADBLUE` skip that table. For these four, any price of at least 0.05 and below 100 is kept, whatever the currency. `LPG` is sold by the litre, so it goes through the normal per-currency range.
+`CNG`, `LNG`, `H2` and `ADBLUE` skip that table. For these four, any price of at least 0.05 and below 100 is kept, whatever the currency. `LPG` is sold by the litre, so it goes through the normal per-currency range. `EV` is per kWh and is kept only in EUR, from 0.10 to 2.00.
 
 ### EV charging {#ev}
 
-`EV` is not a fuel with a price. It selects stations by type instead:
+`EV` selects stations by type, not by price:
 
-- The API returns every station whose type is `ev_charger` or `both`, and ignores `fuel_prices`.
-- EV features have no `price` and no `reportedAt`. Their `currency` is `EUR` and carries no meaning.
+- The API returns every station whose type is `ev_charger` or `both`, priced or not.
+- A charger with an `EV` row in `fuel_prices` carries its newest `price`, per kWh, with `currency`, `reportedAt` and any `evFees`. Only German chargers from OCPDB have these rows.
+- Unpriced chargers have no `price` and no `reportedAt`. Their `currency` is `EUR` and carries no meaning.
 
-None of Pumperly's EV sources stores a tariff. Charging tariffs are per kilowatt-hour and per session, and a single per-litre number cannot express them. [EV charging sources](../data/ev-sources.md) lists where the chargers come from, and [EV charging](../using/ev-charging.md) shows how they appear on the map.
+A charging tariff is more than a per-kWh price. The session and per-minute fees on top go in `evFees`, described with the [`ev_fees`](data-model.md#ev_fees) column. [EV charging sources](../data/ev-sources.md) lists where the chargers come from, and [EV charging](../using/ev-charging.md) shows how they appear on the map.
 
 ## Adding a fuel code
 

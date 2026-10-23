@@ -59,7 +59,7 @@ export function StationResults({
         </span>
         {avgPrice != null && (
           <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
-            {t("stations.avg")} {formatPrice(avgPrice)} {currencySymbol}/L
+            {t("stations.avg")} {formatPrice(avgPrice)} {currencySymbol}{stationList[0]?.properties.fuelType === "EV" ? "/kWh" : "/L"}
           </span>
         )}
       </div>

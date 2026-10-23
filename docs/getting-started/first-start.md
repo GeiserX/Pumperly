@@ -58,10 +58,10 @@ When the Spanish or German EV source is an official registry, the app logs it at
 
 ```text
 [scraper] Spain EV: using Mapa REVE (official registry) instead of OpenChargeMap
-[scraper] Germany EV: using the BNetzA Ladesäulenregister instead of OpenChargeMap
+[scraper] Germany EV: using OCPDB (BNetzA register + operator feeds, with prices)
 ```
 
-Each line appears only when that country's EV scraper is enabled. The Spanish line also needs `PUMPERLY_REVE_API_KEY` to be set. The German line appears unless `PUMPERLY_DE_EV_SOURCE=ocm`. See [EV charging sources](../data/ev-sources.md).
+Each line appears only when that country's EV scraper is enabled. The Spanish line also needs `PUMPERLY_REVE_API_KEY` to be set. The German line above appears unless `PUMPERLY_DE_EV_SOURCE` is `bnetza` or `ocm`. With `bnetza` it reads `using the BNetzA Ladesäulenregister instead of OpenChargeMap`. See [EV charging sources](../data/ev-sources.md).
 
 !!! note "Australia is two scrapers"
     `AU` runs the Western Australia source. New South Wales is a separate scraper, `AU_NSW`. List it too if you set `PUMPERLY_ENABLED_COUNTRIES`, for example `AU,AU_NSW`. It needs `NSW_FUEL_API_KEY` and `NSW_FUEL_API_SECRET`. See [Countries and scrape schedule](../configuration/countries-and-schedule.md).

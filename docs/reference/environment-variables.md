@@ -58,7 +58,7 @@ Feature page: [Countries and scrape schedule](../configuration/countries-and-sch
 
 Feature page: [Countries and scrape schedule](../configuration/countries-and-schedule.md).
 
-A scraper key names one scheduled scraper. Most are a country code (`ES`). The others are `AU_NSW`, `EV_<CC>` for Open Charge Map, `EV_ES_REVE`, `EV_DE_BNETZA` and `STATIC_<SOURCE>`. [Scraper keys](../configuration/countries-and-schedule.md#scraper-keys) lists them.
+A scraper key names one scheduled scraper. Most are a country code (`ES`). The others are `AU_NSW`, `EV_<CC>` for Open Charge Map, `EV_ES_REVE`, `EV_DE_BNETZA`, `EV_DE_OCPDB` and `STATIC_<SOURCE>`. [Scraper keys](../configuration/countries-and-schedule.md#scraper-keys) lists them.
 
 | Variable | Default | Read by | Notes |
 |---|---|---|---|
@@ -70,7 +70,7 @@ A scraper key names one scheduled scraper. Most are a country code (`ES`). The o
 
 Feature page: [How scrapers work](../data/how-scrapers-work.md).
 
-Every scraper run drops prices that cannot be real before it writes anything. A price of zero or less is always dropped. Hydrogen, CNG, LNG and AdBlue prices must be at least 0.05 and below 100, in any currency.
+Every scraper run drops prices that cannot be real before it writes anything. A price of zero or less is always dropped. Hydrogen, CNG, LNG and AdBlue prices must be at least 0.05 and below 100, in any currency. EV prices are per kWh and must be in EUR, from 0.10 to 2.00. None of these ranges can be changed.
 
 | Variable | Default | Read by | Notes |
 |---|---|---|---|
@@ -106,9 +106,11 @@ Feature pages: [EV charging sources](../data/ev-sources.md) and [API keys](../co
 
 | Variable | Default | Read by | Notes |
 |---|---|---|---|
-| <span id="pumperly_ev_enabled"></span>`PUMPERLY_EV_ENABLED` | on | `src/instrumentation-node.ts` | Only the exact value `0` turns off every EV charger scraper, including REVE and BNetzA. Any other value leaves them on. It does not depend on whether an Open Charge Map key is set. |
-| <span id="pumperly_de_ev_source"></span>`PUMPERLY_DE_EV_SOURCE` | `bnetza` | `src/scrapers/germany-ev-source.ts` | Which source supplies German chargers. `ocm`, in any case, picks Open Charge Map. Anything else picks the BNetzA Ladesäulenregister. The two never run together. |
-| <span id="pumperly_bnetza_min_stations"></span>`PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | `src/scrapers/bnetza.ts` | Stations a BNetzA run must refresh before it deletes chargers that left the register and retires Open Charge Map's German rows. A safety floor: a damaged download cannot empty the map. A value below 1 or not a number means the default. |
+| <span id="pumperly_ev_enabled"></span>`PUMPERLY_EV_ENABLED` | on | `src/instrumentation-node.ts` | Only the exact value `0` turns off every EV charger scraper, including REVE, BNetzA and OCPDB. Any other value leaves them on. It does not depend on whether an Open Charge Map key is set. |
+| <span id="pumperly_de_ev_source"></span>`PUMPERLY_DE_EV_SOURCE` | `ocpdb` | `src/scrapers/germany-ev-source.ts` | Which source supplies German chargers, in any case: `ocpdb` for the Open ChargePoint Database, with prices; `bnetza` for the BNetzA Ladesäulenregister; `ocm` for Open Charge Map. Anything else picks OCPDB. Only one ever runs. |
+| <span id="pumperly_bnetza_min_stations"></span>`PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | `src/scrapers/bnetza.ts` | Stations a BNetzA run must refresh before it deletes chargers that left the register and retires the Open Charge Map and OCPDB German rows. A safety floor: a damaged download cannot empty the map. A value below 1 or not a number means the default. |
+| <span id="pumperly_ocpdb_min_stations"></span>`PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | `src/scrapers/ocpdb.ts` | Stations an OCPDB run must refresh before it deletes chargers that left the database and retires the Open Charge Map and BNetzA German rows. Same safety floor as BNetzA's. A value below 1 or not a number means the default. |
+| <span id="pumperly_ocpdb_max_feed_age_days"></span>`PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS` | `3` | `src/scrapers/ocpdb.ts` | Days an OCPDB operator feed may go without refreshing before its tariffs are ignored, so its chargers show unpriced instead of with old prices. Feeds OCPDB marks as failed are always ignored. A value of 0 or less, or not a number, means the default. |
 | <span id="pumperly_reve_pages_per_run"></span>`PUMPERLY_REVE_PAGES_PER_RUN` | `4` | `src/scrapers/reve.ts` | Pages of 100 locations each REVE run fetches. Values above 5 are lowered to 5, the API's hourly limit. A value below 1 or not a number means the default. |
 | <span id="pumperly_reve_cutover_ratio"></span>`PUMPERLY_REVE_CUTOVER_RATIO` | `0.95` | `src/scrapers/reve.ts` | Share of the REVE registry that must be stored before Open Charge Map's Spanish rows are deleted. Must be above 0 and at most 1. Anything else means the default. |
 

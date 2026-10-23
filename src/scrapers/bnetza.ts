@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client";
 import { BaseScraper, maxSanePowerKw, type RawFuelPrice, type RawStation, type ScraperResult } from "./base";
+import { otherGermanyEvPrefixes } from "./germany-ev-source";
 
 // ---------------------------------------------------------------------------
 // BNetzA Ladesäulenregister — official German EV charging point registry
@@ -74,10 +73,6 @@ const rawMinStations = Number(process.env.PUMPERLY_BNETZA_MIN_STATIONS ?? "10000
 // impossible to satisfy and silently disable the guard, so it falls back too.
 const MIN_STATIONS =
   Number.isFinite(rawMinStations) && rawMinStations >= 1 ? Math.floor(rawMinStations) : 10_000;
-
-// Slack added to the staleness cutoff so the sweep can never delete a row
-// written in the opening moments of the run it belongs to.
-const SWEEP_MARGIN_SECONDS = 300;
 
 // Share of merged rows that may disagree on operator before it is worth
 // flagging. Measured at ~1.2% on the real file, which is colocated chargers run
@@ -368,102 +363,29 @@ export class BNetzAScraper extends BaseScraper {
   }
 
   /**
-   * Run the normal pipeline, then take out the rows nothing else will.
-   *
-   * `base.run()` only orphan-cleans price-less `fuel` stations, so EV rows
-   * accumulate forever. Two sweeps are needed:
-   *
-   *   1. Stations that left the register (or whose derived ID churned because
-   *      an operator corrected its coordinates) — without this the map degrades
-   *      monotonically, one stale pin per correction.
-   *   2. The OpenChargeMap rows this source replaces. Germany is served by
-   *      exactly one EV source (see germany-ev-source.ts), so once BNetzA has
-   *      landed, the `ocm-` rows are pure duplicates. Unlike Spain's REVE
-   *      handover there is no gradual backfill to wait out: this file arrives
-   *      complete in a single run, so one healthy run is the whole cutover.
-   *
-   * Both are gated on a DB-counted floor rather than on the `stationsUpserted`
-   * the pipeline reports, because that figure is `batch.length` regardless of
-   * what the database actually did. The count covers only rows this run
-   * touched: yesterday's 74k rows must not vouch for a degraded fetch that
-   * refreshed 42 of them, or sweep 1 would delete the other 73,958 and sweep 2
-   * would retire OpenChargeMap on the strength of a near-empty file.
+   * Run the normal pipeline, then sweep (see BaseScraper.sweepEvRows): stale
+   * `bnetza-` rows, and the other German EV sources' rows this one replaces.
+   * Unlike Spain's REVE handover there is no gradual backfill to wait out:
+   * this file arrives complete in a single run, so one healthy run is the
+   * whole cutover.
    */
   async run(): Promise<ScraperResult> {
     const result = await super.run();
     if (result.errors.length > 0) return result;
 
     try {
-      await this.sweep(result.durationMs);
+      await this.sweepEvRows({
+        ownPrefix: "bnetza-",
+        retirePrefixes: otherGermanyEvPrefixes("bnetza-"),
+        minStations: MIN_STATIONS,
+        runDurationMs: result.durationMs,
+        label: "the register",
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[${this.source}] Cleanup failed: ${msg}`);
       result.errors.push(`Cleanup: ${msg}`);
     }
     return result;
-  }
-
-  private async sweep(runDurationMs: number): Promise<void> {
-    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-    const prisma = new PrismaClient({ adapter });
-    try {
-      // Cutoff expressed as a duration back from the database clock rather than
-      // as an app-side timestamp, so clock skew between app and DB cannot make
-      // this delete rows that were just written. The same cutoff separates
-      // "refreshed by this run" from "stale" below, so a row is always on
-      // exactly one side of it.
-      const staleSeconds = runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
-
-      const counts: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
-        `SELECT count(*) FROM stations
-         WHERE country = 'DE' AND station_type = 'ev_charger'
-           AND external_id LIKE 'bnetza-%'
-           AND updated_at >= NOW() - make_interval(secs => $1::float8)`,
-        staleSeconds,
-      );
-      const refreshed = Number(counts[0]?.count ?? 0);
-      if (refreshed < MIN_STATIONS) {
-        console.warn(
-          `[${this.source}] Only ${refreshed} station(s) refreshed by this run ` +
-            `(floor ${MIN_STATIONS}) — skipping cleanup`,
-        );
-        return;
-      }
-
-      const stale: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
-        `WITH deleted AS (
-           DELETE FROM stations
-           WHERE country = 'DE'
-             AND station_type = 'ev_charger'
-             AND external_id LIKE 'bnetza-%'
-             AND updated_at < NOW() - make_interval(secs => $1::float8)
-           RETURNING id
-         ) SELECT count(*) FROM deleted`,
-        staleSeconds,
-      );
-      const staleCount = Number(stale[0]?.count ?? 0);
-      if (staleCount > 0) {
-        console.log(`[${this.source}] Removed ${staleCount} station(s) no longer in the register`);
-      }
-
-      const retired: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
-        `WITH deleted AS (
-           DELETE FROM stations
-           WHERE country = 'DE'
-             AND station_type = 'ev_charger'
-             AND external_id LIKE 'ocm-%'
-           RETURNING id
-         ) SELECT count(*) FROM deleted`,
-      );
-      const retiredCount = Number(retired[0]?.count ?? 0);
-      if (retiredCount > 0) {
-        console.log(
-          `[${this.source}] Retired ${retiredCount} superseded OpenChargeMap row(s) for DE ` +
-            `(${refreshed} registry stations refreshed this run)`,
-        );
-      }
-    } finally {
-      await prisma.$disconnect().catch(() => {});
-    }
   }
 }

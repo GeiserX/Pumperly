@@ -19,11 +19,11 @@ A scraper declares two names and implements one method. The base class does ever
 | Record | Fields |
 | --- | --- |
 | `RawStation` | `externalId`, `name`, `brand` (or `null`), `address`, `city`, `province` (or `null`), `latitude`, `longitude`, `stationType` (`"fuel"`, `"ev_charger"` or `"both"`) |
-| `RawFuelPrice` | `stationExternalId` (matches a station's `externalId` in the same result), `fuelType` (one of the [fuel type codes](../reference/fuel-types.md)), `price` (per litre, in local currency), `currency` (ISO 4217) |
+| `RawFuelPrice` | `stationExternalId` (matches a station's `externalId` in the same result), `fuelType` (one of the [fuel type codes](../reference/fuel-types.md)), `price` (per litre, in local currency; per kWh for `EV`), `currency` (ISO 4217). Optional: `evFees` (`EV` only, written to [`ev_fees`](../reference/data-model.md#ev_fees)) and `reportedAt` (when the upstream last vouched for the price) |
 
 The `externalId` is the source's own id for the station, usually with a short prefix such as `ocm-` or `se-bp-`. Together with `country` it identifies a station across runs. [Data model](../reference/data-model.md) explains both columns in full.
 
-EV charger scrapers return stations with `stationType: "ev_charger"` and an empty price list.
+EV charger scrapers return stations with `stationType: "ev_charger"`. Most return an empty price list. The OCPDB scraper returns one `EV` price per priced charger.
 
 `fetch()` should throw when the upstream answers with an HTTP error or with data of the wrong shape. The base class turns the throw into a failed run that changes nothing. A single malformed row is different: skip it and keep going, so one bad record cannot cost the whole country a run.
 
@@ -71,6 +71,7 @@ Which band applies depends on the fuel and the currency:
 
 | Case | Accepted range |
 | --- | --- |
+| `EV`, per kWh | `EUR` only, from 0.10 to 2.00. A price in any other currency is dropped. |
 | `H2`, `CNG`, `LNG` and `ADBLUE`, any currency | At least 0.05 and below 100 |
 | `EUR`, `GBP` and `CHF` | From `PUMPERLY_PRICE_MIN` to `PUMPERLY_PRICE_MAX`. The defaults are 0.30 and 4.00. |
 | Any other currency with a band | The band for that currency (table below) |
@@ -92,7 +93,7 @@ The per-currency bands live in the `PRICE_BANDS` table in [`base.ts`](https://gi
 
 The table also holds bands for EUR, GBP and CHF, but a run uses the two environment variables for those three currencies instead. If `PUMPERLY_PRICE_MIN` or `PUMPERLY_PRICE_MAX` is not a number, the default is used, so a typo cannot switch the check off.
 
-After the price filter, a station of type `fuel` with no valid price left is dropped from this run. EV chargers are kept even though they carry no prices.
+After the price filter, a station of type `fuel` with no valid price left is dropped from this run. EV chargers are kept, priced or not.
 
 ### 2. The empty-fetch guard
 
@@ -116,7 +117,7 @@ The run looks up the database id of every station in the country, then maps each
 Then one transaction replaces the prices:
 
 1. Delete every price row whose `source` is this scraper's source and whose station is in this scraper's country.
-2. Insert the new prices in batches of 2,000. Each row gets `reported_at` set to the current time.
+2. Insert the new prices in batches of 2,000. Each row gets `reported_at` set to the current time, unless the scraper passed its own `reportedAt`.
 
 Because it is a single transaction, readers see either the old set or the new set, never a mix. The transaction may run for up to 120 seconds. If it fails, it rolls back and the old prices stay.
 
@@ -140,7 +141,7 @@ This is how a station disappears from the map when its source stops listing it. 
 The cleanup runs only when every station batch in step 3 succeeded. If a batch failed, the stations in it may not have been written this run, and their prices were already replaced in step 4. Deleting orphans then could remove stations that are only missing because of the failure. So the run records `Skipped orphan cleanup: one or more station batches failed` and leaves them alone.
 
 !!! note "EV chargers are never cleaned up by the base class"
-    The cleanup only deletes rows with `station_type = 'fuel'`. An EV charger that its source stops listing stays in the table. A scraper that needs to remove EV rows does it in its own `run()` override, as the Mapa REVE and BNetzA scrapers do. See [EV charging sources](ev-sources.md).
+    The cleanup only deletes rows with `station_type = 'fuel'`. An EV charger that its source stops listing stays in the table. A scraper that needs to remove EV rows does it in its own `run()` override, as the Mapa REVE, BNetzA and OCPDB scrapers do. The German ones share `BaseScraper.sweepEvRows()`. See [EV charging sources](ev-sources.md).
 
 ### The result
 
@@ -178,7 +179,7 @@ Every scraper has a **key** in the scheduler. The key is what you use in environ
 | `XX` | The fuel price scraper for country `XX` | `SE` |
 | `XX_NAME` | A second fuel scraper for the same country | `AU_NSW` (New South Wales, next to `AU` for Western Australia) |
 | `EV_XX` | The OpenChargeMap EV scraper for country `XX` | `EV_SE` |
-| `EV_XX_NAME` | An official EV registry that replaces OpenChargeMap for `XX` | `EV_ES_REVE`, `EV_DE_BNETZA` |
+| `EV_XX_NAME` | An official EV source that replaces OpenChargeMap for `XX` | `EV_ES_REVE`, `EV_DE_BNETZA`, `EV_DE_OCPDB` |
 | `STATIC_NAME` | A committed community dataset (see [`src/scrapers/data/README.md`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/data/README.md)) | none ship today |
 
 ### Which scrapers run
@@ -187,7 +188,7 @@ Every scraper has a **key** in the scheduler. The key is what you use in environ
 2. If `PUMPERLY_ENABLED_COUNTRIES` is unset, every key is selected.
 3. If it is set, only the keys it lists are selected. For each listed code that is not itself an `EV_` key, `EV_<code>` is added when such a key exists. So `SE` selects `SE` and `EV_SE`, and `US` selects `EV_US` alone, because the United States has EV coverage only.
 4. `PUMPERLY_EV_ENABLED=0` removes every `EV_` key.
-5. Spain and Germany each keep exactly one EV source. Spain runs `EV_ES_REVE` when `PUMPERLY_REVE_API_KEY` is set and `EV_ES` otherwise. Germany runs `EV_DE_BNETZA` unless `PUMPERLY_DE_EV_SOURCE=ocm`. Running both would put two pins on most chargers.
+5. Spain and Germany each keep exactly one EV source. Spain runs `EV_ES_REVE` when `PUMPERLY_REVE_API_KEY` is set and `EV_ES` otherwise. Germany runs `EV_DE_OCPDB` unless `PUMPERLY_DE_EV_SOURCE` is `bnetza` (`EV_DE_BNETZA`) or `ocm` (`EV_DE`). Running two would put two pins on most chargers.
 
 !!! note "A second scraper for a country needs its own key"
     Listing `AU` in `PUMPERLY_ENABLED_COUNTRIES` selects `AU` and `EV_AU`, not `AU_NSW`. List `AU_NSW` too if you set the variable and want New South Wales.
@@ -271,12 +272,13 @@ async run(): Promise<ScraperResult> {
 
 After the first successful handover the retired sources have no rows left, so later runs delete nothing. The step is safe to leave in place.
 
-The two EV registries use variations of the same idea, because EV rows are never removed by the base class:
+The EV scrapers use variations of the same idea, because EV rows are never removed by the base class:
 
 | Scraper | Retires | Condition |
 | --- | --- | --- |
 | Sweden, `bensinpriser` | Prices of the retired sources, then Swedish fuel stations left without a price | Error-free run and at least 200 stations |
 | Mapa REVE, `EV_ES_REVE` | Spanish OpenChargeMap chargers (`ocm-` ids) | Error-free run and the local REVE rows reach a share of the registry, 95% by default (`PUMPERLY_REVE_CUTOVER_RATIO`) |
-| BNetzA, `EV_DE_BNETZA` | German OpenChargeMap chargers, and its own chargers that left the register | Error-free run and at least `PUMPERLY_BNETZA_MIN_STATIONS` rows (default 10,000) refreshed by this run |
+| BNetzA, `EV_DE_BNETZA` | German OpenChargeMap and OCPDB chargers, and its own chargers that left the register | Error-free run and at least `PUMPERLY_BNETZA_MIN_STATIONS` rows (default 10,000) refreshed by this run |
+| OCPDB, `EV_DE_OCPDB` | German OpenChargeMap and BNetzA chargers, and its own chargers that left the database | Error-free run and at least `PUMPERLY_OCPDB_MIN_STATIONS` rows (default 10,000) refreshed by this run |
 
-[EV charging sources](ev-sources.md) describes the two EV handovers in detail. [Adding a country](adding-a-country.md) covers when a new scraper needs this pattern.
+[EV charging sources](ev-sources.md) describes the EV handovers in detail. [Adding a country](adding-a-country.md) covers when a new scraper needs this pattern.

@@ -277,7 +277,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          # The scrapers run inside the app, and Node caps its heap at about
+          # half of this. Germany's EV sources (BNetzA, OCPDB) need ~170 MB of
+          # heap on their own, so 512M runs out while other scrapers are busy.
+          memory: 1536M
 
 volumes:
   pumperly-pgdata:

@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import type { FuelType } from "../types/station";
+import type { EvFees, FuelType } from "../types/station";
 
 /**
  * Transaction client type — Prisma's interactive transaction callback receives
@@ -66,8 +66,32 @@ export interface RawFuelPrice {
   /** Must match a RawStation.externalId in the same batch */
   stationExternalId: string;
   fuelType: FuelType;
-  price: number; // per litre in local currency
+  price: number; // per litre in local currency (per kWh for EV)
   currency: string; // ISO 4217
+  /** EV only: fees on top of the per-kWh price. */
+  evFees?: EvFees;
+  /** When the upstream last vouched for this price. Unset = now. */
+  reportedAt?: Date;
+}
+
+/** A charger price per kWh the map can show. Only EUR chargers are priced today. */
+export function isPlausibleEvPrice(price: number, currency: string): boolean {
+  return currency === "EUR" && price >= 0.1 && price <= 2;
+}
+
+// A sweep deletes rows not touched within the run plus this margin.
+const SWEEP_MARGIN_SECONDS = 300;
+
+export interface EvSweepOptions {
+  /** externalId prefix this scraper writes, e.g. "bnetza-". */
+  ownPrefix: string;
+  /** Prefixes of the sources this one replaces in the same country. */
+  retirePrefixes: string[];
+  /** Fewer rows refreshed by this run than this, and nothing is deleted. */
+  minStations: number;
+  runDurationMs: number;
+  /** For the log lines, e.g. "the register". */
+  label: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,6 +201,8 @@ export abstract class BaseScraper {
       const badPriceBefore = prices.length;
       const validPrices = prices.filter((p) => {
         if (p.price <= 0) return false;
+        // Per kWh, not per litre.
+        if (p.fuelType === "EV") return isPlausibleEvPrice(p.price, p.currency);
         if (ALT_FUELS.has(p.fuelType)) return p.price >= 0.05 && p.price < 100;
         if (p.currency === "EUR" || p.currency === "GBP" || p.currency === "CHF")
           return p.price >= priceMin && p.price <= priceMax;
@@ -268,6 +294,8 @@ export abstract class BaseScraper {
             price: p.price,
             currency: p.currency,
             source: this.source,
+            evFees: p.evFees,
+            reportedAt: p.reportedAt,
           },
         ];
       });
@@ -423,29 +451,138 @@ export abstract class BaseScraper {
       price: number;
       currency: string;
       source: string;
+      evFees?: EvFees;
+      reportedAt?: Date;
     }>,
   ): Promise<number> {
     if (batch.length === 0) return 0;
 
-    // Each price needs 5 params: stationId, fuelType, price, currency, source
+    // Like max_power_kw: only batches that carry fees write ev_fees, so fuel
+    // scrapers keep working on a database without the column.
+    const withFees = batch.some((p) => p.evFees != null);
+    // Only batches that carry an upstream timestamp bind one; the rest keep NOW().
+    const withReported = batch.some((p) => p.reportedAt != null);
+    const perRow = 5 + (withFees ? 1 : 0) + (withReported ? 1 : 0);
+
+    // Each price needs 5 params: stationId, fuelType, price, currency, source,
+    // plus evFees and reportedAt for batches that carry them.
     const params: unknown[] = [];
     const valueClauses: string[] = [];
 
     for (let i = 0; i < batch.length; i++) {
       const p = batch[i];
-      const offset = i * 5;
+      const offset = i * perRow;
+      let n = offset + 5;
+      const reported = withReported ? `COALESCE($${++n}::timestamptz, NOW())` : "NOW()";
       valueClauses.push(
-        `($${offset + 1}::uuid, $${offset + 2}, $${offset + 3}, $${offset + 4}, NOW(), $${offset + 5})`,
+        `($${offset + 1}::uuid, $${offset + 2}, $${offset + 3}, $${offset + 4}, ${reported}, $${offset + 5}` +
+          (withFees ? `, $${++n}::jsonb` : "") +
+          `)`,
       );
       params.push(p.stationId, p.fuelType, p.price, p.currency, p.source);
+      if (withReported) params.push(p.reportedAt ? p.reportedAt.toISOString() : null);
+      if (withFees) params.push(p.evFees ? JSON.stringify(p.evFees) : null);
     }
 
     const sql = `
-      INSERT INTO fuel_prices (station_id, fuel_type, price, currency, reported_at, source)
+      INSERT INTO fuel_prices (station_id, fuel_type, price, currency, reported_at, source${withFees ? ", ev_fees" : ""})
       VALUES ${valueClauses.join(",\n")}
     `;
 
     await tx.$executeRawUnsafe(sql, ...params);
     return batch.length;
+  }
+
+  // ---------------------------------------------------------------------------
+  // EV sweep
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Take out the EV rows nothing else will. `run()` only orphan-cleans
+   * price-less `fuel` stations, so EV rows accumulate forever:
+   *
+   *   1. Own rows this run didn't touch: chargers that left the upstream, or
+   *      whose derived ID churned because coordinates were corrected.
+   *   2. The rows of the sources this one replaces (`retirePrefixes`). A
+   *      country is served by exactly one EV source at a time, so once this
+   *      one has landed those are pure duplicates.
+   *
+   * Both are gated on a DB-counted floor rather than on the `stationsUpserted`
+   * the pipeline reports, because that figure is `batch.length` regardless of
+   * what the database did. The count covers only rows this run touched:
+   * yesterday's 74k rows must not vouch for a degraded fetch that refreshed 42
+   * of them.
+   */
+  protected async sweepEvRows(opts: EvSweepOptions): Promise<void> {
+    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+    const prisma = new PrismaClient({ adapter });
+    try {
+      // Cutoff expressed as a duration back from the database clock rather than
+      // as an app-side timestamp, so clock skew between app and DB cannot make
+      // this delete rows that were just written. The same cutoff separates
+      // "refreshed by this run" from "stale", so a row is always on exactly
+      // one side of it.
+      const staleSeconds = opts.runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
+      const own = `${opts.ownPrefix}%`;
+
+      const counts: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `SELECT count(*) FROM stations
+         WHERE country = $2 AND station_type = 'ev_charger'
+           AND external_id LIKE $3
+           AND updated_at >= NOW() - make_interval(secs => $1::float8)`,
+        staleSeconds,
+        this.country,
+        own,
+      );
+      const refreshed = Number(counts[0]?.count ?? 0);
+      if (refreshed < opts.minStations) {
+        console.warn(
+          `[${this.source}] Only ${refreshed} station(s) refreshed by this run ` +
+            `(floor ${opts.minStations}) — skipping cleanup`,
+        );
+        return;
+      }
+
+      const stale: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `WITH deleted AS (
+           DELETE FROM stations
+           WHERE country = $2
+             AND station_type = 'ev_charger'
+             AND external_id LIKE $3
+             AND updated_at < NOW() - make_interval(secs => $1::float8)
+           RETURNING id
+         ) SELECT count(*) FROM deleted`,
+        staleSeconds,
+        this.country,
+        own,
+      );
+      const staleCount = Number(stale[0]?.count ?? 0);
+      if (staleCount > 0) {
+        console.log(`[${this.source}] Removed ${staleCount} station(s) no longer in ${opts.label}`);
+      }
+
+      if (opts.retirePrefixes.length === 0) return;
+      const retired: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
+        `WITH deleted AS (
+           DELETE FROM stations
+           WHERE country = $1
+             AND station_type = 'ev_charger'
+             AND external_id LIKE ANY($2::text[])
+           RETURNING id
+         ) SELECT count(*) FROM deleted`,
+        this.country,
+        opts.retirePrefixes.map((p) => `${p}%`),
+      );
+      const retiredCount = Number(retired[0]?.count ?? 0);
+      if (retiredCount > 0) {
+        console.log(
+          `[${this.source}] Retired ${retiredCount} superseded row(s) ` +
+            `(${opts.retirePrefixes.join(", ")}) for ${this.country} ` +
+            `(${refreshed} ${opts.label} stations refreshed this run)`,
+        );
+      }
+    } finally {
+      await prisma.$disconnect().catch(() => {});
+    }
   }
 }

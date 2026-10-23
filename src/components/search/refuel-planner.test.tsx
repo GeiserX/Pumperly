@@ -415,6 +415,98 @@ describe("RefuelPlanner", () => {
       expect(screen.getAllByText(/^\d+ (h \d+ )?min · /).length).toBeGreaterThan(0);
     });
 
+    it("plans by price when chargers have one, with the session fee per stop", async () => {
+      const chargers = [
+        makeStation("x", { brand: "Ionity", price: 0.69, fuelType: "EV", routeFraction: 0.3, detourMin: 0, evFees: { sessionFee: 1.5 } }),
+        makeStation("y", { brand: "Tesla", price: 0.49, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const input = planSpy.mock.lastCall![0];
+      // At their price, with the real value of time.
+      expect(input.stations.map((s: { id: string }) => s.id)).toEqual(["x", "y"]);
+      expect(input.stations[0]).toMatchObject({ price: 0.69, stopFee: 1.5 });
+      expect(input.stations[1].stopFee).toBeUndefined();
+      expect(input.timeValuePerHour).toBe(15);
+      expect(screen.getByText(/planner.timeValue/)).toBeInTheDocument();
+      expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(2);
+      // Every stop priced: the plan shows its total cost.
+      expect(screen.getByText(/ · \d+\.\d\d €$/)).toBeInTheDocument();
+    });
+
+    // Munich to Vienna: German chargers carry OCPDB prices, Austrian ones none.
+    it("keeps unpriced chargers in a priced plan, at the median price and with no cost shown", async () => {
+      const chargers = [
+        makeStation("de", { brand: "EnBW", price: 0.79, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("de2", { brand: "Aral", price: 0.59, fuelType: "EV", routeFraction: 0.1, detourMin: 30 }),
+        makeStation("at", { brand: "Smatrics", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+      ];
+      const { onPlanChange } = renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const input = planSpy.mock.lastCall![0];
+      // Neither free nor dropped: the median of the priced ones, 0.69.
+      expect(input.stations).toEqual([
+        expect.objectContaining({ id: "de", price: 0.79 }),
+        expect.objectContaining({ id: "de2", price: 0.59 }),
+        expect.objectContaining({ id: "at", price: 0.69 }),
+      ]);
+      expect(input.timeValuePerHour).toBe(15);
+      expect(onPlanChange.mock.lastCall![0].map((s: { id: string }) => s.id)).toEqual(["de", "at"]);
+      expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(1);
+      expect(screen.getAllByText(/^\+\d+\.\d kWh$/)).toHaveLength(1);
+      // An estimated stop: no total cost.
+      expect(screen.queryByText(/ · \d+\.\d\d €$/)).not.toBeInTheDocument();
+    });
+
+    it("plans by time when the only priced charger has no detour yet", async () => {
+      const chargers = [
+        makeStation("pending", { price: 0.59, fuelType: "EV", routeFraction: 0.3, detourMin: undefined }),
+        makeStation("free", { price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const input = planSpy.mock.lastCall![0];
+      expect(input.stations).toEqual([expect.objectContaining({ id: "free", price: 0 })]);
+      expect(input.timeValuePerHour).toBe(1);
+    });
+
+    it("still drops chargers priced in another currency or above the price filter", async () => {
+      const chargers = [
+        makeStation("ok", { price: 0.59, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("chf", { price: 0.6, currency: "CHF", fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("dear", { price: 0.99, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300, maxPrice: 0.8 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy.mock.lastCall![0].stations.map((s: { id: string }) => s.id)).toEqual(["ok"]);
+    });
+
+    it("plans by time only when the filters leave no priced charger", async () => {
+      const chargers = [
+        makeStation("dear", { price: 0.99, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 150 }),
+        makeStation("slow", { price: 0.49, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 22 }),
+        makeStation("free", { price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0, powerKw: 150 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300, maxPrice: 0.8 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy.mock.lastCall![0].timeValuePerHour).toBe(15);
+      await userEvent.selectOptions(screen.getByLabelText("planner.minChargerKw"), "50");
+      const input = planSpy.mock.lastCall![0];
+      expect(input.stations.map((s: { id: string }) => s.id)).toEqual(["free"]);
+      expect(input.timeValuePerHour).toBe(1);
+      expect(screen.queryByText(/planner.timeValue/)).not.toBeInTheDocument();
+    });
+
+    it("converts the session fee from the tariff's currency", async () => {
+      Object.assign(currencyState, { currency: "HUF", symbol: "Ft", decimals: 0, rate: 400, rates: { base: "EUR", rates: { HUF: 400 }, date: "2026-10-22" } });
+      const chargers = [
+        makeStation("x", { price: 276, currency: "HUF", originalPrice: 0.69, originalCurrency: "EUR", fuelType: "EV", routeFraction: 0.3, detourMin: 0, evFees: { sessionFee: 1.5 } }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy.mock.lastCall![0].stations[0]).toMatchObject({ price: 276, stopFee: 600 });
+    });
+
     it("drops slower and unknown-power chargers under a minimum power", async () => {
       const chargers = [
         makeStation("fast", { price: null, fuelType: "EV", routeFraction: 0.3, powerKw: 150 }),

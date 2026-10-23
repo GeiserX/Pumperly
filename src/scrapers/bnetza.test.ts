@@ -484,20 +484,20 @@ describe("BNetzAScraper cleanup", () => {
     // The floor counts only rows this run refreshed, using the same cutoff as
     // the stale sweep, so rows left over from an earlier run cannot clear it.
     expect(stub.queries[0].sql).toMatch(/count\(\*\)/);
-    expect(stub.queries[0].sql).toMatch(/external_id LIKE 'bnetza-%'/);
     expect(stub.queries[0].sql).toMatch(/updated_at >= NOW\(\) - make_interval/);
-    expect(stub.queries[0].params[0]).toBe(30 + 300);
+    expect(stub.queries[0].params).toEqual([30 + 300, "DE", "bnetza-%"]);
 
     // Stale sweep: scoped to this source, and cut off by a duration measured
     // back from the DB clock so app/DB clock skew cannot delete fresh rows.
     expect(stub.queries[1].sql).toMatch(/DELETE FROM stations/);
-    expect(stub.queries[1].sql).toMatch(/external_id LIKE 'bnetza-%'/);
     expect(stub.queries[1].sql).toMatch(/updated_at < NOW\(\) - make_interval/);
-    expect(stub.queries[1].params[0]).toBe(30 + 300); // run duration + margin
+    expect(stub.queries[1].params).toEqual([30 + 300, "DE", "bnetza-%"]); // run duration + margin
 
-    // Retirement: OpenChargeMap's German chargers, which nothing else removes.
-    expect(stub.queries[2].sql).toMatch(/external_id LIKE 'ocm-%'/);
+    // Retirement: the other German EV sources' chargers, which nothing else
+    // removes once BNetzA is the chosen source.
+    expect(stub.queries[2].sql).toMatch(/DELETE FROM stations/);
     expect(stub.queries[2].sql).toMatch(/station_type = 'ev_charger'/);
+    expect(stub.queries[2].params).toEqual(["DE", ["ocm-%", "ocpdb-%"]]);
   });
 
   it("leaves yesterday's rows alone when a degraded fetch refreshed too few of them", async () => {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { fuelTypeEnum } from "@/types/fuel";
-import type { StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
+import type { EvFees, StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
 
 const querySchema = z.object({
   lat: z
@@ -50,6 +50,8 @@ interface NearestStationRow {
   distance_km: number;
   /** EV query only. */
   max_power_kw?: number | null;
+  /** EV query only: fees on top of the per-kWh price. */
+  ev_fees?: EvFees | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -90,12 +92,21 @@ export async function GET(request: NextRequest) {
             s.city,
             ST_X(s.geom) AS longitude,
             ST_Y(s.geom) AS latitude,
-            NULL::float AS price,
-            'EUR' AS currency,
-            NULL::timestamptz AS reported_at,
+            fp.price::float AS price,
+            COALESCE(fp.currency, 'EUR') AS currency,
+            fp.reported_at,
+            fp.ev_fees,
             s.max_power_kw::int AS max_power_kw,
             (ST_Distance(s.geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)) * 111.32)::float AS distance_km
           FROM stations s
+          LEFT JOIN LATERAL (
+            SELECT price, currency, reported_at, ev_fees
+            FROM fuel_prices
+            WHERE station_id = s.id
+              AND fuel_type = 'EV'
+            ORDER BY reported_at DESC NULLS LAST
+            LIMIT 1
+          ) fp ON true
           WHERE s.station_type IN ('ev_charger', 'both')
             AND ST_DWithin(
               s.geom,
@@ -169,6 +180,7 @@ export async function GET(request: NextRequest) {
         ...(row.price != null ? { price: row.price } : {}),
         ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
         ...(row.max_power_kw != null ? { powerKw: row.max_power_kw } : {}),
+        ...(row.ev_fees ? { evFees: row.ev_fees } : {}),
         distanceKm: Math.round(row.distance_km * 1000) / 1000,
       },
     }));

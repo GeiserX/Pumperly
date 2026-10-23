@@ -18,8 +18,15 @@ const EV_MAX_CHARGE_PCT = 80;
 /** "Min charger power" choices, kW; 0 = any (including chargers with unknown power). */
 const MIN_CHARGER_KW_OPTIONS = [0, 50, 150] as const;
 
+/** Whether a charger passes the detour and power filters; a detour still loading passes. */
+function evEligible(p: StationGeoJSON["properties"], maxDetour: number | null | undefined, minChargerKw: number): boolean {
+  if (p.detourMin != null && (p.detourMin < 0 || (maxDetour != null && p.detourMin > maxDetour))) return false;
+  // A power filter can't vouch for a charger whose power is unknown.
+  return !(minChargerKw > 0 && !((p.powerKw ?? 0) >= minChargerKw));
+}
+
 interface RefuelPlannerProps {
-  /** `ev` plans by energy only (kWh): chargers have no prices yet. */
+  /** `ev` plans in kWh, by price when chargers on the route have one, else by time only. */
   mode?: "fuel" | "ev";
   /** Corridor stations (with routeFraction and, once streamed, detourMin). */
   stations: StationGeoJSON[];
@@ -99,10 +106,31 @@ export function RefuelPlanner({
   // Same for the value of time; null shows the saved (and planned) value.
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
+  // EV plans use money only when some charger the filters leave has a price in
+  // the display currency. Chargers without a price still compete: most
+  // countries publish none, and dropping them could leave a cross-border route
+  // with no plan. They are costed at the median of the priced ones, so they
+  // are neither free (and picked everywhere) nor penalised. With no such
+  // priced charger, only detour and charging time count.
+  const evMedianPrice = useMemo(() => {
+    if (!ev) return null;
+    const prices = stations
+      .map(({ properties: p }) => p)
+      // Only chargers the plan can use: a detour still unknown keeps one out.
+      .filter((p) => p.detourMin != null && evEligible(p, maxDetour, minChargerKw) && p.price != null && p.price > 0 && p.currency === currency && (maxPrice == null || p.price <= maxPrice))
+      .map((p) => p.price as number)
+      .sort((a, b) => a - b);
+    if (prices.length === 0) return null;
+    const mid = Math.floor(prices.length / 2);
+    return prices.length % 2 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
+  }, [ev, stations, maxDetour, minChargerKw, currency, maxPrice]);
+  const evPriced = evMedianPrice != null;
+  const usesMoney = !ev || evPriced;
+
   // The time value is stored in EUR: without a rate for the display currency it
   // can't be converted, and `convert` would silently treat it as 1:1.
-  // EV plans ignore money, so they don't need rates.
-  const ratesMissing = !ev && currency !== "EUR" && !rates?.rates[currency];
+  // Plans that ignore money don't need rates.
+  const ratesMissing = usesMoney && currency !== "EUR" && !rates?.rates[currency];
   const eurRate = convert(1, "EUR");
   const timeValue = Number((timeValueEur * eurRate).toFixed(Math.min(decimals, 2)));
 
@@ -123,17 +151,15 @@ export function RefuelPlanner({
     const candidates = stations.flatMap((s) => {
       const p = s.properties;
       if (ev) {
-        // No prices yet: chargers compete on detour and charging time only.
-        if (p.detourMin == null || p.detourMin < 0 || (maxDetour != null && p.detourMin > maxDetour)) return [];
-        // A power filter can't vouch for a charger whose power is unknown.
-        if (minChargerKw > 0 && !((p.powerKw ?? 0) >= minChargerKw)) return [];
-        return [{
-          id: p.id,
-          km: (p.routeFraction ?? 0) * routeKm,
-          price: 0,
-          detourMin: p.detourMin,
-          minutesPerPct: minutesPerPct(evProfile, p.powerKw),
-        }];
+        if (p.detourMin == null || !evEligible(p, maxDetour, minChargerKw)) return [];
+        if (maxPrice != null && p.price != null && p.price > maxPrice && p.currency === currency) return [];
+        const base = { id: p.id, km: (p.routeFraction ?? 0) * routeKm, detourMin: p.detourMin, minutesPerPct: minutesPerPct(evProfile, p.powerKw) };
+        if (!evPriced) return [{ ...base, price: 0 }];
+        if (p.price == null || p.price <= 0) return [{ ...base, price: evMedianPrice }];
+        if (p.currency !== currency) return [];
+        // The session fee is in the tariff's own currency; the price is already converted.
+        const fee = p.evFees?.sessionFee;
+        return [{ ...base, price: p.price, ...(fee != null ? { stopFee: convert(fee, p.originalCurrency ?? p.currency) } : {}) }];
       }
       // Mixed currencies can't be compared; only use prices in the display currency.
       if (p.price == null || p.price <= 0 || p.detourMin == null || p.detourMin < 0 || p.currency !== currency) return [];
@@ -149,11 +175,11 @@ export function RefuelPlanner({
       arrivalPct: arrival,
       reservePct,
       // With no price the cost is all time, so any positive value gives the same plan.
-      timeValuePerHour: ev ? 1 : timeValue,
+      timeValuePerHour: usesMoney ? timeValue : 1,
       maxStops: maxStopsFor(routeKm, capacity, consumption, reservePct, maxChargePct),
       maxChargePct,
     });
-  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evProfile, minChargerKw, maxPrice, maxDetour, currency, capacity, consumption, maxChargePct, startPct, arrival, reservePct, timeValue]);
+  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evPriced, evMedianPrice, usesMoney, evProfile, minChargerKw, maxPrice, maxDetour, currency, convert, capacity, consumption, maxChargePct, startPct, arrival, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"
@@ -292,7 +318,7 @@ export function RefuelPlanner({
             <PctSlider label={t(ev ? "planner.startEv" : "planner.start")} value={startPct} min={1} onChange={(v) => update({ startPct: v })} />
             <PctSlider label={t(ev ? "planner.arrivalEv" : "planner.arrival")} value={arrival} min={0} max={maxChargePct} onChange={(v) => update({ arrivalPct: v })} />
             <PctSlider label={t("planner.reserve")} value={reservePct} min={0} max={50} onChange={(v) => update(ev ? { evReservePct: v } : { reservePct: v })} />
-            {!ev && <label className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
+            {usesMoney && <label className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               {t("planner.timeValue").replace("{cur}", symbol)}
               <input
                 type="number"
@@ -350,7 +376,9 @@ export function RefuelPlanner({
                       <div className="shrink-0 text-right">
                         {ev ? (
                           <>
-                            <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">+{kwh(stop.litres)}</p>
+                            <p className="text-xs font-bold tabular-nums text-gray-900 dark:text-gray-50">
+                              {evPriced && (f.properties.price ?? 0) > 0 ? `${money(stop.cost)} · ` : ""}+{kwh(stop.litres)}
+                            </p>
                             <p className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
                               {minutes(stop.chargeMin)} · {f.properties.powerKw != null ? `${f.properties.powerKw} kW` : t("popup.powerUnknown")}
                             </p>
@@ -373,7 +401,11 @@ export function RefuelPlanner({
                   </span>
                   <span className="font-bold tabular-nums text-gray-900 dark:text-gray-50">
                     {ev
-                      ? `${kwh(plan.stops.reduce((sum, s) => sum + s.litres, 0))} · ${minutes(plan.totalChargeMin)}`
+                      ? `${kwh(plan.stops.reduce((sum, s) => sum + s.litres, 0))} · ${minutes(plan.totalChargeMin)}` +
+                        // An unpriced stop is costed at an estimate, so no total is shown then.
+                        (evPriced && plan.stops.every((s) => (byId.get(s.id)?.properties.price ?? 0) > 0)
+                          ? ` · ${money(plan.totalFuelCost)}`
+                          : "")
                       : money(plan.totalFuelCost)}
                   </span>
                 </div>

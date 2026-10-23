@@ -1,34 +1,36 @@
 # EV charging sources
 
-This page describes where Pumperly's EV charging locations come from, how each source is read and which settings tune it. EV chargers carry a location, an operator and an address. They carry no price.
+This page describes where Pumperly's EV charging locations come from, how each source is read and which settings tune it. EV chargers carry a location, an operator and an address. German chargers from OCPDB also carry a price per kWh and any fees on top. Every other charger has no price.
 
-## The three sources {#the-three-sources}
+## The sources {#the-three-sources}
 
 | Source | Covers | Key | Every | Licence |
 |---|---|---|---|---|
 | [Open Charge Map](#open-charge-map) | Every supported country and the United States | `PUMPERLY_OCM_API_KEY` | 24 h | Open Database License (ODbL) |
 | [Mapa REVE](#mapa-reve) | Spain | `PUMPERLY_REVE_API_KEY` | 1 h | Non-commercial use, credit Red Eléctrica de España |
+| [Open ChargePoint Database (OCPDB)](#ocpdb) | Germany, with prices | None | 6 h | dl-de/by-2-0 (MobiData BW); the register and EnBW are CC BY 4.0 |
 | [BNetzA Ladesäulenregister](#bnetza) | Germany | None | 24 h | CC BY 4.0, credit "Bundesnetzagentur.de" |
 
-Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced.
+Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced. OCPDB contains the BNetzA register and adds the operators' own feeds, which carry ad-hoc tariffs.
 
-None of the three publishes a per-litre price. Mapa REVE publishes connector tariffs, but they are per kWh and per session, which the price model cannot hold, so they are left out.
+Only OCPDB's prices are stored. Mapa REVE also publishes connector tariffs, but its scraper leaves them out.
 
 ## Which source a country uses {#which-source}
 
-Every other country uses Open Charge Map. Spain and Germany each have a second, official source, and each uses exactly one of its two sources at a time. Running both would put two pins on almost every charger, because the sources overlap heavily.
+Every other country uses Open Charge Map. Spain and Germany also have official sources, and each country uses exactly one source at a time. Running two would put two pins on almost every charger, because the sources overlap heavily.
 
 ```mermaid
 flowchart TD
     ES[Spain] --> K{PUMPERLY_REVE_API_KEY set?}
     K -- Yes --> REVE[Mapa REVE, EV_ES_REVE]
     K -- No --> OCMES[Open Charge Map, EV_ES]
-    DE[Germany] --> S{PUMPERLY_DE_EV_SOURCE=ocm?}
-    S -- Yes --> OCMDE[Open Charge Map, EV_DE]
-    S -- No --> BNETZA[BNetzA register, EV_DE_BNETZA]
+    DE[Germany] --> S{PUMPERLY_DE_EV_SOURCE}
+    S -- ocm --> OCMDE[Open Charge Map, EV_DE]
+    S -- bnetza --> BNETZA[BNetzA register, EV_DE_BNETZA]
+    S -- anything else --> OCPDB[OCPDB, EV_DE_OCPDB]
 ```
 
-The scheduler and the manual scraper command apply the same rule, from [`spain-ev-source.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain-ev-source.ts) and [`germany-ev-source.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany-ev-source.ts). In the scheduler, `PUMPERLY_EV_ENABLED=0` turns off all three sources at once.
+The scheduler and the manual scraper command apply the same rule, from [`spain-ev-source.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain-ev-source.ts) and [`germany-ev-source.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany-ev-source.ts). In the scheduler, `PUMPERLY_EV_ENABLED=0` turns off every EV source at once.
 
 !!! warning "Naming a source by hand overrides the rule"
     The manual command `npm run scraper:run -- --country=all` picks one source per country, like the scheduler. Naming a scraper explicitly, such as `--country=EV_ES`, runs it even when the other source is active. One such run puts back every Open Charge Map row the registry had retired. They stay, as duplicates, until the registry's next error-free run deletes them again.
@@ -56,7 +58,7 @@ Only chargers marked operational are requested. Each one becomes a station with:
 
 ### Without an API key {#ocm-without-a-key}
 
-The scrapers still run on schedule. Each one logs `PUMPERLY_OCM_API_KEY not set, skipping` and writes nothing. Because the run returned no stations, the scheduler reports it with one error. German chargers still load from the BNetzA register, which needs no key.
+The scrapers still run on schedule. Each one logs `PUMPERLY_OCM_API_KEY not set, skipping` and writes nothing. Because the run returned no stations, the scheduler reports it with one error. German chargers still load from OCPDB or the BNetzA register, which need no key.
 
 ### How a large country is fetched {#ocm-tiling}
 
@@ -201,6 +203,68 @@ The workflow only tracks the project's own key. If you run your own instance, ke
     --8<-- ".github/workflows/reve-key-renewal.yml"
     ```
 
+## Open ChargePoint Database (OCPDB), Germany {#ocpdb}
+
+The [Open ChargePoint Database](https://api.mobidata-bw.de/ocpdb/) is run by MobiData BW for the state of Baden-Württemberg, but covers all of Germany. It merges the BNetzA register with the operators' own DATEX II feeds from Mobilithek: EnBW, EcoMovement, Chargecloud, Wirelane, e-clearing.net, Tesla and others. Those feeds carry ad-hoc tariffs, the price a driver pays without a contract, for about 97,000 charge points. It is Germany's default source. The code is in [`src/scrapers/ocpdb.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/ocpdb.ts).
+
+| | |
+|---|---|
+| Source key | `ocpdb` |
+| Scraper key | `EV_DE_OCPDB` |
+| Station ids | `ocpdb-<latitude>_<longitude>` |
+| Every | 6 h |
+| API key | None |
+| Licence | The bundle is [dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0), credited to MobiData BW. Within it the register and EnBW are CC BY 4.0. Some feeds declare no licence of their own, so the bundle's licence is the one that covers them. The attribution is in the app's legal notice. |
+
+### How the data is read {#ocpdb-reading}
+
+Each run reads four endpoints in parallel: locations, tariffs, the links from tariffs to charge points, and the health of each operator feed. The OCPI endpoints are paged, 1,000 items per request. Each page, and the feed-health request, is retried once.
+
+- **Only German locations with a live charge point are kept.** Locations outside a padded bounding box around Germany, and charge points marked removed or planned, are skipped and counted.
+- **Locations within 25 m merge into one pin.** A charger reported by its operator is often in the register too, under another operator name and a few metres away. When the register lists the charger, its location anchors the pin, so the coordinates are the official ones. The station id is built from the anchor's coordinates.
+- **The brand is the operator,** and the name joins the operator and the site. When a merged location supplies the pin's price, its operator becomes the brand, so a pin never shows one operator's name next to another's price.
+
+Each run logs what it read:
+
+```text
+[ocpdb] DE: <tariffs> tariffs → <n> priced EVSEs; <locations> locations → <stations> stations, <n> priced (merged <n>, skipped <n> without live EVSE, <n> outside DE, <n> unparseable)
+```
+
+### How a price is chosen {#ocpdb-prices}
+
+A charger can have several tariffs. The pin shows one:
+
+1. **Only ad-hoc tariffs count.** Tariffs for contract customers, and links with no audience, are skipped.
+2. **Only tariffs from healthy feeds count.** A feed that OCPDB marks as failed, or that has not refreshed in [`PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS`](../reference/environment-variables.md#pumperly_ocpdb_max_feed_age_days) days, has its tariffs ignored, and its chargers show unpriced. The price's `reported_at` is when its feed last refreshed.
+3. **Prices are gross.** Ad-hoc charging is a consumer price, and German law requires it shown with VAT. A price marked net gets the VAT rate it lists, or 19 % when it lists none. A price with no tax data is read as gross.
+4. **Prices outside EUR 0.10 to 2.00 per kWh are dropped** before the cheapest is picked, so a bogus 0.00 cannot hide a real price.
+5. **The cheapest at the pin's top power wins,** with the session fee spread over a 30 kWh session, so a low rate cannot hide a large fee. The price shown is the one paid at the kW shown next to it. When no charger at the top power has a price, the cheapest of the same class stands in (DC from 50 kW, AC below). A DC pin never shows an AC rate: it stays unpriced instead.
+
+The fees on top of the per-kWh price are stored in [`ev_fees`](../reference/data-model.md#ev_fees):
+
+- **Session fee:** fixed fees that always apply are added up. When the fee depends on the time of day, the weekday or other conditions, every option is kept and the popup lists them. The highest is the one used to rank tariffs and to cost a planned stop.
+- **Per-minute fee:** the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute. As in OCPI, the first time charge that always applies wins, so later copies of it are ignored (Chargecloud lists a free one first, then the real fee after 4 hours, then copies). Two feed errors are dropped: a time charge equal to the tariff's kWh price, and anything above 0.30 per minute, which no operator charges.
+
+### Records that do not parse {#ocpdb-bad-records}
+
+A record the scraper cannot read is skipped and counted in the run's log line, so one bad location from a feed does not stop Germany from updating. When more than 0.5 % of the tariffs, the tariff associations or the locations fail to parse, the feed's shape has most likely changed: the run fails and writes nothing, and the stations and prices from the last good run stay.
+
+### When the feed health is unavailable {#ocpdb-feed-health}
+
+Without the feed-health endpoint, no tariff can be vouched for, and a run without prices would delete the current ones. So when that request fails twice, the whole run fails and writes nothing. The stations and prices from the last good run stay until the next run.
+
+### Cleanup after each run {#ocpdb-cleanup}
+
+Cleanup works as for [BNetzA](#bnetza-cleanup). After a run with no errors, if the run refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) stations, the scraper deletes:
+
+1. **OCPDB stations the run did not refresh.** These left the database, or their anchor's coordinates changed, which changes the id.
+2. **Every German Open Charge Map and BNetzA charger.** Once OCPDB has landed, those rows are duplicates.
+
+| Variable | Default | Effect |
+|---|---|---|
+| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
+| `PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS` | `3` | Days a feed may go without refreshing before its tariffs are ignored. A value of 0 or less, or not a number, falls back to the default. |
+
 ## BNetzA Ladesäulenregister, Germany {#bnetza}
 
 The Ladesäulenregister is the German charging point register kept by the Bundesnetzagentur, the federal network agency. Every operator of a publicly accessible charge point must file into it under §5 of the Ladesäulenverordnung, the charging station ordinance. It holds about 74,000 locations. The code is in [`src/scrapers/bnetza.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/bnetza.ts).
@@ -214,14 +278,15 @@ The Ladesäulenregister is the German charging point register kept by the Bundes
 | API key | None |
 | Licence | CC BY 4.0, attribution "Bundesnetzagentur.de" |
 
-The register only lists operators who completed the notification procedure and agreed to publication, so it is not complete. It is still several times larger than Open Charge Map's German coverage.
+The register only lists operators who completed the notification procedure and agreed to publication, so it is not complete. It is still several times larger than Open Charge Map's German coverage. It has no prices: [OCPDB](#ocpdb) contains the same register and adds them.
 
 ### Choosing Germany's source {#bnetza-source-choice}
 
-| `PUMPERLY_DE_EV_SOURCE` | Germany's EV source |
+| `PUMPERLY_DE_EV_SOURCE` (any case) | Germany's EV source |
 |---|---|
-| unset, or any value other than `ocm` | BNetzA register |
-| `ocm` (any case) | Open Charge Map |
+| unset, `ocpdb`, or any value not listed here | OCPDB |
+| `bnetza` | BNetzA register |
+| `ocm` | Open Charge Map |
 
 ### How the file is read {#bnetza-reading}
 
@@ -244,19 +309,21 @@ Each run logs how many rows it read, merged and skipped:
 The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run refreshed. If the count reaches the safety floor, it makes two deletions:
 
 1. **BNetzA stations the run did not refresh.** These left the register, or their operator corrected the coordinates, which changes the id.
-2. **Every German Open Charge Map charger.** Once BNetzA has landed, those rows are duplicates.
+2. **Every German Open Charge Map and OCPDB charger.** Once BNetzA has landed, those rows are duplicates.
 
 | Variable | Default | Effect |
 |---|---|---|
 | `PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
 
-The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires Open Charge Map on its strength.
+The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires the other sources on its strength.
 
 ## Switching a source back {#switching-back}
 
-The handovers only run in one direction. Registry runs delete Open Charge Map rows, but nothing deletes registry rows once their scraper stops running. If you switch Spain or Germany back to Open Charge Map, the registry's pins stay, and Open Charge Map adds its own next to them.
+Open Charge Map deletes nothing when it takes over. Official sources delete Open Charge Map's rows, and OCPDB and BNetzA delete each other's, but nothing deletes the official rows once their scraper stops running and Open Charge Map runs instead. If you switch Spain or Germany back to Open Charge Map, the official pins stay, and Open Charge Map adds its own next to them.
 
-To clear the old registry rows after switching back, delete them in `psql` against the Pumperly database:
+Rolling back to a Pumperly release from before OCPDB has the same effect in Germany. That release's BNetzA scraper does not know the `ocpdb-` rows, so it leaves them in place and adds its own pins next to them, and every German charger shows twice.
+
+To clear the old rows after switching back, delete them in `psql` against the Pumperly database:
 
 === "Spain, after removing the REVE key"
 
@@ -273,7 +340,16 @@ To clear the old registry rows after switching back, delete them in `psql` again
     DELETE FROM stations
     WHERE country = 'DE'
       AND station_type = 'ev_charger'
-      AND external_id LIKE 'bnetza-%';
+      AND (external_id LIKE 'ocpdb-%' OR external_id LIKE 'bnetza-%');
     ```
 
-EV chargers have no price rows, so nothing else needs deleting. [Backing up the database](../operations/backup-and-restore.md) explains how to take a backup first.
+=== "Germany, after rolling back to a release without OCPDB"
+
+    ```sql
+    DELETE FROM stations
+    WHERE country = 'DE'
+      AND station_type = 'ev_charger'
+      AND external_id LIKE 'ocpdb-%';
+    ```
+
+A charger's prices are deleted with it, so nothing else needs deleting. [Backing up the database](../operations/backup-and-restore.md) explains how to take a backup first.

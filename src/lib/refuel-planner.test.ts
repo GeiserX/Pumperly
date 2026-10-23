@@ -313,6 +313,15 @@ describe("pruneCandidates", () => {
     expect(pruneCandidates(stations, 1000, 7).length).toBeLessThanOrEqual(7);
   });
 
+  it("weighs the stop fee when picking a bucket's cheapest", () => {
+    // Over a 40 kWh charge "fee" costs 0.39 + 10/40 = 0.64 per kWh, "nofee" 0.45.
+    const fee = { ...st("fee", 0.1, 0.39, 5), stopFee: 10 };
+    const nofee = st("nofee", 0.2, 0.45, 5);
+    const fillers = Array.from({ length: 250 }, (_, i) => st(`F${i}`, i * 0.001, 0.6, 1));
+    expect(pruneCandidates([...fillers, fee, nofee], 1000, 200, 40).map((s) => s.id)).toContain("nofee");
+    expect(pruneCandidates([...fillers, fee, nofee], 1000, 200).map((s) => s.id)).not.toContain("nofee");
+  });
+
   it("returns the input untouched under the cap", () => {
     const stations = [st("A", 1, 1), st("B", 2, 1)];
     expect(pruneCandidates(stations, 10, 200)).toBe(stations);
@@ -428,6 +437,21 @@ describe("planRefuel with charge time (EV)", () => {
 
   it("ignores a station with an invalid charge rate", () => {
     const r = planRefuel({ ...ev, routeKm: 250, stations: [at("bad", 100, 0, -1), at("nan", 100, 0, Number.NaN), at("ok", 100, 0, 1)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
+  });
+
+  it("adds a stop fee to the stop's cost and weighs it when choosing", () => {
+    const priced = (id: string, price: number, stopFee?: number): PlannerStation => ({ id, km: 100, price, detourMin: 0, minutesPerPct: 0.5, ...(stopFee != null ? { stopFee } : {}) });
+    // 45 % of 60 kWh = 27 kWh: 0.39 × 27 + 10 = 20.53 loses to 0.45 × 27 = 12.15.
+    const r = planRefuel({ ...ev, routeKm: 250, stations: [priced("fee", 0.39, 10), priced("plain", 0.45)] });
+    expect(r.stops.map((s) => s.id)).toEqual(["plain"]);
+    const only = planRefuel({ ...ev, routeKm: 250, stations: [priced("fee", 0.39, 10)] });
+    expect(only.stops[0].cost).toBeCloseTo(0.39 * 27 + 10);
+    expect(only.totalFuelCost).toBeCloseTo(0.39 * 27 + 10);
+  });
+
+  it("ignores a station with an invalid stop fee", () => {
+    const r = planRefuel({ ...ev, routeKm: 250, stations: [{ ...at("bad", 100, 0, 1), stopFee: -1 }, at("ok", 100, 0, 1)] });
     expect(r.stops.map((s) => s.id)).toEqual(["ok"]);
   });
 

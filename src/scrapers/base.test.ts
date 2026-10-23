@@ -22,7 +22,15 @@ vi.mock("../generated/prisma/client", () => ({
 }));
 
 // Concrete test scraper
-import { BaseScraper, bandFor, maxSanePowerKw, sanePowerKw, type RawStation, type RawFuelPrice } from "./base";
+import {
+  BaseScraper,
+  bandFor,
+  isPlausibleEvPrice,
+  maxSanePowerKw,
+  sanePowerKw,
+  type RawStation,
+  type RawFuelPrice,
+} from "./base";
 
 describe("bandFor (per-currency price bands)", () => {
   it("accepts a plausible HUF price (595)", () => {
@@ -274,6 +282,74 @@ describe("BaseScraper.run()", () => {
     expect(result.pricesUpserted).toBe(2);
   });
 
+  it("validates EV prices per kWh and writes their fees as JSON", async () => {
+    scraper.mockStations = [{ ...makeStation("ev1"), stationType: "ev_charger" }];
+    scraper.mockPrices = [
+      { ...makePrice("ev1", "EV", 0.79, "EUR"), evFees: { perMinute: 0.24, afterMin: 30 } }, // valid
+      makePrice("ev1", "EV", 0.05, "EUR"), // too low (< 0.10), would pass the per-litre alt band
+      makePrice("ev1", "EV", 2.5, "EUR"), // too high (> 2.00), would pass the EUR fuel band
+    ];
+
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-ev", external_id: "ev1" }]);
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockResolvedValue(undefined);
+
+    const result = await scraper.run();
+    expect(result.pricesUpserted).toBe(1);
+
+    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO fuel_prices"),
+    );
+    expect(priceInsert?.[0]).toContain("ev_fees");
+    expect(priceInsert).toContain(JSON.stringify({ perMinute: 0.24, afterMin: 30 }));
+  });
+
+  it("leaves ev_fees out of fuel price inserts", async () => {
+    scraper.mockStations = [makeStation("s1")];
+    scraper.mockPrices = [makePrice("s1", "B7", 1.5, "EUR")];
+
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-1", external_id: "s1" }]);
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockResolvedValue(undefined);
+
+    await scraper.run();
+    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO fuel_prices"),
+    );
+    expect(priceInsert?.[0]).not.toContain("ev_fees");
+  });
+
+  it("writes an upstream reported_at when the price carries one, NOW() otherwise", async () => {
+    scraper.mockStations = [{ ...makeStation("ev1"), stationType: "ev_charger" }];
+    scraper.mockPrices = [{ ...makePrice("ev1", "EV", 0.79, "EUR"), reportedAt: new Date("2026-10-20T04:00:00Z") }];
+
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-ev", external_id: "ev1" }]);
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockResolvedValue(undefined);
+
+    await scraper.run();
+    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO fuel_prices"),
+    );
+    expect(priceInsert?.[0]).toContain("COALESCE($6::timestamptz, NOW())");
+    expect(priceInsert).toContain("2026-10-20T04:00:00.000Z");
+  });
+
+  it("keeps NOW() for prices without an upstream timestamp", async () => {
+    scraper.mockStations = [makeStation("s1")];
+    scraper.mockPrices = [makePrice("s1", "B7", 1.5, "EUR")];
+
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-1", external_id: "s1" }]);
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockResolvedValue(undefined);
+
+    await scraper.run();
+    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO fuel_prices"),
+    );
+    expect(priceInsert?.[0]).not.toContain("COALESCE");
+  });
+
   it("drops fuel stations with no valid prices (keeps EV chargers)", async () => {
     const evStation: RawStation = {
       ...makeStation("ev1"),
@@ -428,6 +504,16 @@ describe("BaseScraper.run()", () => {
     await scraper.run();
 
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("isPlausibleEvPrice", () => {
+  it("accepts EUR between 0.10 and 2.00 per kWh", () => {
+    expect(isPlausibleEvPrice(0.1, "EUR")).toBe(true);
+    expect(isPlausibleEvPrice(2, "EUR")).toBe(true);
+    expect(isPlausibleEvPrice(0.05, "EUR")).toBe(false);
+    expect(isPlausibleEvPrice(2.5, "EUR")).toBe(false);
+    expect(isPlausibleEvPrice(0.5, "CHF")).toBe(false);
   });
 });
 

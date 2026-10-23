@@ -30,8 +30,8 @@ What works today is described in [The map](using/map.md), [Planning a route](usi
 ## EV charging
 
 - **EV route planning.** You enter battery size, charge level and consumption, and Pumperly plans the charging stops. Today EV chargers show on the map and along a route, like fuel stations, without range planning.
-- **Connector, power and price details.** Each charger shows its connector types, power in kW and price per kWh. Today a charger is stored like any station, with its location, name, brand and address, and none of these fields.
-- **More official registries.** National registries replace crowdsourced data in more countries. Today Spain (Mapa REVE, with an API key) and Germany (the BNetzA Ladesäulenregister) use official registries, and every other country uses Open Charge Map. See [EV charging sources](data/ev-sources.md).
+- **Connector and price details everywhere.** Each charger shows its connector types, power in kW and price per kWh. Today every charger shows its power, but only German chargers have prices, from OCPDB, and none has connector types.
+- **More official registries.** National registries replace crowdsourced data in more countries. Today Spain (Mapa REVE, with an API key) and Germany (OCPDB, which contains the BNetzA Ladesäulenregister) use official sources, and every other country uses Open Charge Map. See [EV charging sources](data/ev-sources.md).
 
 ## Coverage
 

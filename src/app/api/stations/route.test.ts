@@ -80,7 +80,7 @@ describe("stations API", () => {
     expect(response.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=300");
   });
 
-  it("queries EV stations without price join", async () => {
+  it("keeps unpriced EV chargers on the map", async () => {
     vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([{
       ...mockRow,
       price: null,
@@ -101,6 +101,36 @@ describe("stations API", () => {
     expect(sqlArg).toContain("station_type");
     expect(sqlArg).toContain("s.max_power_kw::int AS max_power_kw");
     expect(response.data.features[0].properties.powerKw).toBe(150);
+  });
+
+  it("returns an EV charger's price and fees from an outer price join", async () => {
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([{
+      ...mockRow,
+      price: 0.79,
+      currency: "EUR",
+      max_power_kw: 22,
+      ev_fees: { perMinute: 0.24, afterMin: 120 },
+    }, {
+      ...mockRow,
+      id: "no-fees",
+      price: 0.46,
+      currency: "EUR",
+      ev_fees: null,
+    }]);
+
+    const response = (await GET(makeRequest({
+      bbox: "9.1,48.7,9.3,48.85",
+      fuel: "EV",
+    }) as any)) as any;
+
+    const [priced, noFees] = response.data.features;
+    expect(priced.properties).toMatchObject({ price: 0.79, currency: "EUR", evFees: { perMinute: 0.24, afterMin: 120 } });
+    expect(noFees.properties.price).toBe(0.46);
+    expect(noFees.properties).not.toHaveProperty("evFees");
+    const sqlArg = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0][0] as string;
+    expect(sqlArg).toContain("LEFT JOIN LATERAL");
+    expect(sqlArg).toContain("fuel_type = 'EV'");
+    expect(sqlArg).toContain("ev_fees");
   });
 
   it("returns 400 when bbox is missing", async () => {

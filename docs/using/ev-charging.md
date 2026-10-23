@@ -16,13 +16,13 @@ Pumperly keeps a type on every station: a fuel station, an EV charger, or both. 
 
 The fuel layers work differently. They show a station only when it has a price for the chosen fuel. A station marked as both appears on the EV layer, and on each fuel layer it has a price for.
 
-Chargers carry no price. That changes a few things on the map:
+Only German chargers have prices, per kWh, from [OCPDB](../data/ev-sources.md#ocpdb). Chargers elsewhere carry none. That changes a few things on the map:
 
 | On a fuel layer | On the EV layer |
 |-----------------|-----------------|
-| Dots are coloured by price | Every dot is grey, and every cluster is orange |
-| The price legend shows in the corner | No legend |
-| The max-price slider shows | No max-price slider |
+| Dots are coloured by price | Priced chargers are coloured by price per kWh. Unpriced chargers are grey. With no priced charger in view, every dot is grey and every cluster is orange |
+| The price legend shows in the corner | The legend shows when chargers in view have prices |
+| The max-price slider shows | The slider shows when at least two chargers in view have different prices. It hides priced chargers above the limit and keeps unpriced ones |
 
 Clustering, country markers and the Stats panel work as on any other layer. The station counts in the country markers and the Stats panel include chargers.
 
@@ -33,7 +33,7 @@ Pumperly uses an official national registry where one exists, and [Open Charge M
 | Where | Source |
 |-------|--------|
 | Spain | Mapa REVE, the official registry, when `PUMPERLY_REVE_API_KEY` is set. Open Charge Map otherwise. |
-| Germany | The BNetzA Ladesäulenregister by default. `PUMPERLY_DE_EV_SOURCE=ocm` switches to Open Charge Map. |
+| Germany | The Open ChargePoint Database (OCPDB) by default, with prices. `PUMPERLY_DE_EV_SOURCE=bnetza` switches to the BNetzA Ladesäulenregister, and `ocm` to Open Charge Map. Neither has prices. |
 | Every other covered country | Open Charge Map |
 
 Open Charge Map needs `PUMPERLY_OCM_API_KEY`. Without it, every Open Charge Map scraper skips its run. That includes Spain without a REVE key, and Germany with `PUMPERLY_DE_EV_SOURCE=ocm`.
@@ -46,19 +46,20 @@ Click a charger to open its popup. It holds:
 
 1. The **brand**. For chargers this is the operator, when the source names one.
 2. The **address** and the **city**.
-3. The charger's **highest power** in kW, such as `150 kW`, labelled "Max. charging power · No price for EV Charging". When the source lists no power, it reads "Power unknown" instead. The German registry, OpenChargeMap and Mapa REVE all publish power.
-4. The same four buttons as any station: **Get directions**, **Show on map**, **Copy link** and **Share**. See [Station popup](map.md#station-popup).
+3. For a priced charger, the **price per kWh**, with the charger's highest power and how old the price is. Fees on top follow on one line, such as `+0.20 €/min after 45 min · +0.50 € per session`. When the session fee depends on the time or day, each option is listed with when it applies, such as `+0.50 € per session (06:00–22:00) · +1.00 € per session (22:00–06:00)`.
+4. For an unpriced charger, its **highest power** in kW, such as `150 kW`, labelled "Max. charging power · Price not published". When the source lists no power, it reads "Power unknown" instead. Every charger source publishes power.
+5. The same four buttons as any station: **Get directions**, **Show on map**, **Copy link** and **Share**. See [Station popup](map.md#station-popup).
 
 In a route's station list, a charger row shows the operator and the station name. Each source builds that name differently. The German registry, for example, combines the operator with the street and a site label, which tells apart two chargers at one address.
 
-!!! note "No tariffs, connectors or live availability"
-    Pumperly does not store charging tariffs, connector types or live availability. Its price model holds one price per litre for each fuel. A charging tariff is per kWh and per session, and that does not fit. The popup tells you where a charger is, who runs it and how fast it can charge. Check the operator's app for price and plug type.
+!!! note "Ad-hoc prices only, no connectors or live availability"
+    The price shown is the cheapest ad-hoc tariff, what a driver without a contract pays. Contract and subscription prices are not stored, and neither are connector types or live availability. Outside Germany no source provides prices. Check the operator's app for those.
 
 ## Chargers along a route
 
 Route planning on the EV layer works the same way as on a fuel layer. See [Planning a route](routes.md). Pumperly finds the chargers within the search radius of each route and times the detour to each one.
 
-The difference is that no charger has a price. That affects the station list:
+The difference is that many chargers have no price. That affects the station list:
 
 | Feature | On the EV layer |
 |---------|-----------------|
@@ -66,19 +67,23 @@ The difference is that no charger has a price. That affects the station list:
 | Detour times and the detour basis | Work as usual |
 | Max detour | Works as usual |
 | Sort by **Detour** or **Route km** | Works as usual |
-| Sort by **Price** | Keeps the chargers in route order, since none has a price |
+| Sort by **Price** | Priced chargers first, cheapest per kWh first. Unpriced chargers follow in route order |
 | **Least detour** badge | Works as usual |
-| **Cheapest** and **Balanced** badges | Never shown |
-| Average price and the difference from it | Not shown |
+| **Cheapest** and **Balanced** badges | Among priced chargers only. Never shown when none has a price |
+| Average price and the difference from it | Per kWh, over the priced chargers. Not shown when none has a price |
 
-Every charger within the radius is included, because none is left out for lacking a price. A route gets at most 5,000 stations, in route order.
+Every charger within the radius is included, priced or not. Unlike fuel stations, none is left out for lacking a price. A route gets at most 5,000 stations, in route order.
 
 !!! tip "Keep the radius small in cities"
     Cities have far more chargers than fuel stations. A 5 km radius across a large city can hold hundreds of them. Pumperly times detours in batches of 150 chargers, and each batch is one request. A visitor may send 10 detour requests a minute, so the later batches of a very dense corridor come back as unknown detours. Lower the search radius, or pick a route that avoids the centre. The limits are listed in [Limits](routes.md#limits).
 
 Clicking a charger in the list or on the map adds it to the route as a stop, as on any layer. See [Pick a station as a stop](routes.md#pick-a-station-as-a-stop).
 
-On the EV layer, the fuel stop planner becomes **Plan charging stops**. You set the battery size in kWh, the consumption in kWh/100 km, the car's max charge power, and the battery level at the start and at arrival. The planner then picks the chargers along the route that get you there with the least detour and charging time, since chargers have no prices. Each stop charges to at most 80 %, because charging slows sharply above that. Charging time uses the lower of the charger's power and the car's max charge power, capped at 22 kW on AC chargers. On DC it averages 75 % of that, because charging tapers as the battery fills. The reserve defaults to 20 %. **Min charger power** (Any, 50 kW or 150 kW) skips slower chargers. It also skips chargers whose power is unknown, because the filter can't vouch for them.
+On the EV layer, the fuel stop planner becomes **Plan charging stops**. You set the battery size in kWh, the consumption in kWh/100 km, the car's max charge power, and the battery level at the start and at arrival.
+
+When any charger along the route that passes the filters has a price, the planner picks the stops with the lowest cost: the energy at each charger's price per kWh, plus its session fee, plus your time, priced with **Value of your time**. Unpriced chargers still compete, costed at the median price of the priced ones, so a route that crosses into a country without prices still gets a plan. Each priced stop shows its cost. The plan shows a total only when every stop has a price. A session fee that varies counts at its highest. Per-minute blocking fees are left out. When no charger along the route has a price, as outside Germany, the planner picks the stops with the least detour and charging time.
+
+Each stop charges to at most 80 %, because charging slows sharply above that. Charging time uses the lower of the charger's power and the car's max charge power, capped at 22 kW on AC chargers. On DC it averages 75 % of that, because charging tapers as the battery fills. The reserve defaults to 20 %. **Min charger power** (Any, 50 kW or 150 kW) skips slower chargers. It also skips chargers whose power is unknown, because the filter can't vouch for them.
 
 ## Sharing a charger
 
@@ -87,7 +92,8 @@ A charger link must carry `fuel=EV`. The map only loads chargers on the EV layer
 ## Summary
 
 - Pick **EV Charging** (`EV`) in the fuel selector to see chargers.
-- The EV layer shows every charger in view. Chargers have no price, so dots are grey and there is no legend or price slider.
-- A charger's popup shows the operator, the address, the city and the highest power in kW. There are no tariffs, connectors or live availability.
-- Along a route, detours and the detour filter work as usual. Price sorting and the Cheapest and Balanced badges do not apply.
+- The EV layer shows every charger in view. German chargers have ad-hoc prices per kWh and are coloured by price. Chargers elsewhere are grey, with no legend or price slider.
+- A charger's popup shows the operator, the address, the city, the highest power in kW, and for priced chargers the price per kWh and any session or per-minute fees. There are no connectors or live availability.
+- Along a route, detours and the detour filter work as usual. Price sorting and the Cheapest and Balanced badges use the priced chargers.
+- The charging stop planner costs stops by price and session fee when the route has priced chargers, and by time alone when it has none.
 - Keep the search radius small in cities, or dense corridors run into the detour rate limit.

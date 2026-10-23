@@ -5,6 +5,32 @@ export type StationType = "fuel" | "ev_charger" | "both";
 export type { FuelType } from "./fuel";
 import type { FuelType } from "./fuel";
 
+/**
+ * Charges an EV tariff adds on top of its per-kWh price, in the price's
+ * currency. `perMinute` starts `afterMin` minutes into the session (0 = from
+ * the start). Stored as JSONB in fuel_prices.ev_fees.
+ */
+export interface EvFees {
+  /** The highest session fee that can apply: what cost estimates use. */
+  sessionFee?: number;
+  /** Set when the session fee depends on the time, day or session. */
+  sessionFeeRules?: SessionFeeRule[];
+  perMinute?: number;
+  afterMin?: number;
+}
+
+/** One session fee and when it applies. No fields besides `fee`: always. */
+export interface SessionFeeRule {
+  fee: number;
+  /** "HH:MM" local time. */
+  from?: string;
+  to?: string;
+  /** ISO weekdays, 1 = Monday. */
+  days?: number[];
+  /** Applies under other conditions too (energy, power, duration...). */
+  other?: boolean;
+}
+
 export interface Station {
   id: string;
   externalId: string;
@@ -57,6 +83,8 @@ export interface StationGeoJSON {
     originalCurrency?: string;
     /** EV chargers: highest single-connector power in kW (absent when unknown). */
     powerKw?: number;
+    /** EV chargers: fees on top of the per-kWh `price` (absent when there are none). */
+    evFees?: EvFees;
     routeFraction?: number;
     detourMin?: number;
     /** Distance from the query point in km (only set by /api/stations/nearest) */
