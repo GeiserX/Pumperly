@@ -259,6 +259,11 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
   let sessionFee = 0;
   const rules: SessionFeeRule[] = [];
   let perMinute: { price: number; afterSec: number } | null = null;
+  // OCPI takes the first element that matches, per dimension: after one
+  // always-on TIME component (even a free one), later always-on ones can never
+  // apply. Chargecloud lists TIME 0.00, then the real fee after 4 h, then
+  // always-on copies of the fee or the kWh rate (133380, 133462).
+  let unrestrictedTimeSeen = false;
   const unrestrictedEnergy = new Set<number>();
   const energyPrices = new Set(
     tariff.elements.flatMap((e) => e.price_components.filter((c) => c.type === "ENERGY").map((c) => grossPrice(c, tariff))),
@@ -277,7 +282,12 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
       } else if (c.type === "FLAT") {
         if (!restricted) sessionFee += price;
         else rules.push(feeRule(price, element.restrictions ?? {}));
-      } else if (c.type === "TIME" && price > 0 && price <= MAX_PER_MINUTE && !energyPrices.has(price)) {
+      } else if (c.type === "TIME") {
+        if (!restricted) {
+          if (unrestrictedTimeSeen) continue;
+          unrestrictedTimeSeen = true;
+        }
+        if (price <= 0 || price > MAX_PER_MINUTE || energyPrices.has(price)) continue;
         // Several TIME steps: the first one that costs anything is the fee
         // a driver will actually meet.
         if (perMinute == null || afterSec < perMinute.afterSec) perMinute = { price, afterSec };
@@ -396,6 +406,16 @@ export interface OcpdbParseStats {
 interface Offer {
   tariff: TariffSummary;
   operator: string | null;
+  /** Power of the EVSE the tariff was found on. */
+  powerKw: number | null;
+}
+
+// From here a charger counts as fast (DC). A fallback price must come from an
+// EVSE of the same class as the pin's power, or a 150 kW pin shows a 22 kW rate.
+const FAST_KW = 50;
+
+function sameClass(a: number | null | undefined, b: number | null | undefined): boolean {
+  return (a ?? 0) >= FAST_KW === (b ?? 0) >= FAST_KW;
 }
 
 interface Pin {
@@ -482,7 +502,7 @@ export function mergeLocations(
     for (let i = 0; i < evses.length; i++) {
       const t = tariffsByEvse.get(evses[i].uid);
       if (!t) continue;
-      const offer = { tariff: t, operator };
+      const offer = { tariff: t, operator, powerKw: evsePower[i] };
       any = cheaperOffer(offer, any);
       if (powerKw != null && evsePower[i] === powerKw) top = cheaperOffer(offer, top);
     }
@@ -551,7 +571,9 @@ export function mergeLocations(
 
   const prices: RawFuelPrice[] = [];
   for (const { station, top, any, site } of pins) {
-    const offer = top ?? any;
+    // No priced EVSE at the top power: a cheaper one of the same class may
+    // stand in, never an AC rate on a DC pin (or the other way round).
+    const offer = top ?? (any && sameClass(any.powerKw, station.maxPowerKw) ? any : null);
     if (!offer) continue;
     const { tariff, operator } = offer;
     if (operator && operator !== station.brand) {

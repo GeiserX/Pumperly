@@ -238,12 +238,12 @@ A charger can have several tariffs. The pin shows one:
 2. **Only tariffs from healthy feeds count.** A feed that OCPDB marks as failed, or that has not refreshed in [`PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS`](../reference/environment-variables.md#pumperly_ocpdb_max_feed_age_days) days, has its tariffs ignored, and its chargers show unpriced. The price's `reported_at` is when its feed last refreshed.
 3. **Prices are gross.** Ad-hoc charging is a consumer price, and German law requires it shown with VAT. A price marked net gets the VAT rate it lists, or 19 % when it lists none. A price with no tax data is read as gross.
 4. **Prices outside EUR 0.10 to 2.00 per kWh are dropped** before the cheapest is picked, so a bogus 0.00 cannot hide a real price.
-5. **The cheapest wins,** with the session fee spread over a 30 kWh session. A low rate cannot hide a large fee.
+5. **The cheapest at the pin's top power wins,** with the session fee spread over a 30 kWh session, so a low rate cannot hide a large fee. The price shown is the one paid at the kW shown next to it. When no charger at the top power has a price, the cheapest of the same class stands in (DC from 50 kW, AC below). A DC pin never shows an AC rate: it stays unpriced instead.
 
 The fees on top of the per-kWh price are stored in [`ev_fees`](../reference/data-model.md#ev_fees):
 
 - **Session fee:** fixed fees that always apply are added up. When the fee depends on the time of day, the weekday or other conditions, every option is kept and the popup lists them. The highest is the one used to rank tariffs and to cost a planned stop.
-- **Per-minute fee:** the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute. Two feed errors are dropped: a time charge equal to the tariff's kWh price, and anything above 0.30 per minute, which no operator charges.
+- **Per-minute fee:** the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute. As in OCPI, the first time charge that always applies wins, so later copies of it are ignored (Chargecloud lists a free one first, then the real fee after 4 hours, then copies). Two feed errors are dropped: a time charge equal to the tariff's kWh price, and anything above 0.30 per minute, which no operator charges.
 
 ### Records that do not parse {#ocpdb-bad-records}
 

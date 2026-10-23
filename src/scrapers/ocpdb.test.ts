@@ -185,6 +185,28 @@ describe("summarizeTariff", () => {
     expect(summarizeTariff(tariff)?.fees).toEqual({ perMinute: 0.05, afterMin: 240 });
   });
 
+  // Chargecloud 133380: an always-on TIME 0.00 first, the real fee after 4 h,
+  // then always-on copies of it. By OCPI's first match the copies never apply.
+  it("ignores always-on TIME components after the first one", () => {
+    const time = (price: number, min_duration?: number) => ({
+      price_components: [{ type: "TIME", price }],
+      ...(min_duration ? { restrictions: { min_duration } } : {}),
+    });
+    const tariff: Tariff = {
+      ...CHARGECLOUD,
+      elements: [
+        { price_components: [{ type: "FLAT", price: 0.85 }] },
+        { price_components: [{ type: "ENERGY", price: 0.44 }] },
+        time(0),
+        time(0.06, 14400),
+        time(0, 26400),
+        time(0),
+        time(0.06),
+      ],
+    };
+    expect(summarizeTariff(tariff)?.fees).toEqual({ sessionFee: 0.85, perMinute: 0.06, afterMin: 240 });
+  });
+
   // EcoMovement 133247 (14.28/min) and 133278 (0.397/min from minute 0).
   it.each([14.28, 0.397])("ignores an implausible per-minute fee of %s", (fee) => {
     const tariff: Tariff = {
@@ -415,10 +437,18 @@ describe("mergeLocations", () => {
     expect(prices[0]).toMatchObject({ price: 0.79, evFees: { perMinute: 0.24, afterMin: 30 } });
   });
 
-  it("falls back to the cheapest EVSE when none at the top power is priced", () => {
+  it("falls back to a cheaper EVSE of the same class when none at the top power is priced", () => {
+    const { stations, prices } = mergeLocations([site({ unpriced: 150, dc: 50 })], hpc);
+    expect(stations[0].maxPowerKw).toBe(150);
+    expect(prices[0].price).toBe(0.79);
+  });
+
+  // Like ocpdb-52.65288_9.21849 (Mer): 150 kW unpriced, 22 kW priced. An AC
+  // rate next to "150 kW" would undersell the fast charge.
+  it("leaves a DC pin unpriced rather than show an AC rate", () => {
     const { stations, prices } = mergeLocations([site({ unpriced: 150, ac: 22 })], hpc);
     expect(stations[0].maxPowerKw).toBe(150);
-    expect(prices[0].price).toBe(0.7);
+    expect(prices).toHaveLength(0);
   });
 
   it("applies the same rule across merged locations", () => {
