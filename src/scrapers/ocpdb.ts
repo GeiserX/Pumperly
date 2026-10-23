@@ -363,11 +363,25 @@ export interface OcpdbParseStats {
   priced: number;
 }
 
+/** A tariff and the operator of the location it came from. */
+interface Offer {
+  tariff: TariffSummary;
+  operator: string | null;
+}
+
 interface Pin {
   station: RawStation;
-  tariff: TariffSummary | null;
+  /** Cheapest tariff on the EVSEs at the pin's top power. */
+  top: Offer | null;
+  /** Cheapest tariff on any EVSE: the fallback when no top-power EVSE is priced. */
+  any: Offer | null;
   /** The location's own name or street, which the pin's name is built from. */
   site: string;
+}
+
+function cheaperOffer(a: Offer | null, b: Offer | null): Offer | null {
+  if (!a) return b;
+  return cheaper(a.tariff, b?.tariff) ? a : b;
 }
 
 /** "Operator — site", falling back to whichever part exists, then the key. */
@@ -376,11 +390,14 @@ function pinName(operator: string | null, site: string, key: string): string {
 }
 
 /**
- * Turn OCPDB locations into deduplicated pins, each with its cheapest ad-hoc
- * tariff. A pin is labelled with the operator whose tariff it shows: when a
- * merged location supplies the price, its operator takes over the brand, so a
- * driver never sees one operator's name next to another's price. Pure: the merge, the filters and the derived externalId all live
- * here, so this is what the tests cover.
+ * Turn OCPDB locations into deduplicated pins, each with one ad-hoc tariff:
+ * the cheapest on the EVSEs at the pin's top power, so the price shown is the
+ * one paid at the kW shown next to it (a 22 kW rate must not pass for the
+ * 150 kW one). Only when none of those EVSEs is priced does the cheapest
+ * tariff on any EVSE stand in. A pin is labelled with the operator whose
+ * tariff it shows, so a driver never sees one operator's name next to
+ * another's price. Pure: the merge, the filters and the derived externalId
+ * all live here, so this is what the tests cover.
  */
 export function mergeLocations(
   locations: OcpdbLocation[],
@@ -420,16 +437,19 @@ export function mergeLocations(
       continue;
     }
 
-    // max_electric_power is in W.
-    const powerKw = maxSanePowerKw(
-      evses.flatMap((e) => e.connectors.map((c) => (c.max_electric_power ?? 0) / 1000)),
-    );
-    let tariff: TariffSummary | null = null;
-    for (const e of evses) {
-      const t = tariffsByEvse.get(e.uid);
-      if (t && cheaper(t, tariff)) tariff = t;
-    }
     const operator = loc.operator?.name?.trim() || null;
+    // max_electric_power is in W.
+    const evsePower = evses.map((e) => maxSanePowerKw(e.connectors.map((c) => (c.max_electric_power ?? 0) / 1000)));
+    const powerKw = maxSanePowerKw(evsePower);
+    let top: Offer | null = null;
+    let any: Offer | null = null;
+    for (let i = 0; i < evses.length; i++) {
+      const t = tariffsByEvse.get(evses[i].uid);
+      if (!t) continue;
+      const offer = { tariff: t, operator };
+      any = cheaperOffer(offer, any);
+      if (powerKw != null && evsePower[i] === powerKw) top = cheaperOffer(offer, top);
+    }
 
     // Fold into an existing pin within the merge radius, if any.
     const gy = Math.floor(latitude / GRID_DEG);
@@ -450,14 +470,15 @@ export function mergeLocations(
 
     if (target) {
       stats.merged++;
-      if (powerKw != null && powerKw > (target.station.maxPowerKw ?? 0)) target.station.maxPowerKw = powerKw;
-      if (tariff && cheaper(tariff, target.tariff)) {
-        target.tariff = tariff;
-        if (operator) {
-          target.station.brand = operator;
-          target.station.name = pinName(operator, target.site, target.station.externalId);
-        }
+      // Same rule as within a location: a faster location brings its own
+      // top-power price; an equally fast one competes on price.
+      if (powerKw != null && powerKw > (target.station.maxPowerKw ?? 0)) {
+        target.station.maxPowerKw = powerKw;
+        target.top = top;
+      } else if (powerKw != null && powerKw === target.station.maxPowerKw) {
+        target.top = cheaperOffer(top, target.top);
       }
+      target.any = cheaperOffer(any, target.any);
       continue;
     }
 
@@ -479,7 +500,8 @@ export function mergeLocations(
         stationType: "ev_charger",
         maxPowerKw: powerKw,
       },
-      tariff,
+      top,
+      any,
       site,
     };
     pins.push(pin);
@@ -490,8 +512,14 @@ export function mergeLocations(
   }
 
   const prices: RawFuelPrice[] = [];
-  for (const { station, tariff } of pins) {
-    if (!tariff) continue;
+  for (const { station, top, any, site } of pins) {
+    const offer = top ?? any;
+    if (!offer) continue;
+    const { tariff, operator } = offer;
+    if (operator && operator !== station.brand) {
+      station.brand = operator;
+      station.name = pinName(operator, site, station.externalId);
+    }
     stats.priced++;
     prices.push({
       stationExternalId: station.externalId,

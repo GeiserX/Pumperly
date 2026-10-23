@@ -323,14 +323,56 @@ describe("mergeLocations", () => {
     expect(prices[0]).toMatchObject({ stationExternalId: stations[0].externalId, price: 0.46 });
   });
 
-  it("keeps the cheapest price across merged locations, and the highest power", () => {
-    const fast = location({ source: "datex2_enbw", evses: ["enbw"] });
-    fast.charging_pool[0].evses[0].connectors = [{ max_electric_power: 300000 }];
+  /** A location whose EVSEs (uid → kW) are given explicitly. */
+  function site(evses: Record<string, number>, overrides: Parameters<typeof location>[0] = {}): Location {
+    const loc = location({ evses: Object.keys(evses), ...overrides });
+    loc.charging_pool[0].evses.forEach((e) => (e.connectors = [{ max_electric_power: evses[e.uid] * 1000 }]));
+    return loc;
+  }
+
+  // Like ocpdb-51.14720_7.32149 (EnBW Hückeswagen): DC at 0.79, AC at 0.70.
+  // The pin shows 150 kW, so it must show the 150 kW price.
+  const hpc = evseTariffs(
+    [ENBW, { ...ENBW, id: "ac", elements: [{ price_components: [{ type: "ENERGY", price: 0.7, tax_included: true }] }] }],
+    [
+      { tariff_id: ENBW.id, audience: "AD_HOC_PAYMENT", evses: [{ evse_uid: "dc" }] },
+      { tariff_id: "ac", audience: "AD_HOC_PAYMENT", evses: [{ evse_uid: "ac" }] },
+    ],
+  );
+
+  it("prices a pin from the EVSEs at its top power, not the cheapest slower one", () => {
+    const { stations, prices } = mergeLocations([site({ dc: 150, ac: 22 })], hpc);
+    expect(stations[0].maxPowerKw).toBe(150);
+    expect(prices[0]).toMatchObject({ price: 0.79, evFees: { perMinute: 0.24, afterMin: 30 } });
+  });
+
+  it("falls back to the cheapest EVSE when none at the top power is priced", () => {
+    const { stations, prices } = mergeLocations([site({ unpriced: 150, ac: 22 })], hpc);
+    expect(stations[0].maxPowerKw).toBe(150);
+    expect(prices[0].price).toBe(0.7);
+  });
+
+  it("applies the same rule across merged locations", () => {
     const { stations, prices } = mergeLocations(
-      [fast, location({ source: "datex2_chargecloud", lon: 9.1829 + 5 * METRES, evses: ["cc"] })],
+      [
+        site({ ac: 22 }),
+        site({ dc: 150 }, { source: "datex2_enbw", lon: 9.1829 + 5 * METRES, operator: { name: "EnBW AG" } }),
+      ],
+      hpc,
+    );
+    expect(stations[0].maxPowerKw).toBe(150);
+    expect(prices[0].price).toBe(0.79);
+    expect(stations[0].brand).toBe("EnBW AG");
+  });
+
+  it("keeps the cheapest price across merged locations of the same power", () => {
+    const { prices } = mergeLocations(
+      [
+        location({ source: "datex2_enbw", evses: ["enbw"] }),
+        location({ source: "datex2_chargecloud", lon: 9.1829 + 5 * METRES, evses: ["cc"] }),
+      ],
       tariffs,
     );
-    expect(stations[0].maxPowerKw).toBe(300);
     expect(prices).toHaveLength(1);
     expect(prices[0].price).toBe(0.46);
   });
