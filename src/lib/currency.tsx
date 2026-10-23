@@ -91,14 +91,31 @@ const REGION_TO_CURRENCY: Record<string, Currency> = {
   AU: "AUD", NZ: "NZD",
 };
 
-function detectBrowserCurrency(): Currency {
-  if (typeof navigator === "undefined") return "EUR";
-  const langs = navigator.languages ?? [navigator.language];
+function regionOf(lang: string): string | undefined {
+  try {
+    return new Intl.Locale(lang).region?.toUpperCase();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The first language that names a region decides: that region's currency, or
+ * EUR when the region is not in the map (Spain, France, ...). Later languages
+ * never override it. Android's WebView appends en-US to every list, so
+ * ["es-ES", "en-US"] must stay EUR.
+ */
+export function currencyForLanguages(langs: readonly string[]): Currency {
   for (const lang of langs) {
-    const region = lang.split("-")[1]?.toUpperCase();
-    if (region && region in REGION_TO_CURRENCY) return REGION_TO_CURRENCY[region];
+    const region = regionOf(lang);
+    if (region) return REGION_TO_CURRENCY[region] ?? "EUR";
   }
   return "EUR";
+}
+
+function detectBrowserCurrency(): Currency {
+  if (typeof navigator === "undefined") return "EUR";
+  return currencyForLanguages(navigator.languages ?? [navigator.language]);
 }
 
 // ---------------------------------------------------------------------------
