@@ -38,8 +38,9 @@ import { otherGermanyEvPrefixes } from "./germany-ev-source";
 //    prices with `taxes: [VAT 19%]` and `tax_included: false`, Wirelane
 //    publishes gross, Chargecloud publishes no tax data at all. Ad-hoc
 //    charging is a consumer price and PAngV requires it gross, so "no tax
-//    data" is read as gross. A price marked net with no rate gets German
-//    VAT. See grossPrice().
+//    data" is read as gross. A price marked net with no rate, or a rate of
+//    0, gets German VAT. Some EcoMovement tariffs (TotalEnergies) give the
+//    rate as a fraction ("0.19"), which is read as 19 %. See grossPrice().
 //
 // 3. TIME components read as per minute here, not OCPI's per hour. Every
 //    one seen is a blocking fee starting 30-240 min in (EnBW 0.2017 net
@@ -204,12 +205,10 @@ export interface TariffSummary {
 /** A component's price with VAT, rounded to 4 dp. See header note 2. */
 export function grossPrice(component: PriceComponent, tariff: Pick<OcpdbTariff, "tax_included">): number {
   const included = component.tax_included ?? (tariff.tax_included === "NO" ? false : true);
-  // Marked net but no rate given: the price is still net, so add German VAT.
-  const vat = included
-    ? 0
-    : component.taxes?.length
-      ? component.taxes.reduce((sum, t) => sum + t.percentage, 0)
-      : DE_VAT_PCT;
+  // A rate below 1 is a fraction ("0.19"), not a fraction of a percent.
+  const rate = (component.taxes ?? []).reduce((sum, t) => sum + (t.percentage < 1 ? t.percentage * 100 : t.percentage), 0);
+  // Marked net but no rate (or 0) given: the price is still net, so add German VAT.
+  const vat = included ? 0 : rate > 0 ? rate : DE_VAT_PCT;
   return Math.round(component.price * (1 + vat / 100) * 10_000) / 10_000;
 }
 

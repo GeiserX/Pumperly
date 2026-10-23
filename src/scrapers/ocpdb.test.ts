@@ -86,6 +86,15 @@ describe("grossPrice", () => {
     expect(grossPrice({ type: "ENERGY", price: 0.42 }, { tax_included: "NO" })).toBe(0.4998);
     expect(grossPrice({ type: "ENERGY", price: 0.42, taxes: [], tax_included: false }, { tax_included: null })).toBe(0.4998);
   });
+
+  // Values as the schema hands them over; the raw payloads are in the fetch tests.
+  it("reads a rate given as a fraction as a percentage", () => {
+    expect(grossPrice({ type: "ENERGY", price: 0.66386555, taxes: [{ percentage: 0.19 }], tax_included: false }, { tax_included: "NO" })).toBe(0.79);
+  });
+
+  it("adds German VAT to a net price whose rate is 0", () => {
+    expect(grossPrice({ type: "ENERGY", price: 0.5798, taxes: [{ percentage: 0 }], tax_included: false }, { tax_included: "NO" })).toBe(0.69);
+  });
 });
 
 describe("summarizeTariff", () => {
@@ -403,7 +412,9 @@ describe("OcpdbScraper.fetch", () => {
   const page = (items: unknown[], total = items.length) => json({ items, total_count: total });
 
   /** Routes each URL to a page; records every URL requested. */
-  function stubApi(opts: { sources?: unknown[]; locationsTotal?: number; failOnce?: string; failAlways?: string } = {}) {
+  function stubApi(
+    opts: { sources?: unknown[]; tariffs?: unknown[]; locationsTotal?: number; failOnce?: string; failAlways?: string } = {},
+  ) {
     const urls: string[] = [];
     const failed = new Set<string>();
     vi.stubGlobal(
@@ -426,7 +437,7 @@ describe("OcpdbScraper.fetch", () => {
             ],
           });
         }
-        if (url.includes("/tariffs?")) return page([ENBW, CHARGECLOUD]);
+        if (url.includes("/tariffs?")) return page(opts.tariffs ?? [ENBW, CHARGECLOUD]);
         if (url.includes("/tariff-associations?")) {
           return page([
             { tariff_id: ENBW.id, audience: "AD_HOC_PAYMENT", evses: [{ evse_uid: "enbw" }] },
@@ -466,6 +477,32 @@ describe("OcpdbScraper.fetch", () => {
     expect(stations).toHaveLength(1);
     expect(prices).toEqual([expect.objectContaining({ fuelType: "EV", price: 0.79 })]);
     expect(vi.mocked(console.log).mock.calls.flat().join(" ")).toMatch(/1 unparseable/);
+  });
+
+  // TotalEnergies tariffs on EcoMovement (132622, 132721, 132724, 133685) give
+  // the rate as a fraction; 132725 gives a net price with a rate of "0". Both
+  // are 0.79 / 0.69 gross. The ids stand in for the stub's associations.
+  it("prices the live VAT shapes gross", async () => {
+    const net = (price: number, percentage: string) => ({
+      type: "ENERGY",
+      price,
+      taxes: [{ percentage }],
+      tax_included: false,
+      step_size: 1,
+    });
+    stubApi({
+      locationsTotal: 1001,
+      tariffs: [
+        { id: ENBW.id, source: "datex2_enbw", currency: "EUR", tax_included: "NO", elements: [{ price_components: [net(0.66386555, "0.19000000000000000000")] }] },
+        { id: CHARGECLOUD.id, source: "datex2_chargecloud", currency: "EUR", tax_included: "NO", elements: [{ price_components: [net(0.5798, "0")] }] },
+      ],
+    });
+    const { OcpdbScraper } = await import("./ocpdb");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const { prices } = await new OcpdbScraper().fetch();
+
+    expect(prices.map((p) => p.price).sort()).toEqual([0.69, 0.79]);
   });
 
   it("leaves a dead feed's chargers on the map without a price", async () => {
