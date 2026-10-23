@@ -313,6 +313,15 @@ describe("pruneCandidates", () => {
     expect(pruneCandidates(stations, 1000, 7).length).toBeLessThanOrEqual(7);
   });
 
+  it("weighs the stop fee when picking a bucket's cheapest", () => {
+    // Over a 40 kWh charge "fee" costs 0.39 + 10/40 = 0.64 per kWh, "nofee" 0.45.
+    const fee = { ...st("fee", 0.1, 0.39, 5), stopFee: 10 };
+    const nofee = st("nofee", 0.2, 0.45, 5);
+    const fillers = Array.from({ length: 250 }, (_, i) => st(`F${i}`, i * 0.001, 0.6, 1));
+    expect(pruneCandidates([...fillers, fee, nofee], 1000, 200, 40).map((s) => s.id)).toContain("nofee");
+    expect(pruneCandidates([...fillers, fee, nofee], 1000, 200).map((s) => s.id)).not.toContain("nofee");
+  });
+
   it("returns the input untouched under the cap", () => {
     const stations = [st("A", 1, 1), st("B", 2, 1)];
     expect(pruneCandidates(stations, 10, 200)).toBe(stations);
