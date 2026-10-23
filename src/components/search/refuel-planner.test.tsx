@@ -430,25 +430,32 @@ describe("RefuelPlanner", () => {
       expect(input.timeValuePerHour).toBe(15);
       expect(screen.getByText(/planner.timeValue/)).toBeInTheDocument();
       expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(2);
+      // Every stop priced: the plan shows its total cost.
+      expect(screen.getByText(/ · \d+\.\d\d €$/)).toBeInTheDocument();
     });
 
     // Munich to Vienna: German chargers carry OCPDB prices, Austrian ones none.
-    it("keeps unpriced chargers in a priced plan, at 0 and with no cost shown", async () => {
+    it("keeps unpriced chargers in a priced plan, at the median price and with no cost shown", async () => {
       const chargers = [
         makeStation("de", { brand: "EnBW", price: 0.79, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),
+        makeStation("de2", { brand: "Aral", price: 0.59, fuelType: "EV", routeFraction: 0.1, detourMin: 30 }),
         makeStation("at", { brand: "Smatrics", price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
       ];
       const { onPlanChange } = renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
       await userEvent.click(screen.getByText("planner.titleEv"));
       const input = planSpy.mock.lastCall![0];
+      // Neither free nor dropped: the median of the priced ones, 0.69.
       expect(input.stations).toEqual([
         expect.objectContaining({ id: "de", price: 0.79 }),
-        expect.objectContaining({ id: "at", price: 0 }),
+        expect.objectContaining({ id: "de2", price: 0.59 }),
+        expect.objectContaining({ id: "at", price: 0.69 }),
       ]);
       expect(input.timeValuePerHour).toBe(15);
       expect(onPlanChange.mock.lastCall![0].map((s: { id: string }) => s.id)).toEqual(["de", "at"]);
       expect(screen.getAllByText(/^\d+\.\d\d € · \+\d+\.\d kWh$/)).toHaveLength(1);
       expect(screen.getAllByText(/^\+\d+\.\d kWh$/)).toHaveLength(1);
+      // An estimated stop: no total cost.
+      expect(screen.queryByText(/ · \d+\.\d\d €$/)).not.toBeInTheDocument();
     });
 
     it("still drops chargers priced in another currency or above the price filter", async () => {

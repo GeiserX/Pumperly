@@ -107,11 +107,23 @@ export function RefuelPlanner({
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
   // EV plans use money only when some charger the filters leave has a price in
-  // the display currency. Chargers without a price still compete, at 0: most
+  // the display currency. Chargers without a price still compete: most
   // countries publish none, and dropping them could leave a cross-border route
-  // with no plan. With no such priced charger, only detour and charging time count.
-  const evPriced = ev && stations.some(({ properties: p }) =>
-    evEligible(p, maxDetour, minChargerKw) && p.price != null && p.price > 0 && p.currency === currency && (maxPrice == null || p.price <= maxPrice));
+  // with no plan. They are costed at the median of the priced ones, so they
+  // are neither free (and picked everywhere) nor penalised. With no such
+  // priced charger, only detour and charging time count.
+  const evMedianPrice = useMemo(() => {
+    if (!ev) return null;
+    const prices = stations
+      .map(({ properties: p }) => p)
+      .filter((p) => evEligible(p, maxDetour, minChargerKw) && p.price != null && p.price > 0 && p.currency === currency && (maxPrice == null || p.price <= maxPrice))
+      .map((p) => p.price as number)
+      .sort((a, b) => a - b);
+    if (prices.length === 0) return null;
+    const mid = Math.floor(prices.length / 2);
+    return prices.length % 2 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
+  }, [ev, stations, maxDetour, minChargerKw, currency, maxPrice]);
+  const evPriced = evMedianPrice != null;
   const usesMoney = !ev || evPriced;
 
   // The time value is stored in EUR: without a rate for the display currency it
@@ -141,7 +153,8 @@ export function RefuelPlanner({
         if (p.detourMin == null || !evEligible(p, maxDetour, minChargerKw)) return [];
         if (maxPrice != null && p.price != null && p.price > maxPrice && p.currency === currency) return [];
         const base = { id: p.id, km: (p.routeFraction ?? 0) * routeKm, detourMin: p.detourMin, minutesPerPct: minutesPerPct(evProfile, p.powerKw) };
-        if (!evPriced || p.price == null || p.price <= 0) return [{ ...base, price: 0 }];
+        if (!evPriced) return [{ ...base, price: 0 }];
+        if (p.price == null || p.price <= 0) return [{ ...base, price: evMedianPrice }];
         if (p.currency !== currency) return [];
         // The session fee is in the tariff's own currency; the price is already converted.
         const fee = p.evFees?.sessionFee;
@@ -165,7 +178,7 @@ export function RefuelPlanner({
       maxStops: maxStopsFor(routeKm, capacity, consumption, reservePct, maxChargePct),
       maxChargePct,
     });
-  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evPriced, usesMoney, evProfile, minChargerKw, maxPrice, maxDetour, currency, convert, capacity, consumption, maxChargePct, startPct, arrival, reservePct, timeValue]);
+  }, [open, ratesMissing, detoursPending, routeKm, stations, ev, evPriced, evMedianPrice, usesMoney, evProfile, minChargerKw, maxPrice, maxDetour, currency, convert, capacity, consumption, maxChargePct, startPct, arrival, reservePct, timeValue]);
 
   useEffect(() => {
     const stops = plan?.status === "ok"
@@ -388,7 +401,10 @@ export function RefuelPlanner({
                   <span className="font-bold tabular-nums text-gray-900 dark:text-gray-50">
                     {ev
                       ? `${kwh(plan.stops.reduce((sum, s) => sum + s.litres, 0))} · ${minutes(plan.totalChargeMin)}` +
-                        (evPriced ? ` · ${money(plan.totalFuelCost)}` : "")
+                        // An unpriced stop is costed at an estimate, so no total is shown then.
+                        (evPriced && plan.stops.every((s) => (byId.get(s.id)?.properties.price ?? 0) > 0)
+                          ? ` · ${money(plan.totalFuelCost)}`
+                          : "")
                       : money(plan.totalFuelCost)}
                   </span>
                 </div>
