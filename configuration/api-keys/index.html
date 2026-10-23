@@ -2059,7 +2059,7 @@
 <td><a href="#open-charge-map"><code>PUMPERLY_OCM_API_KEY</code></a></td>
 <td>Open Charge Map</td>
 <td>EV chargers in every country without an official registry</td>
-<td>No chargers from Open Charge Map. Germany still gets chargers from BNetzA.</td>
+<td>No chargers from Open Charge Map. Germany still gets chargers from OCPDB.</td>
 </tr>
 <tr>
 <td><a href="#mapa-reve-spain"><code>PUMPERLY_REVE_API_KEY</code></a></td>
@@ -2075,7 +2075,7 @@
 </tr>
 </tbody>
 </table>
-<p>Every other source, in every other country, is keyless. That includes Germany's charger registry, the <a href="../../data/ev-sources/">BNetzA Ladesäulenregister</a>. <a href="../../data/fuel-sources/">Fuel price sources</a> and <a href="../../data/ev-sources/">EV charging sources</a> list them all.</p>
+<p>Every other source, in every other country, is keyless. That includes Germany's charger sources, the <a href="../../data/ev-sources/#ocpdb">Open ChargePoint Database</a> and the <a href="../../data/ev-sources/#bnetza">BNetzA Ladesäulenregister</a>. <a href="../../data/fuel-sources/">Fuel price sources</a> and <a href="../../data/ev-sources/">EV charging sources</a> list them all.</p>
 <h2 id="setting-a-key">Setting a key<a class="headerlink" href="#setting-a-key" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Docker Compose</label><label for="__tabbed_1_2">Helm</label><label for="__tabbed_1_3">Source checkout</label></div>
 <div class="tabbed-content">
@@ -2154,7 +2154,7 @@
 <li><strong>Variable:</strong> <a href="../../reference/environment-variables/#pumperly_ocm_api_key"><code>PUMPERLY_OCM_API_KEY</code></a>.</li>
 <li><strong>How it is used:</strong> the key goes in the <code>X-API-Key</code> header. Each <code>EV_&lt;CC&gt;</code> scraper runs once a day by default. A small country takes one request. The API returns at most 5,000 chargers per request, so for a large country the scraper splits the map into smaller boxes. By default it sends one request at a time across all countries, with 600 ms between requests, and at most 800 requests per country per run. <a href="../../reference/environment-variables/#open-charge-map-tuning">Open Charge Map tuning</a> lists the settings.</li>
 <li>
-<p><strong>Without it:</strong> every Open Charge Map scraper skips its run and writes nothing. Chargers already in the database stay. Germany still gets chargers from the keyless BNetzA register, and Spain from REVE if you set that key. The log shows, for each country:</p>
+<p><strong>Without it:</strong> every Open Charge Map scraper skips its run and writes nothing. Chargers already in the database stay. Germany still gets chargers from the keyless OCPDB, and Spain from REVE if you set that key. The log shows, for each country:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>[ocm] PUMPERLY_OCM_API_KEY not set, skipping
 </code></pre></div>
 </li>

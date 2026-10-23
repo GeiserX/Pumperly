@@ -2217,7 +2217,7 @@
 <p>A station link without a valid <code>lat</code> and <code>lng</code> is ignored, and the map opens as usual.</p>
 <h2 id="the-ev-rule">The EV rule<a class="headerlink" href="#the-ev-rule" title="Permanent link">&para;</a></h2>
 <p><strong>A link to an EV charger must carry <code>fuel=EV</code>.</strong></p>
-<p>The map loads stations for one fuel at a time. On a fuel layer it loads only stations with a price for that fuel. Chargers have no price, so they load only on the EV layer.</p>
+<p>The map loads stations for one fuel at a time. A layer other than EV loads only stations with a price for that fuel. A charger's only price, when it has one, is an <code>EV</code> price, so it loads only on the EV layer.</p>
 <p>A charger link without <code>fuel=EV</code> opens on the instance's default fuel. The charger never loads, so the popup never opens. You land on the right spot, but the charger is not there.</p>
 <p>The <strong>Copy link</strong> and <strong>Share</strong> buttons in the popup always add the fuel of the layer you opened it from. Links from the app are correct. Keep <code>fuel=EV</code> when you build or edit a charger link by hand.</p>
 <p>The same logic applies to fuel stations. A link with <code>fuel=LPG</code> finds a station only when it has an LPG price.</p>

@@ -2465,7 +2465,7 @@
 <p><strong>What it selects:</strong></p>
 <ul>
 <li>For a fuel other than <code>EV</code>, a station is returned only if it has at least one price for that fuel. The price shown is the newest one by <code>reported_at</code>.</li>
-<li>For <code>EV</code>, it returns every station whose type is <code>ev_charger</code> or <code>both</code>. These features have no <code>price</code> and no <code>reportedAt</code>. Their <code>currency</code> is always <code>EUR</code> and means nothing.</li>
+<li>For <code>EV</code>, it returns every station whose type is <code>ev_charger</code> or <code>both</code>, priced or not. A charger with an <code>EV</code> price row carries its newest <code>price</code> per kWh, its <code>currency</code>, <code>reportedAt</code> and any <code>evFees</code>. Unpriced chargers have no <code>price</code> and no <code>reportedAt</code>, and their <code>currency</code> is <code>EUR</code> and means nothing.</li>
 </ul>
 <p><strong>Limit:</strong> at most 20,000 features. The query has no <code>ORDER BY</code>, so a box with more stations returns an arbitrary 20,000. Nothing in the response says it was cut. The server logs <code>[stations] result truncated at 20000</code>. Ask for a smaller box if you need them all.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"https://pumperly.com/api/stations?bbox=-3.75,40.38,-3.65,40.45&amp;fuel=B7"</span>
@@ -2975,22 +2975,27 @@
 <tr>
 <td><code>currency</code></td>
 <td>yes</td>
-<td>ISO 4217 code of <code>price</code>. <code>EUR</code> on EV chargers, where it carries no meaning.</td>
+<td>ISO 4217 code of <code>price</code>. <code>EUR</code> on unpriced EV chargers, where it carries no meaning.</td>
 </tr>
 <tr>
 <td><code>price</code></td>
 <td>no</td>
-<td>Latest price for <code>fuelType</code>, in <code>currency</code>. Absent on EV chargers.</td>
+<td>Latest price for <code>fuelType</code>, in <code>currency</code>. Per kWh for <code>EV</code>. Absent on unpriced EV chargers.</td>
 </tr>
 <tr>
 <td><code>reportedAt</code></td>
 <td>no</td>
-<td>ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. Absent on EV chargers.</td>
+<td>ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers.</td>
 </tr>
 <tr>
 <td><code>powerKw</code></td>
 <td>no</td>
 <td>EV chargers only: highest single-connector power in kW. Absent when the source publishes none.</td>
+</tr>
+<tr>
+<td><code>evFees</code></td>
+<td>no</td>
+<td>EV chargers only: fees on top of <code>price</code>, in the price's currency. Shaped like the <a href="../data-model/#ev_fees"><code>ev_fees</code></a> column. Absent when there are none.</td>
 </tr>
 <tr>
 <td><code>distanceKm</code></td>

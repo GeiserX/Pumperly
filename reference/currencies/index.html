@@ -2560,6 +2560,7 @@
 <p>The rules live in <code>BaseScraper.run()</code> in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/base.ts"><code>src/scrapers/base.ts</code></a>. For each price, in this order:</p>
 <ol>
 <li>A price of zero or less is dropped.</li>
+<li><code>EV</code> prices are per kWh. They are kept only in <code>EUR</code>, from 0.10 to 2.00. The rest of this list does not apply to them.</li>
 <li><code>CNG</code>, <code>LNG</code>, <code>H2</code> and <code>ADBLUE</code> are kept if the price is at least 0.05 and below 100, whatever the currency. The rest of this list does not apply to them.</li>
 <li>A price in <code>EUR</code>, <code>GBP</code> or <code>CHF</code> is kept if it is from <a href="../environment-variables/#pumperly_price_min"><code>PUMPERLY_PRICE_MIN</code></a> to <a href="../environment-variables/#pumperly_price_max"><code>PUMPERLY_PRICE_MAX</code></a>. The defaults are 0.30 and 4.00. The same two numbers apply to all three currencies.</li>
 <li>Any other currency is checked against its row in the table below. Both ends are inclusive.</li>

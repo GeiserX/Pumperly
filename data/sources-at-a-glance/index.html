@@ -2118,6 +2118,11 @@
 <td>Non-commercial, attribution required</td>
 </tr>
 <tr>
+<td><a href="https://api.mobidata-bw.de/ocpdb/">Open ChargePoint Database</a> (MobiData BW)</td>
+<td>Germany — the Ladesäulenregister merged with operator feeds, with ad-hoc prices</td>
+<td>dl-de/by-2-0 (MobiData BW); the register and EnBW are CC BY 4.0</td>
+</tr>
+<tr>
 <td><a href="https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html">Ladesäulenregister</a> (Bundesnetzagentur)</td>
 <td>Germany — official operator-reported registry, ~74,000 locations</td>
 <td>CC BY 4.0, attribution "Bundesnetzagentur.de"</td>
@@ -2125,7 +2130,7 @@
 </tbody>
 </table>
 <p>Spain uses Mapa REVE when <code>PUMPERLY_REVE_API_KEY</code> is set: it is the registry every Spanish charge point operator files into, so it is authoritative where Open Charge Map is crowdsourced. The two overlap heavily, so Open Charge Map stops being scraped for Spain immediately, its existing Spanish rows stay visible while REVE backfills, and they are deleted once REVE reaches 95% of the registry. Expect duplicate Spanish pins until then.</p>
-<p>Germany uses the BNetzA Ladesäulenregister by default — no API key, no signup. Every operator of a publicly accessible charge point must file into it under §5 Ladesäulenverordnung, so like REVE it is authoritative where Open Charge Map is crowdsourced, and it is several times larger. It arrives as one daily bulk file, so there is no backfill period: Open Charge Map stops being scraped for Germany, and its existing German rows are retired on the first healthy run. Set <code>PUMPERLY_DE_EV_SOURCE=ocm</code> to keep Open Charge Map instead.</p>
+<p>Germany uses the Open ChargePoint Database (OCPDB) by default — no API key, no signup. It contains the BNetzA Ladesäulenregister, which every operator of a publicly accessible charge point must file into under §5 Ladesäulenverordnung, and merges it with the operators' own feeds, which carry ad-hoc prices. It is read in full every 6 hours, so there is no backfill period: Open Charge Map and BNetzA stop being scraped for Germany, and their existing German rows are retired on the first healthy run. Set <code>PUMPERLY_DE_EV_SOURCE=bnetza</code> to use the register alone, without prices, or <code>ocm</code> to keep Open Charge Map.</p>
 <h2 id="map-routing">Map &amp; routing<a class="headerlink" href="#map-routing" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

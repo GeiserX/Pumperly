@@ -1009,7 +1009,7 @@
   <a href="#the-three-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The three sources
+        The sources
       
     </span>
   </a>
@@ -1160,6 +1160,78 @@
     <span class="md-ellipsis">
       
         Renewing the key
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ocpdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open ChargePoint Database (OCPDB), Germany
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open ChargePoint Database (OCPDB), Germany">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the data is read
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a price is chosen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-bad-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Records that do not parse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-feed-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the feed health is unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup after each run
       
     </span>
   </a>
@@ -2026,7 +2098,7 @@
   <a href="#the-three-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The three sources
+        The sources
       
     </span>
   </a>
@@ -2189,6 +2261,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ocpdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open ChargePoint Database (OCPDB), Germany
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open ChargePoint Database (OCPDB), Germany">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the data is read
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a price is chosen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-bad-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Records that do not parse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-feed-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the feed health is unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ocpdb-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup after each run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bnetza" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2275,8 +2419,8 @@
 
 
 <h1 id="ev-charging-sources">EV charging sources<a class="headerlink" href="#ev-charging-sources" title="Permanent link">&para;</a></h1>
-<p>This page describes where Pumperly's EV charging locations come from, how each source is read and which settings tune it. EV chargers carry a location, an operator and an address. They carry no price.</p>
-<h2 id="the-three-sources">The three sources<a class="headerlink" href="#the-three-sources" title="Permanent link">&para;</a></h2>
+<p>This page describes where Pumperly's EV charging locations come from, how each source is read and which settings tune it. EV chargers carry a location, an operator and an address. German chargers from OCPDB also carry a price per kWh and any fees on top. Every other charger has no price.</p>
+<h2 id="the-three-sources">The sources<a class="headerlink" href="#the-three-sources" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -2303,6 +2447,13 @@
 <td>Non-commercial use, credit Red Eléctrica de España</td>
 </tr>
 <tr>
+<td><a href="#ocpdb">Open ChargePoint Database (OCPDB)</a></td>
+<td>Germany, with prices</td>
+<td>None</td>
+<td>6 h</td>
+<td>dl-de/by-2-0 (MobiData BW); the register and EnBW are CC BY 4.0</td>
+</tr>
+<tr>
 <td><a href="#bnetza">BNetzA Ladesäulenregister</a></td>
 <td>Germany</td>
 <td>None</td>
@@ -2311,18 +2462,19 @@
 </tr>
 </tbody>
 </table>
-<p>Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced.</p>
-<p>None of the three publishes a per-litre price. Mapa REVE publishes connector tariffs, but they are per kWh and per session, which the price model cannot hold, so they are left out.</p>
+<p>Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced. OCPDB contains the BNetzA register and adds the operators' own feeds, which carry ad-hoc tariffs.</p>
+<p>Only OCPDB's prices are stored. Mapa REVE also publishes connector tariffs, but its scraper leaves them out.</p>
 <h2 id="which-source">Which source a country uses<a class="headerlink" href="#which-source" title="Permanent link">&para;</a></h2>
-<p>Every other country uses Open Charge Map. Spain and Germany each have a second, official source, and each uses exactly one of its two sources at a time. Running both would put two pins on almost every charger, because the sources overlap heavily.</p>
+<p>Every other country uses Open Charge Map. Spain and Germany also have official sources, and each country uses exactly one source at a time. Running two would put two pins on almost every charger, because the sources overlap heavily.</p>
 <pre class="mermaid"><code>flowchart TD
     ES[Spain] --&gt; K{PUMPERLY_REVE_API_KEY set?}
     K -- Yes --&gt; REVE[Mapa REVE, EV_ES_REVE]
     K -- No --&gt; OCMES[Open Charge Map, EV_ES]
-    DE[Germany] --&gt; S{PUMPERLY_DE_EV_SOURCE=ocm?}
-    S -- Yes --&gt; OCMDE[Open Charge Map, EV_DE]
-    S -- No --&gt; BNETZA[BNetzA register, EV_DE_BNETZA]</code></pre>
-<p>The scheduler and the manual scraper command apply the same rule, from <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain-ev-source.ts"><code>spain-ev-source.ts</code></a> and <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany-ev-source.ts"><code>germany-ev-source.ts</code></a>. In the scheduler, <code>PUMPERLY_EV_ENABLED=0</code> turns off all three sources at once.</p>
+    DE[Germany] --&gt; S{PUMPERLY_DE_EV_SOURCE}
+    S -- ocm --&gt; OCMDE[Open Charge Map, EV_DE]
+    S -- bnetza --&gt; BNETZA[BNetzA register, EV_DE_BNETZA]
+    S -- anything else --&gt; OCPDB[OCPDB, EV_DE_OCPDB]</code></pre>
+<p>The scheduler and the manual scraper command apply the same rule, from <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain-ev-source.ts"><code>spain-ev-source.ts</code></a> and <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany-ev-source.ts"><code>germany-ev-source.ts</code></a>. In the scheduler, <code>PUMPERLY_EV_ENABLED=0</code> turns off every EV source at once.</p>
 <div class="admonition warning">
 <p class="admonition-title">Naming a source by hand overrides the rule</p>
 <p>The manual command <code>npm run scraper:run -- --country=all</code> picks one source per country, like the scheduler. Naming a scraper explicitly, such as <code>--country=EV_ES</code>, runs it even when the other source is active. One such run puts back every Open Charge Map row the registry had retired. They stay, as duplicates, until the registry's next error-free run deletes them again.</p>
@@ -2368,7 +2520,7 @@
 <li><strong>Town and province:</strong> as Open Charge Map records them.</li>
 </ul>
 <h3 id="ocm-without-a-key">Without an API key<a class="headerlink" href="#ocm-without-a-key" title="Permanent link">&para;</a></h3>
-<p>The scrapers still run on schedule. Each one logs <code>PUMPERLY_OCM_API_KEY not set, skipping</code> and writes nothing. Because the run returned no stations, the scheduler reports it with one error. German chargers still load from the BNetzA register, which needs no key.</p>
+<p>The scrapers still run on schedule. Each one logs <code>PUMPERLY_OCM_API_KEY not set, skipping</code> and writes nothing. Because the run returned no stations, the scheduler reports it with one error. German chargers still load from OCPDB or the BNetzA register, which need no key.</p>
 <h3 id="ocm-tiling">How a large country is fetched<a class="headerlink" href="#ocm-tiling" title="Permanent link">&para;</a></h3>
 <p>Open Charge Map returns at most 5,000 results per request and cuts the rest off without saying so. Small countries fit in one request. Large ones, such as the United States, Germany, the United Kingdom and France, do not.</p>
 <p>The first request for a country has no bounding box. When it comes back full, the scraper splits the whole world into four boxes and asks for each one, still filtered by country code. It keeps splitting any box that comes back full. Boxes share edges, so results are merged by their Open Charge Map id.</p>
@@ -2642,6 +2794,97 @@
 <a id="__codelineno-2-91" name="__codelineno-2-91" href="#__codelineno-2-91"></a><span class="w">          </span><span class="no">fi</span>
 </code></pre></div>
 </details>
+<h2 id="ocpdb">Open ChargePoint Database (OCPDB), Germany<a class="headerlink" href="#ocpdb" title="Permanent link">&para;</a></h2>
+<p>The <a href="https://api.mobidata-bw.de/ocpdb/">Open ChargePoint Database</a> is run by MobiData BW for the state of Baden-Württemberg, but covers all of Germany. It merges the BNetzA register with the operators' own DATEX II feeds from Mobilithek: EnBW, EcoMovement, Chargecloud, Wirelane, e-clearing.net, Tesla and others. Those feeds carry ad-hoc tariffs, the price a driver pays without a contract, for about 97,000 charge points. It is Germany's default source. The code is in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/ocpdb.ts"><code>src/scrapers/ocpdb.ts</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source key</td>
+<td><code>ocpdb</code></td>
+</tr>
+<tr>
+<td>Scraper key</td>
+<td><code>EV_DE_OCPDB</code></td>
+</tr>
+<tr>
+<td>Station ids</td>
+<td><code>ocpdb-&lt;latitude&gt;_&lt;longitude&gt;</code></td>
+</tr>
+<tr>
+<td>Every</td>
+<td>6 h</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Licence</td>
+<td>The bundle is <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>, credited to MobiData BW. Within it the register and EnBW are CC BY 4.0. Some feeds declare no licence of their own, so the bundle's licence is the one that covers them. The attribution is in the app's legal notice.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ocpdb-reading">How the data is read<a class="headerlink" href="#ocpdb-reading" title="Permanent link">&para;</a></h3>
+<p>Each run reads four endpoints in parallel: locations, tariffs, the links from tariffs to charge points, and the health of each operator feed. The OCPI endpoints are paged, 1,000 items per request. Each page, and the feed-health request, is retried once.</p>
+<ul>
+<li><strong>Only German locations with a live charge point are kept.</strong> Locations outside a padded bounding box around Germany, and charge points marked removed or planned, are skipped and counted.</li>
+<li><strong>Locations within 25 m merge into one pin.</strong> A charger reported by its operator is often in the register too, under another operator name and a few metres away. When the register lists the charger, its location anchors the pin, so the coordinates are the official ones. The station id is built from the anchor's coordinates.</li>
+<li><strong>The brand is the operator,</strong> and the name joins the operator and the site. When a merged location supplies the pin's price, its operator becomes the brand, so a pin never shows one operator's name next to another's price.</li>
+</ul>
+<p>Each run logs what it read:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>[ocpdb] DE: &lt;tariffs&gt; tariffs → &lt;n&gt; priced EVSEs; &lt;locations&gt; locations → &lt;stations&gt; stations, &lt;n&gt; priced (merged &lt;n&gt;, skipped &lt;n&gt; without live EVSE, &lt;n&gt; outside DE, &lt;n&gt; unparseable)
+</code></pre></div>
+<h3 id="ocpdb-prices">How a price is chosen<a class="headerlink" href="#ocpdb-prices" title="Permanent link">&para;</a></h3>
+<p>A charger can have several tariffs. The pin shows one:</p>
+<ol>
+<li><strong>Only ad-hoc tariffs count.</strong> Tariffs for contract customers, and links with no audience, are skipped.</li>
+<li><strong>Only tariffs from healthy feeds count.</strong> A feed that OCPDB marks as failed, or that has not refreshed in <a href="../../reference/environment-variables/#pumperly_ocpdb_max_feed_age_days"><code>PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS</code></a> days, has its tariffs ignored, and its chargers show unpriced. The price's <code>reported_at</code> is when its feed last refreshed.</li>
+<li><strong>Prices are gross.</strong> Ad-hoc charging is a consumer price, and German law requires it shown with VAT. A price marked net gets the VAT rate it lists, or 19 % when it lists none. A price with no tax data is read as gross.</li>
+<li><strong>Prices outside EUR 0.10 to 2.00 per kWh are dropped</strong> before the cheapest is picked, so a bogus 0.00 cannot hide a real price.</li>
+<li><strong>The cheapest at the pin's top power wins,</strong> with the session fee spread over a 30 kWh session, so a low rate cannot hide a large fee. The price shown is the one paid at the kW shown next to it. When no charger at the top power has a price, the cheapest of the same class stands in (DC from 50 kW, AC below). A DC pin never shows an AC rate: it stays unpriced instead.</li>
+</ol>
+<p>The fees on top of the per-kWh price are stored in <a href="../../reference/data-model/#ev_fees"><code>ev_fees</code></a>:</p>
+<ul>
+<li><strong>Session fee:</strong> fixed fees that always apply are added up. When the fee depends on the time of day, the weekday or other conditions, every option is kept and the popup lists them. The highest is the one used to rank tariffs and to cost a planned stop.</li>
+<li><strong>Per-minute fee:</strong> the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute. As in OCPI, the first time charge that always applies wins, so later copies of it are ignored (Chargecloud lists a free one first, then the real fee after 4 hours, then copies). Two feed errors are dropped: a time charge equal to the tariff's kWh price, and anything above 0.30 per minute, which no operator charges.</li>
+</ul>
+<h3 id="ocpdb-bad-records">Records that do not parse<a class="headerlink" href="#ocpdb-bad-records" title="Permanent link">&para;</a></h3>
+<p>A record the scraper cannot read is skipped and counted in the run's log line, so one bad location from a feed does not stop Germany from updating. When more than 0.5 % of the tariffs, the tariff associations or the locations fail to parse, the feed's shape has most likely changed: the run fails and writes nothing, and the stations and prices from the last good run stay.</p>
+<h3 id="ocpdb-feed-health">When the feed health is unavailable<a class="headerlink" href="#ocpdb-feed-health" title="Permanent link">&para;</a></h3>
+<p>Without the feed-health endpoint, no tariff can be vouched for, and a run without prices would delete the current ones. So when that request fails twice, the whole run fails and writes nothing. The stations and prices from the last good run stay until the next run.</p>
+<h3 id="ocpdb-cleanup">Cleanup after each run<a class="headerlink" href="#ocpdb-cleanup" title="Permanent link">&para;</a></h3>
+<p>Cleanup works as for <a href="#bnetza-cleanup">BNetzA</a>. After a run with no errors, if the run refreshed at least <a href="../../reference/environment-variables/#pumperly_ocpdb_min_stations"><code>PUMPERLY_OCPDB_MIN_STATIONS</code></a> stations, the scraper deletes:</p>
+<ol>
+<li><strong>OCPDB stations the run did not refresh.</strong> These left the database, or their anchor's coordinates changed, which changes the id.</li>
+<li><strong>Every German Open Charge Map and BNetzA charger.</strong> Once OCPDB has landed, those rows are duplicates.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUMPERLY_OCPDB_MIN_STATIONS</code></td>
+<td><code>10000</code></td>
+<td>Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default.</td>
+</tr>
+<tr>
+<td><code>PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS</code></td>
+<td><code>3</code></td>
+<td>Days a feed may go without refreshing before its tariffs are ignored. A value of 0 or less, or not a number, falls back to the default.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="bnetza">BNetzA Ladesäulenregister, Germany<a class="headerlink" href="#bnetza" title="Permanent link">&para;</a></h2>
 <p>The Ladesäulenregister is the German charging point register kept by the Bundesnetzagentur, the federal network agency. Every operator of a publicly accessible charge point must file into it under §5 of the Ladesäulenverordnung, the charging station ordinance. It holds about 74,000 locations. The code is in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/bnetza.ts"><code>src/scrapers/bnetza.ts</code></a>.</p>
 <table>
@@ -2678,22 +2921,26 @@
 </tr>
 </tbody>
 </table>
-<p>The register only lists operators who completed the notification procedure and agreed to publication, so it is not complete. It is still several times larger than Open Charge Map's German coverage.</p>
+<p>The register only lists operators who completed the notification procedure and agreed to publication, so it is not complete. It is still several times larger than Open Charge Map's German coverage. It has no prices: <a href="#ocpdb">OCPDB</a> contains the same register and adds them.</p>
 <h3 id="bnetza-source-choice">Choosing Germany's source<a class="headerlink" href="#bnetza-source-choice" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th><code>PUMPERLY_DE_EV_SOURCE</code></th>
+<th><code>PUMPERLY_DE_EV_SOURCE</code> (any case)</th>
 <th>Germany's EV source</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>unset, or any value other than <code>ocm</code></td>
+<td>unset, <code>ocpdb</code>, or any value not listed here</td>
+<td>OCPDB</td>
+</tr>
+<tr>
+<td><code>bnetza</code></td>
 <td>BNetzA register</td>
 </tr>
 <tr>
-<td><code>ocm</code> (any case)</td>
+<td><code>ocm</code></td>
 <td>Open Charge Map</td>
 </tr>
 </tbody>
@@ -2708,13 +2955,13 @@
 <li><strong>The brand is the operator.</strong> The name joins the operator, the address supplement (<code>Adresszusatz</code>) and the street.</li>
 </ul>
 <p>Each run logs how many rows it read, merged and skipped:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>[bnetza] DE: &lt;rows&gt; rows → &lt;stations&gt; stations (merged &lt;n&gt;, skipped &lt;n&gt; not operational, &lt;n&gt; out of bounds, &lt;n&gt; malformed)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[bnetza] DE: &lt;rows&gt; rows → &lt;stations&gt; stations (merged &lt;n&gt;, skipped &lt;n&gt; not operational, &lt;n&gt; out of bounds, &lt;n&gt; malformed)
 </code></pre></div>
 <h3 id="bnetza-cleanup">Cleanup after each run<a class="headerlink" href="#bnetza-cleanup" title="Permanent link">&para;</a></h3>
 <p>The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run refreshed. If the count reaches the safety floor, it makes two deletions:</p>
 <ol>
 <li><strong>BNetzA stations the run did not refresh.</strong> These left the register, or their operator corrected the coordinates, which changes the id.</li>
-<li><strong>Every German Open Charge Map charger.</strong> Once BNetzA has landed, those rows are duplicates.</li>
+<li><strong>Every German Open Charge Map and OCPDB charger.</strong> Once BNetzA has landed, those rows are duplicates.</li>
 </ol>
 <table>
 <thead>
@@ -2732,29 +2979,37 @@
 </tr>
 </tbody>
 </table>
-<p>The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires Open Charge Map on its strength.</p>
+<p>The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires the other sources on its strength.</p>
 <h2 id="switching-back">Switching a source back<a class="headerlink" href="#switching-back" title="Permanent link">&para;</a></h2>
-<p>The handovers only run in one direction. Registry runs delete Open Charge Map rows, but nothing deletes registry rows once their scraper stops running. If you switch Spain or Germany back to Open Charge Map, the registry's pins stay, and Open Charge Map adds its own next to them.</p>
-<p>To clear the old registry rows after switching back, delete them in <code>psql</code> against the Pumperly database:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Spain, after removing the REVE key</label><label for="__tabbed_1_2">Germany, after setting PUMPERLY_DE_EV_SOURCE=ocm</label></div>
+<p>Open Charge Map deletes nothing when it takes over. Official sources delete Open Charge Map's rows, and OCPDB and BNetzA delete each other's, but nothing deletes the official rows once their scraper stops running and Open Charge Map runs instead. If you switch Spain or Germany back to Open Charge Map, the official pins stay, and Open Charge Map adds its own next to them.</p>
+<p>Rolling back to a Pumperly release from before OCPDB has the same effect in Germany. That release's BNetzA scraper does not know the <code>ocpdb-</code> rows, so it leaves them in place and adds its own pins next to them, and every German charger shows twice.</p>
+<p>To clear the old rows after switching back, delete them in <code>psql</code> against the Pumperly database:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Spain, after removing the REVE key</label><label for="__tabbed_1_2">Germany, after setting PUMPERLY_DE_EV_SOURCE=ocm</label><label for="__tabbed_1_3">Germany, after rolling back to a release without OCPDB</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ES'</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'reve-%'</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ES'</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'reve-%'</span><span class="p">;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DE'</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'bnetza-%'</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DE'</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="p">(</span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'ocpdb-%'</span><span class="w"> </span><span class="k">OR</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'bnetza-%'</span><span class="p">);</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DE'</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'ocpdb-%'</span><span class="p">;</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<p>EV chargers have no price rows, so nothing else needs deleting. <a href="../../operations/backup-and-restore/">Backing up the database</a> explains how to take a backup first.</p>
+<p>A charger's prices are deleted with it, so nothing else needs deleting. <a href="../../operations/backup-and-restore/">Backing up the database</a> explains how to take a backup first.</p>
 
 
 

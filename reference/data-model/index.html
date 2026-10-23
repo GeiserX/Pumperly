@@ -1555,6 +1555,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="fuel_prices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ev_fees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ev_fees
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1914,6 +1931,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="fuel_prices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ev_fees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ev_fees
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2028,6 +2062,7 @@
         varchar currency
         timestamptz reported_at
         varchar source
+        jsonb ev_fees
     }</code></pre>
 <p>There are no user tables. Pumperly has no accounts, and the database holds nothing about visitors.</p>
 <h2 id="where-the-schema-is-defined">Where the schema is defined<a class="headerlink" href="#where-the-schema-is-defined" title="Permanent link">&para;</a></h2>
@@ -2072,7 +2107,7 @@
 <p>Scrapers insert stations and prices with SQL, not through the Prisma client. Their station insert sets <code>geom</code> and leaves <code>id</code> to the database default. A database therefore needs the <code>geom</code> column and the <code>id</code> default from the migrations, or every scraper insert fails. The map and route queries also rely on the GiST indexes to stay fast. Tools that build the tables from <code>schema.prisma</code> alone, such as <code>prisma db push</code>, create none of these.</p>
 </div>
 <p>The shipped files, included here word for word:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">schema.prisma</label><label for="__tabbed_1_2">Initial migration</label><label for="__tabbed_1_3">Geography index migration</label><label for="__tabbed_1_4">Price column migration</label><label for="__tabbed_1_5">Charger power migration</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:6"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><input id="__tabbed_1_6" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">schema.prisma</label><label for="__tabbed_1_2">Initial migration</label><label for="__tabbed_1_3">Geography index migration</label><label for="__tabbed_1_4">Price column migration</label><label for="__tabbed_1_5">Charger power migration</label><label for="__tabbed_1_6">EV fees migration</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>generator client {
@@ -2115,12 +2150,14 @@
 <a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>  currency   String   @default("EUR") @db.VarChar(3)
 <a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>  reportedAt DateTime @default(now()) @map("reported_at") @db.Timestamptz
 <a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>  source     String   @db.VarChar(50)
-<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>
-<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>  station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>  /// EV only: fees on top of the per-kWh price, shaped as EvFees (src/types/station.ts).
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>  evFees     Json?    @map("ev_fees")
 <a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>
-<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>  @@index([stationId, fuelType, reportedAt(sort: Desc)])
-<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>  @@map("fuel_prices")
-<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>}
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>  station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>  @@index([stationId, fuelType, reportedAt(sort: Desc)])
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>  @@map("fuel_prices")
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>}
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -2195,6 +2232,13 @@
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">-- power keep NULL. ADD COLUMN with no default is metadata-only, so it is</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">-- instant even on a full table.</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="ss">"stations"</span><span class="w"> </span><span class="k">ADD</span><span class="w"> </span><span class="k">COLUMN</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="ss">"max_power_kw"</span><span class="w"> </span><span class="nb">SMALLINT</span><span class="p">;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">-- Extra charges that come on top of an EV tariff's €/kWh, filled by the OCPDB</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">-- scraper, shaped as EvFees (src/types/station.ts), in the price's currency.</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">-- Nullable and metadata-only, like max_power_kw: fuel rows keep NULL.</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="ss">"fuel_prices"</span><span class="w"> </span><span class="k">ADD</span><span class="w"> </span><span class="k">COLUMN</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="ss">"ev_fees"</span><span class="w"> </span><span class="n">JSONB</span><span class="p">;</span>
 </code></pre></div>
 </div>
 </div>
@@ -2275,7 +2319,7 @@
 <td><code>max_power_kw</code></td>
 <td><code>smallint</code></td>
 <td>Yes</td>
-<td>EV chargers: highest single-connector power in kW, set by the BNetzA, OCM and REVE scrapers. <code>null</code> for fuel stations and chargers with no published power.</td>
+<td>EV chargers: highest single-connector power in kW, set by the OCPDB, BNetzA, OCM and REVE scrapers. <code>null</code> for fuel stations and chargers with no published power.</td>
 </tr>
 <tr>
 <td><code>created_at</code></td>
@@ -2308,8 +2352,8 @@
 </tr>
 <tr>
 <td><code>ev_charger</code></td>
-<td>OpenChargeMap, Mapa REVE and BNetzA scrapers</td>
-<td>The <code>EV</code> filter, without prices</td>
+<td>OCPDB, OpenChargeMap, Mapa REVE and BNetzA scrapers</td>
+<td>The <code>EV</code> filter, with the newest <code>EV</code> price when one exists</td>
 </tr>
 <tr>
 <td><code>both</code></td>
@@ -2353,7 +2397,7 @@
 <td><code>price</code></td>
 <td><code>decimal</code></td>
 <td>No</td>
-<td>Price per litre in <code>currency</code>, with three decimals. Gas fuels sold by weight, such as CNG in some countries, are per kilogram.</td>
+<td>Price per litre in <code>currency</code>, with three decimals. Gas fuels sold by weight, such as CNG in some countries, are per kilogram. <code>EV</code> prices are per kWh.</td>
 </tr>
 <tr>
 <td><code>currency</code></td>
@@ -2365,7 +2409,7 @@
 <td><code>reported_at</code></td>
 <td><code>timestamptz</code></td>
 <td>No</td>
-<td>When Pumperly wrote the price, not when the source last changed it.</td>
+<td>When Pumperly wrote the price, not when the source last changed it. The OCPDB scraper is the exception: it writes when the tariff's operator feed last refreshed.</td>
 </tr>
 <tr>
 <td><code>source</code></td>
@@ -2373,9 +2417,43 @@
 <td>No</td>
 <td>The name of the scraper source that wrote the row. See <a href="#source"><code>source</code></a>.</td>
 </tr>
+<tr>
+<td><code>ev_fees</code></td>
+<td><code>jsonb</code></td>
+<td>Yes</td>
+<td><code>EV</code> rows only: charges on top of the per-kWh price, in <code>currency</code>. See <a href="#ev_fees"><code>ev_fees</code></a>. <code>null</code> for fuel rows and for tariffs with no extra charges.</td>
+</tr>
 </tbody>
 </table>
-<p><code>EV</code> is a valid fuel code for API requests, but no price row ever carries it. An <code>EV</code> search queries stations by <code>station_type</code> instead. EV chargers have no rows in this table.</p>
+<p>An <code>EV</code> search queries stations by <code>station_type</code>, then joins each one to its newest <code>EV</code> row here, if any. Only the <a href="../../data/ev-sources/#ocpdb">OCPDB scraper</a> writes <code>EV</code> rows, so only German chargers have prices. Every other charger has no rows in this table and shows unpriced.</p>
+<h3 id="ev_fees"><code>ev_fees</code><a class="headerlink" href="#ev_fees" title="Permanent link">&para;</a></h3>
+<p>The JSON object holds the parts of a charging tariff that a per-kWh price cannot express. Every field is optional.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sessionFee</code></td>
+<td>A fixed fee per charging session. When the fee varies, this is the highest one, and that is the value cost estimates use.</td>
+</tr>
+<tr>
+<td><code>sessionFeeRules</code></td>
+<td>Present only when the session fee varies. A list of <code>{ fee, from?, to?, days?, other? }</code>: <code>from</code> and <code>to</code> are local <code>HH:MM</code> times, <code>days</code> are ISO weekdays (1 is Monday), and <code>other: true</code> means further conditions apply.</td>
+</tr>
+<tr>
+<td><code>perMinute</code></td>
+<td>A blocking fee per minute.</td>
+</tr>
+<tr>
+<td><code>afterMin</code></td>
+<td>Minutes into the session at which <code>perMinute</code> starts. <code>0</code> means from the start.</td>
+</tr>
+</tbody>
+</table>
 <p>Nothing stops two rows for the same station and fuel. Readers take the newest one by <code>reported_at</code>. The example query <a href="#reading-the-newest-price">below</a> shows the pattern.</p>
 <h2 id="indexes-and-constraints">Indexes and constraints<a class="headerlink" href="#indexes-and-constraints" title="Permanent link">&para;</a></h2>
 <table>
@@ -2462,13 +2540,17 @@
 <td><code>bnetza-&lt;latitude&gt;_&lt;longitude&gt;</code>, rounded to 5 decimals. The register has one row per charging device, and the scraper merges the rows at one position into one station.</td>
 </tr>
 <tr>
+<td><code>ocpdb</code> (Open ChargePoint Database, Germany)</td>
+<td><code>ocpdb-&lt;latitude&gt;_&lt;longitude&gt;</code>, rounded to 5 decimals, from the location that anchors the pin. Locations within 25 m of each other merge into one station.</td>
+</tr>
+<tr>
 <td><code>miteco</code> (Spain)</td>
 <td>The ministry's station id, with no prefix</td>
 </tr>
 </tbody>
 </table>
 <p>Some older scrapers use the upstream id without a prefix, as <code>miteco</code> does. A new scraper should use a prefix. <a href="../../data/adding-a-country/#choosing-source-and-externalid">Adding a country</a> gives the rules.</p>
-<p><code>stations</code> has no <code>source</code> column. For EV chargers, which have no prices, the <code>external_id</code> prefix is the only record of where a row came from. That is how the Mapa REVE and BNetzA scrapers find the OpenChargeMap rows they replace: <code>external_id LIKE 'ocm-%'</code>.</p>
+<p><code>stations</code> has no <code>source</code> column. For EV chargers, most of which have no prices, the <code>external_id</code> prefix is the only record of where a row came from. That is how the EV scrapers find the rows of the sources they replace: Mapa REVE deletes <code>external_id LIKE 'ocm-%'</code> in Spain, and OCPDB and BNetzA each delete the other German prefixes among <code>ocm-</code>, <code>bnetza-</code> and <code>ocpdb-</code>.</p>
 <h2 id="source"><code>source</code><a class="headerlink" href="#source" title="Permanent link">&para;</a></h2>
 <p><code>source</code> is the name of the scraper that wrote a price row, such as <code>miteco</code>, <code>cma</code>, <code>fuelo_pl</code> or <code>bensinpriser</code>. It lives on <code>fuel_prices</code> only.</p>
 <p>Every scraper run replaces exactly the price rows that carry its own <code>source</code> for stations in its own country. It never touches another source's rows. Two consequences:</p>
@@ -2523,23 +2605,23 @@
 <p>Prices are replaced, not appended. The database holds the current price per station, fuel and source, not a price history.</p>
 <h2 id="reading-the-newest-price">Reading the newest price<a class="headerlink" href="#reading-the-newest-price" title="Permanent link">&para;</a></h2>
 <p>To query the data yourself, join each station to its newest price for one fuel. This is the pattern the app's own station endpoints use:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">brand</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">reported_at</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span><span class="w"> </span><span class="n">s</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">JOIN</span><span class="w"> </span><span class="k">LATERAL</span><span class="w"> </span><span class="p">(</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">SELECT</span><span class="w"> </span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">reported_at</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">fuel_prices</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="k">WHERE</span><span class="w"> </span><span class="n">station_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="k">AND</span><span class="w"> </span><span class="n">fuel_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'B7'</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">reported_at</span><span class="w"> </span><span class="k">DESC</span><span class="w"> </span><span class="n">NULLS</span><span class="w"> </span><span class="k">LAST</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">1</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="p">)</span><span class="w"> </span><span class="n">fp</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">true</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">ST_DWithin</span><span class="p">(</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span><span class="n">s</span><span class="p">.</span><span class="n">geom</span><span class="p">::</span><span class="n">geography</span><span class="p">,</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span><span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">.</span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">.</span><span class="mi">42</span><span class="p">),</span><span class="w"> </span><span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span><span class="p">,</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span><span class="mi">5000</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="p">)</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">brand</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">reported_at</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span><span class="w"> </span><span class="n">s</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">JOIN</span><span class="w"> </span><span class="k">LATERAL</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">SELECT</span><span class="w"> </span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">reported_at</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">fuel_prices</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">WHERE</span><span class="w"> </span><span class="n">station_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="k">AND</span><span class="w"> </span><span class="n">fuel_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'B7'</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">reported_at</span><span class="w"> </span><span class="k">DESC</span><span class="w"> </span><span class="n">NULLS</span><span class="w"> </span><span class="k">LAST</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="p">)</span><span class="w"> </span><span class="n">fp</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">true</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">ST_DWithin</span><span class="p">(</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="n">s</span><span class="p">.</span><span class="n">geom</span><span class="p">::</span><span class="n">geography</span><span class="p">,</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">.</span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">.</span><span class="mi">42</span><span class="p">),</span><span class="w"> </span><span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span><span class="p">,</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="mi">5000</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="p">)</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
 </code></pre></div>
 <p>This lists the ten cheapest diesel prices within 5 km of a point. <code>ST_MakePoint</code> takes longitude first. The lateral subquery can use the <code>fuel_prices</code> index, and the <code>ST_DWithin</code> on <code>geom::geography</code> can use the geography index.</p>
 <p>For the same data over HTTP, see the <a href="../api/">HTTP API</a>.</p>

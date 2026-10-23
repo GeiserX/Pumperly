@@ -2500,6 +2500,13 @@
 </tr>
 <tr>
 <td>Germany</td>
+<td><code>EV_DE_OCPDB</code></td>
+<td><a href="../ev-sources/#ocpdb">Open ChargePoint Database</a>, with prices</td>
+<td>6 h</td>
+<td>nothing</td>
+</tr>
+<tr>
+<td>Germany, opt-in</td>
 <td><code>EV_DE_BNETZA</code></td>
 <td><a href="../ev-sources/#bnetza">BNetzA Ladesäulenregister</a></td>
 <td>24 h</td>
@@ -2507,17 +2514,17 @@
 </tr>
 </tbody>
 </table>
-<p>Spain and Germany each use exactly one EV source at a time, never both:</p>
+<p>Spain and Germany each use exactly one EV source at a time:</p>
 <ul>
 <li><strong>Spain</strong> uses Mapa REVE when <code>PUMPERLY_REVE_API_KEY</code> is set, and Open Charge Map otherwise.</li>
-<li><strong>Germany</strong> uses the BNetzA register by default. Set <code>PUMPERLY_DE_EV_SOURCE=ocm</code> to use Open Charge Map instead.</li>
+<li><strong>Germany</strong> uses OCPDB by default. Set <code>PUMPERLY_DE_EV_SOURCE=bnetza</code> for the BNetzA register, or <code>ocm</code> for Open Charge Map.</li>
 </ul>
-<p>Without <code>PUMPERLY_OCM_API_KEY</code>, the Open Charge Map scrapers still run on schedule but write nothing. German chargers from BNetzA still load, because that source needs no key.</p>
-<p>EV chargers have no prices. None of the three sources publishes a per-litre price, and per-kWh tariffs do not fit the price model. <a href="../ev-sources/">EV charging sources</a> covers each source in detail.</p>
+<p>Without <code>PUMPERLY_OCM_API_KEY</code>, the Open Charge Map scrapers still run on schedule but write nothing. German chargers from OCPDB or BNetzA still load, because those sources need no key.</p>
+<p>Only German chargers from OCPDB have prices: the cheapest ad-hoc tariff per kWh, with any session and per-minute fees. Chargers from every other source have none. <a href="../ev-sources/">EV charging sources</a> covers each source in detail.</p>
 <h2 id="community-datasets">Community datasets<a class="headerlink" href="#community-datasets" title="Permanent link">&para;</a></h2>
 <p>Places with no source to scrape can be added as committed data files under <a href="https://github.com/GeiserX/Pumperly/tree/main/src/scrapers/data"><code>src/scrapers/data/</code></a>. Each dataset registers its own scraper, keyed <code>STATIC_&lt;SOURCE&gt;</code>, and writes only its own rows. The repository ships with no datasets registered yet. <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/data/README.md"><code>src/scrapers/data/README.md</code></a> explains the format, and <a href="../adding-a-country/">Adding a country</a> covers the wider process.</p>
 <h2 id="choosing-what-runs">Choosing what runs<a class="headerlink" href="#choosing-what-runs" title="Permanent link">&para;</a></h2>
-<p>By default every fuel scraper runs, including both Australian states. Each country also gets one EV source: Open Charge Map everywhere, including the United States, except that Germany uses the BNetzA register and Spain uses Mapa REVE when its key is set. These settings narrow that down:</p>
+<p>By default every fuel scraper runs, including both Australian states. Each country also gets one EV source: Open Charge Map everywhere, including the United States, except that Germany uses OCPDB and Spain uses Mapa REVE when its key is set. These settings narrow that down:</p>
 <table>
 <thead>
 <tr>
@@ -2532,7 +2539,7 @@
 </tr>
 <tr>
 <td><code>PUMPERLY_EV_ENABLED=0</code></td>
-<td>Turns off every EV scraper, including Mapa REVE and BNetzA.</td>
+<td>Turns off every EV scraper, including Mapa REVE, OCPDB and BNetzA.</td>
 </tr>
 <tr>
 <td><code>PUMPERLY_SCRAPE_INTERVAL_&lt;KEY&gt;</code></td>

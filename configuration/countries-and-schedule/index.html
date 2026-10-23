@@ -2110,6 +2110,11 @@
 <td><code>EV_DE_BNETZA</code></td>
 </tr>
 <tr>
+<td><code>EV_DE_OCPDB</code></td>
+<td>Germany's chargers and their prices from the Open ChargePoint Database</td>
+<td><code>EV_DE_OCPDB</code></td>
+</tr>
+<tr>
 <td><code>STATIC_&lt;SOURCE&gt;</code></td>
 <td>A community dataset committed to the repository</td>
 <td>none ship today</td>
@@ -2162,7 +2167,7 @@
 </tr>
 <tr>
 <td><code>EV_DE</code></td>
-<td>Germany's chargers only, from the BNetzA register by default</td>
+<td>Germany's chargers only, from OCPDB by default</td>
 </tr>
 <tr>
 <td><code>ES,XX</code></td>
@@ -2180,12 +2185,12 @@
 </div>
 <p>Some sources are blocked or paused upstream, so a country can be enabled and still get no fresh prices. <a href="../../data/coverage/">Coverage and status</a> lists them.</p>
 <h2 id="spain-and-germany-ev-sources">Spain and Germany: one EV source each<a class="headerlink" href="#spain-and-germany-ev-sources" title="Permanent link">&para;</a></h2>
-<p>Spain and Germany each have two possible charger sources: Open Charge Map, which is crowdsourced, and an official registry. The two overlap heavily, so running both would put two pins on most chargers. The scheduler always keeps exactly one per country. Listing both keys does not change that.</p>
+<p>Spain and Germany each have more than one possible charger source: Open Charge Map, which is crowdsourced, and an official one. Germany has two official ones, the BNetzA register and OCPDB, which contains that register. The sources overlap heavily, so running two would put two pins on most chargers. The scheduler always keeps exactly one per country. Listing several keys does not change that.</p>
 <table>
 <thead>
 <tr>
 <th>Country</th>
-<th>Official registry</th>
+<th>Official source</th>
 <th>Picked when</th>
 <th>Otherwise</th>
 </tr>
@@ -2199,31 +2204,33 @@
 </tr>
 <tr>
 <td>Germany</td>
-<td>BNetzA Ladesäulenregister (<code>EV_DE_BNETZA</code>)</td>
+<td>Open ChargePoint Database (<code>EV_DE_OCPDB</code>)</td>
 <td>Always, unless the next column applies</td>
-<td>Open Charge Map (<code>EV_DE</code>) when <a href="../../reference/environment-variables/#pumperly_de_ev_source"><code>PUMPERLY_DE_EV_SOURCE=ocm</code></a></td>
+<td>The BNetzA register (<code>EV_DE_BNETZA</code>) when <a href="../../reference/environment-variables/#pumperly_de_ev_source"><code>PUMPERLY_DE_EV_SOURCE=bnetza</code></a>, Open Charge Map (<code>EV_DE</code>) when it is <code>ocm</code></td>
 </tr>
 </tbody>
 </table>
 <p>The log shows the choice at start-up:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>[scraper] Spain EV: using Mapa REVE (official registry) instead of OpenChargeMap
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>[scraper] Germany EV: using the BNetzA Ladesäulenregister instead of OpenChargeMap
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>[scraper] Germany EV: using OCPDB (BNetzA register + operator feeds, with prices)
 </code></pre></div>
-<p>Each registry deletes Open Charge Map's rows for its country once it has taken over:</p>
+<p>Each official source deletes the other sources' rows for its country once it has taken over:</p>
 <ul>
-<li><strong>BNetzA</strong> arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map rows. "Healthy" means it refreshed at least <a href="../../reference/environment-variables/#pumperly_bnetza_min_stations"><code>PUMPERLY_BNETZA_MIN_STATIONS</code></a> stations.</li>
+<li><strong>OCPDB</strong> is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it refreshed at least <a href="../../reference/environment-variables/#pumperly_ocpdb_min_stations"><code>PUMPERLY_OCPDB_MIN_STATIONS</code></a> stations.</li>
+<li><strong>BNetzA</strong> arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it refreshed at least <a href="../../reference/environment-variables/#pumperly_bnetza_min_stations"><code>PUMPERLY_BNETZA_MIN_STATIONS</code></a> stations.</li>
 <li><strong>REVE</strong> fills in over many hourly runs. Open Charge Map's Spanish rows stay on the map until REVE holds <a href="../../reference/environment-variables/#pumperly_reve_cutover_ratio"><code>PUMPERLY_REVE_CUTOVER_RATIO</code></a> of the registry, 95% by default. Until then, expect two pins on many Spanish chargers. <a href="../api-keys/#mapa-reve-spain">API keys</a> has the timing.</li>
 </ul>
 <div class="admonition warning">
-<p class="admonition-title">Switching back leaves the registry's rows behind</p>
-<p>Nothing deletes a registry's rows if you switch back to Open Charge Map. Open Charge Map then adds its own, and most chargers get two pins. After switching Germany back to <code>ocm</code>, or removing the REVE key, delete the registry rows yourself:</p>
+<p class="admonition-title">Switching back leaves the official rows behind</p>
+<p>Open Charge Map deletes nothing when you switch back to it. It adds its own rows, and most chargers get two pins. After switching Germany to <code>ocm</code>, or removing the REVE key, delete the official rows yourself. Switching between <code>ocpdb</code> and <code>bnetza</code> needs nothing: each deletes the other's rows.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">-- Germany, after PUMPERLY_DE_EV_SOURCE=ocm</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DE'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'bnetza-%'</span><span class="p">;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">-- Spain, after removing PUMPERLY_REVE_API_KEY</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ES'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'reve-%'</span><span class="p">;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DE'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="p">(</span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'ocpdb-%'</span><span class="w"> </span><span class="k">OR</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'bnetza-%'</span><span class="p">);</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1">-- Spain, after removing PUMPERLY_REVE_API_KEY</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ES'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">station_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ev_charger'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">external_id</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">'reve-%'</span><span class="p">;</span>
 </code></pre></div>
 </div>
 <h2 id="how-often-scrapers-run">How often scrapers run<a class="headerlink" href="#how-often-scrapers-run" title="Permanent link">&para;</a></h2>
@@ -2257,7 +2264,7 @@
 </tr>
 <tr>
 <td>6 hours</td>
-<td><code>SI</code>, <code>NL</code>, <code>BE</code>, <code>DK</code>, <code>NO</code>, <code>IS</code>, <code>CY</code></td>
+<td><code>SI</code>, <code>NL</code>, <code>BE</code>, <code>DK</code>, <code>NO</code>, <code>IS</code>, <code>CY</code>, <code>EV_DE_OCPDB</code></td>
 </tr>
 <tr>
 <td>12 hours</td>

@@ -2134,7 +2134,7 @@
 <td><code>EV</code></td>
 <td>EV Charging</td>
 <td>electric</td>
-<td>Electric vehicle charge points. Has no price. See <a href="#ev">below</a>.</td>
+<td>Electric vehicle charge points. Priced per kWh where the source publishes it. See <a href="#ev">below</a>.</td>
 </tr>
 <tr>
 <td><code>ADBLUE</code></td>
@@ -2225,14 +2225,15 @@
 </div>
 <h3 id="price-checks-for-cng-lng-h2-and-adblue">Price checks for CNG, LNG, H2 and AdBlue<a class="headerlink" href="#price-checks-for-cng-lng-h2-and-adblue" title="Permanent link">&para;</a></h3>
 <p>Every price a scraper produces goes through a sanity check before it is stored. Most fuels are checked against a range that depends on the currency. <a href="../currencies/#price-bands">Currencies and exchange rates</a> has the table.</p>
-<p><code>CNG</code>, <code>LNG</code>, <code>H2</code> and <code>ADBLUE</code> skip that table. For these four, any price of at least 0.05 and below 100 is kept, whatever the currency. <code>LPG</code> is sold by the litre, so it goes through the normal per-currency range.</p>
+<p><code>CNG</code>, <code>LNG</code>, <code>H2</code> and <code>ADBLUE</code> skip that table. For these four, any price of at least 0.05 and below 100 is kept, whatever the currency. <code>LPG</code> is sold by the litre, so it goes through the normal per-currency range. <code>EV</code> is per kWh and is kept only in EUR, from 0.10 to 2.00.</p>
 <h3 id="ev">EV charging<a class="headerlink" href="#ev" title="Permanent link">&para;</a></h3>
-<p><code>EV</code> is not a fuel with a price. It selects stations by type instead:</p>
+<p><code>EV</code> selects stations by type, not by price:</p>
 <ul>
-<li>The API returns every station whose type is <code>ev_charger</code> or <code>both</code>, and ignores <code>fuel_prices</code>.</li>
-<li>EV features have no <code>price</code> and no <code>reportedAt</code>. Their <code>currency</code> is <code>EUR</code> and carries no meaning.</li>
+<li>The API returns every station whose type is <code>ev_charger</code> or <code>both</code>, priced or not.</li>
+<li>A charger with an <code>EV</code> row in <code>fuel_prices</code> carries its newest <code>price</code>, per kWh, with <code>currency</code>, <code>reportedAt</code> and any <code>evFees</code>. Only German chargers from OCPDB have these rows.</li>
+<li>Unpriced chargers have no <code>price</code> and no <code>reportedAt</code>. Their <code>currency</code> is <code>EUR</code> and carries no meaning.</li>
 </ul>
-<p>None of Pumperly's EV sources stores a tariff. Charging tariffs are per kilowatt-hour and per session, and a single per-litre number cannot express them. <a href="../../data/ev-sources/">EV charging sources</a> lists where the chargers come from, and <a href="../../using/ev-charging/">EV charging</a> shows how they appear on the map.</p>
+<p>A charging tariff is more than a per-kWh price. The session and per-minute fees on top go in <code>evFees</code>, described with the <a href="../data-model/#ev_fees"><code>ev_fees</code></a> column. <a href="../../data/ev-sources/">EV charging sources</a> lists where the chargers come from, and <a href="../../using/ev-charging/">EV charging</a> shows how they appear on the map.</p>
 <h2 id="adding-a-fuel-code">Adding a fuel code<a class="headerlink" href="#adding-a-fuel-code" title="Permanent link">&para;</a></h2>
 <p>A new code goes in the <code>FUEL_TYPE_CODES</code> list and gets a <code>FUEL_TYPES</code> entry with a label and a category. Everything else that validates fuel codes reads from those two lists. Map the source's product name to it in the scraper. If it is not sold by the litre, decide whether it belongs in the alternative-fuel check in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/base.ts"><code>src/scrapers/base.ts</code></a>. See <a href="../../data/adding-a-country/">Adding a country</a> for the rest of the scraper workflow.</p>
 

@@ -2326,7 +2326,7 @@
 </table>
 <p>Each fuel has a code, such as <code>B7</code> for regular diesel or <code>EV</code> for charging. The full list with codes is in <a href="../../reference/fuel-types/">Fuel types</a>.</p>
 <p>The first fuel you see is the instance default. The operator sets it with <a href="../../reference/environment-variables/#pumperly_default_fuel"><code>PUMPERLY_DEFAULT_FUEL</code></a>. Without it, Pumperly uses the default fuel of the country in <a href="../../reference/environment-variables/#pumperly_default_country"><code>PUMPERLY_DEFAULT_COUNTRY</code></a>.</p>
-<p>On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, and chargers carry no price. See <a href="../ev-charging/">EV charging</a>.</p>
+<p>On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, priced or not. Only German chargers have prices. See <a href="../ev-charging/">EV charging</a>.</p>
 <p>Changing the fuel clears the max-price filter and resets the max detour to 5 minutes.</p>
 <div class="admonition note">
 <p class="admonition-title">Fuel names are not translated</p>
@@ -2460,7 +2460,7 @@
 </tr>
 </tbody>
 </table>
-<p>When the station has no price for the chosen fuel, the price block reads "No price for" and the fuel name. This is what an EV charger shows.</p>
+<p>When the station has no price for the chosen fuel, the price block reads "No price for" and the fuel name. An EV charger shows its price per kWh when it has one, and its power otherwise. See <a href="../ev-charging/#what-a-charger-shows">What a charger shows</a>.</p>
 <p>The two link buttons are described in <a href="../links/">Share links and deep links</a>.</p>
 <p>With a route open, clicking a station also adds it to the route as a stop. See <a href="../routes/#pick-a-station-as-a-stop">Pick a station as a stop</a>.</p>
 <h2 id="currency">Currency<a class="headerlink" href="#currency" title="Permanent link">&para;</a></h2>

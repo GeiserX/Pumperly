@@ -2218,9 +2218,9 @@
 </table>
 <p>When the Spanish or German EV source is an official registry, the app logs it at start:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[scraper] Spain EV: using Mapa REVE (official registry) instead of OpenChargeMap
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>[scraper] Germany EV: using the BNetzA Ladesäulenregister instead of OpenChargeMap
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>[scraper] Germany EV: using OCPDB (BNetzA register + operator feeds, with prices)
 </code></pre></div>
-<p>Each line appears only when that country's EV scraper is enabled. The Spanish line also needs <code>PUMPERLY_REVE_API_KEY</code> to be set. The German line appears unless <code>PUMPERLY_DE_EV_SOURCE=ocm</code>. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
+<p>Each line appears only when that country's EV scraper is enabled. The Spanish line also needs <code>PUMPERLY_REVE_API_KEY</code> to be set. The German line above appears unless <code>PUMPERLY_DE_EV_SOURCE</code> is <code>bnetza</code> or <code>ocm</code>. With <code>bnetza</code> it reads <code>using the BNetzA Ladesäulenregister instead of OpenChargeMap</code>. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Australia is two scrapers</p>
 <p><code>AU</code> runs the Western Australia source. New South Wales is a separate scraper, <code>AU_NSW</code>. List it too if you set <code>PUMPERLY_ENABLED_COUNTRIES</code>, for example <code>AU,AU_NSW</code>. It needs <code>NSW_FUEL_API_KEY</code> and <code>NSW_FUEL_API_SECRET</code>. See <a href="../../configuration/countries-and-schedule/">Countries and scrape schedule</a>.</p>

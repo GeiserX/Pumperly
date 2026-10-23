@@ -2264,12 +2264,12 @@
 </tr>
 <tr>
 <td><code>RawFuelPrice</code></td>
-<td><code>stationExternalId</code> (matches a station's <code>externalId</code> in the same result), <code>fuelType</code> (one of the <a href="../../reference/fuel-types/">fuel type codes</a>), <code>price</code> (per litre, in local currency), <code>currency</code> (ISO 4217)</td>
+<td><code>stationExternalId</code> (matches a station's <code>externalId</code> in the same result), <code>fuelType</code> (one of the <a href="../../reference/fuel-types/">fuel type codes</a>), <code>price</code> (per litre, in local currency; per kWh for <code>EV</code>), <code>currency</code> (ISO 4217). Optional: <code>evFees</code> (<code>EV</code> only, written to <a href="../../reference/data-model/#ev_fees"><code>ev_fees</code></a>) and <code>reportedAt</code> (when the upstream last vouched for the price)</td>
 </tr>
 </tbody>
 </table>
 <p>The <code>externalId</code> is the source's own id for the station, usually with a short prefix such as <code>ocm-</code> or <code>se-bp-</code>. Together with <code>country</code> it identifies a station across runs. <a href="../../reference/data-model/">Data model</a> explains both columns in full.</p>
-<p>EV charger scrapers return stations with <code>stationType: "ev_charger"</code> and an empty price list.</p>
+<p>EV charger scrapers return stations with <code>stationType: "ev_charger"</code>. Most return an empty price list. The OCPDB scraper returns one <code>EV</code> price per priced charger.</p>
 <p><code>fetch()</code> should throw when the upstream answers with an HTTP error or with data of the wrong shape. The base class turns the throw into a failed run that changes nothing. A single malformed row is different: skip it and keep going, so one bad record cannot cost the whole country a run.</p>
 <h2 id="one-run-step-by-step">One run, step by step<a class="headerlink" href="#one-run-step-by-step" title="Permanent link">&para;</a></h2>
 <p><code>BaseScraper.run()</code> is the pipeline every scraper shares. It opens its own database connection, runs these steps, and always disconnects at the end.</p>
@@ -2313,6 +2313,10 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>EV</code>, per kWh</td>
+<td><code>EUR</code> only, from 0.10 to 2.00. A price in any other currency is dropped.</td>
+</tr>
 <tr>
 <td><code>H2</code>, <code>CNG</code>, <code>LNG</code> and <code>ADBLUE</code>, any currency</td>
 <td>At least 0.05 and below 100</td>
@@ -2419,7 +2423,7 @@
 </tbody>
 </table>
 <p>The table also holds bands for EUR, GBP and CHF, but a run uses the two environment variables for those three currencies instead. If <code>PUMPERLY_PRICE_MIN</code> or <code>PUMPERLY_PRICE_MAX</code> is not a number, the default is used, so a typo cannot switch the check off.</p>
-<p>After the price filter, a station of type <code>fuel</code> with no valid price left is dropped from this run. EV chargers are kept even though they carry no prices.</p>
+<p>After the price filter, a station of type <code>fuel</code> with no valid price left is dropped from this run. EV chargers are kept, priced or not.</p>
 <h3 id="2-the-empty-fetch-guard">2. The empty-fetch guard<a class="headerlink" href="#2-the-empty-fetch-guard" title="Permanent link">&para;</a></h3>
 <p>If no station is left after filtering, the run stops here. It records the error <code>Aborted destructive replace: fetch returned 0 stations / N valid prices</code> and writes nothing.</p>
 <p>This guard exists because an upstream can answer <code>HTTP 200</code> with an empty or broken body that still parses. Without the guard, the next step would delete every price the source had and put nothing back, and the cleanup after it would then delete the country's stations.</p>
@@ -2435,7 +2439,7 @@
 <p>Then one transaction replaces the prices:</p>
 <ol>
 <li>Delete every price row whose <code>source</code> is this scraper's source and whose station is in this scraper's country.</li>
-<li>Insert the new prices in batches of 2,000. Each row gets <code>reported_at</code> set to the current time.</li>
+<li>Insert the new prices in batches of 2,000. Each row gets <code>reported_at</code> set to the current time, unless the scraper passed its own <code>reportedAt</code>.</li>
 </ol>
 <p>Because it is a single transaction, readers see either the old set or the new set, never a mix. The transaction may run for up to 120 seconds. If it fails, it rolls back and the old prices stay.</p>
 <p>The delete is scoped by country as well as by source. That matters where one source name serves several countries. The Netherlands, Belgium and Luxembourg scrapers all use the source <code>anwb</code>, and none of them can delete the others' prices.</p>
@@ -2451,7 +2455,7 @@
 <p>The cleanup runs only when every station batch in step 3 succeeded. If a batch failed, the stations in it may not have been written this run, and their prices were already replaced in step 4. Deleting orphans then could remove stations that are only missing because of the failure. So the run records <code>Skipped orphan cleanup: one or more station batches failed</code> and leaves them alone.</p>
 <div class="admonition note">
 <p class="admonition-title">EV chargers are never cleaned up by the base class</p>
-<p>The cleanup only deletes rows with <code>station_type = 'fuel'</code>. An EV charger that its source stops listing stays in the table. A scraper that needs to remove EV rows does it in its own <code>run()</code> override, as the Mapa REVE and BNetzA scrapers do. See <a href="../ev-sources/">EV charging sources</a>.</p>
+<p>The cleanup only deletes rows with <code>station_type = 'fuel'</code>. An EV charger that its source stops listing stays in the table. A scraper that needs to remove EV rows does it in its own <code>run()</code> override, as the Mapa REVE, BNetzA and OCPDB scrapers do. The German ones share <code>BaseScraper.sweepEvRows()</code>. See <a href="../ev-sources/">EV charging sources</a>.</p>
 </div>
 <h3 id="the-result">The result<a class="headerlink" href="#the-result" title="Permanent link">&para;</a></h3>
 <p><code>run()</code> returns a <code>ScraperResult</code>:</p>
@@ -2548,8 +2552,8 @@
 </tr>
 <tr>
 <td><code>EV_XX_NAME</code></td>
-<td>An official EV registry that replaces OpenChargeMap for <code>XX</code></td>
-<td><code>EV_ES_REVE</code>, <code>EV_DE_BNETZA</code></td>
+<td>An official EV source that replaces OpenChargeMap for <code>XX</code></td>
+<td><code>EV_ES_REVE</code>, <code>EV_DE_BNETZA</code>, <code>EV_DE_OCPDB</code></td>
 </tr>
 <tr>
 <td><code>STATIC_NAME</code></td>
@@ -2564,7 +2568,7 @@
 <li>If <code>PUMPERLY_ENABLED_COUNTRIES</code> is unset, every key is selected.</li>
 <li>If it is set, only the keys it lists are selected. For each listed code that is not itself an <code>EV_</code> key, <code>EV_&lt;code&gt;</code> is added when such a key exists. So <code>SE</code> selects <code>SE</code> and <code>EV_SE</code>, and <code>US</code> selects <code>EV_US</code> alone, because the United States has EV coverage only.</li>
 <li><code>PUMPERLY_EV_ENABLED=0</code> removes every <code>EV_</code> key.</li>
-<li>Spain and Germany each keep exactly one EV source. Spain runs <code>EV_ES_REVE</code> when <code>PUMPERLY_REVE_API_KEY</code> is set and <code>EV_ES</code> otherwise. Germany runs <code>EV_DE_BNETZA</code> unless <code>PUMPERLY_DE_EV_SOURCE=ocm</code>. Running both would put two pins on most chargers.</li>
+<li>Spain and Germany each keep exactly one EV source. Spain runs <code>EV_ES_REVE</code> when <code>PUMPERLY_REVE_API_KEY</code> is set and <code>EV_ES</code> otherwise. Germany runs <code>EV_DE_OCPDB</code> unless <code>PUMPERLY_DE_EV_SOURCE</code> is <code>bnetza</code> (<code>EV_DE_BNETZA</code>) or <code>ocm</code> (<code>EV_DE</code>). Running two would put two pins on most chargers.</li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">A second scraper for a country needs its own key</p>
@@ -2630,7 +2634,7 @@
 <li>A failure in this cleanup is added to the run's errors as <code>Cleanup: &lt;message&gt;</code>. It does not undo the new data.</li>
 </ol>
 <p>After the first successful handover the retired sources have no rows left, so later runs delete nothing. The step is safe to leave in place.</p>
-<p>The two EV registries use variations of the same idea, because EV rows are never removed by the base class:</p>
+<p>The EV scrapers use variations of the same idea, because EV rows are never removed by the base class:</p>
 <table>
 <thead>
 <tr>
@@ -2652,12 +2656,17 @@
 </tr>
 <tr>
 <td>BNetzA, <code>EV_DE_BNETZA</code></td>
-<td>German OpenChargeMap chargers, and its own chargers that left the register</td>
+<td>German OpenChargeMap and OCPDB chargers, and its own chargers that left the register</td>
 <td>Error-free run and at least <code>PUMPERLY_BNETZA_MIN_STATIONS</code> rows (default 10,000) refreshed by this run</td>
+</tr>
+<tr>
+<td>OCPDB, <code>EV_DE_OCPDB</code></td>
+<td>German OpenChargeMap and BNetzA chargers, and its own chargers that left the database</td>
+<td>Error-free run and at least <code>PUMPERLY_OCPDB_MIN_STATIONS</code> rows (default 10,000) refreshed by this run</td>
 </tr>
 </tbody>
 </table>
-<p><a href="../ev-sources/">EV charging sources</a> describes the two EV handovers in detail. <a href="../adding-a-country/">Adding a country</a> covers when a new scraper needs this pattern.</p>
+<p><a href="../ev-sources/">EV charging sources</a> describes the EV handovers in detail. <a href="../adding-a-country/">Adding a country</a> covers when a new scraper needs this pattern.</p>
 
 
 

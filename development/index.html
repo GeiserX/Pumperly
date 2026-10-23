@@ -2665,7 +2665,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># One image for the app and for the migrate service, so the migrations a</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># release ships are the ones applied. The auto-tag workflow moves this pin.</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">x-app-image</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;app-image</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.18.1</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.19.5</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nt">services</span><span class="p">:</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">db</span><span class="p">:</span>
@@ -3046,7 +3046,7 @@
 <p>The command line in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/cli.ts"><code>src/scrapers/cli.ts</code></a> runs scrapers once, outside the dev server:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>npm<span class="w"> </span>run<span class="w"> </span>scraper:run<span class="w"> </span>--<span class="w"> </span>--country<span class="o">=</span>FR
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>npm<span class="w"> </span>run<span class="w"> </span>scraper:run<span class="w"> </span>--<span class="w"> </span>--country<span class="o">=</span>ES,PT<span class="w"> </span>--once
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>npm<span class="w"> </span>run<span class="w"> </span>scraper:run<span class="w"> </span>--<span class="w"> </span>--country<span class="o">=</span>EV_DE_BNETZA
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>npm<span class="w"> </span>run<span class="w"> </span>scraper:run<span class="w"> </span>--<span class="w"> </span>--country<span class="o">=</span>EV_DE_OCPDB
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>npm<span class="w"> </span>run<span class="w"> </span>scraper:run<span class="w"> </span>--<span class="w"> </span>--country<span class="o">=</span>all
 </code></pre></div>
 <table>
@@ -3071,7 +3071,7 @@
 <ul>
 <li>A country code such as <code>ES</code> runs that country's fuel scraper. <code>AU</code> runs both Australian sources, Western Australia and New South Wales.</li>
 <li><code>EV_XX</code> runs Open Charge Map for country <code>XX</code>, for example <code>EV_FR</code> or <code>EV_US</code>.</li>
-<li><code>EV_ES_REVE</code> and <code>EV_DE_BNETZA</code> run the Spanish and German official charger registries.</li>
+<li><code>EV_ES_REVE</code> runs the Spanish official charger registry. <code>EV_DE_OCPDB</code> and <code>EV_DE_BNETZA</code> run the two German official sources.</li>
 <li><code>all</code> runs every scraper. For Spain and Germany it picks one EV source, the same way the app does. Naming <code>EV_ES</code> or <code>EV_DE</code> yourself runs Open Charge Map for that country regardless.</li>
 </ul>
 <p>An unknown code prints the list of valid ones and exits.</p>

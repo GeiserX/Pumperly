@@ -2318,7 +2318,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># One image for the app and for the migrate service, so the migrations a</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># release ships are the ones applied. The auto-tag workflow moves this pin.</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">x-app-image</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;app-image</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.18.1</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">drumsergio/pumperly:1.19.5</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">services</span><span class="p">:</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">db</span><span class="p">:</span>
@@ -2475,18 +2475,27 @@
 <a id="__codelineno-3-90" name="__codelineno-3-90" href="#__codelineno-3-90"></a><span class="c1"># Set to 0 to disable EV charger scraping (default: enabled when OCM key is set)</span>
 <a id="__codelineno-3-91" name="__codelineno-3-91" href="#__codelineno-3-91"></a><span class="c1"># PUMPERLY_EV_ENABLED=1</span>
 <a id="__codelineno-3-92" name="__codelineno-3-92" href="#__codelineno-3-92"></a>
-<a id="__codelineno-3-93" name="__codelineno-3-93" href="#__codelineno-3-93"></a><span class="c1"># Germany EV chargers: which of the two sources supplies them. Defaults to the</span>
-<a id="__codelineno-3-94" name="__codelineno-3-94" href="#__codelineno-3-94"></a><span class="c1"># BNetzA Ladesäulenregister — the official register every operator of a public</span>
-<a id="__codelineno-3-95" name="__codelineno-3-95" href="#__codelineno-3-95"></a><span class="c1"># charge point must file into, ~74,000 locations, no API key and no signup.</span>
-<a id="__codelineno-3-96" name="__codelineno-3-96" href="#__codelineno-3-96"></a><span class="c1"># Set to "ocm" to keep OpenChargeMap instead. The two never run together: the</span>
-<a id="__codelineno-3-97" name="__codelineno-3-97" href="#__codelineno-3-97"></a><span class="c1"># BNetzA scraper retires OpenChargeMap's German rows on its first healthy run,</span>
-<a id="__codelineno-3-98" name="__codelineno-3-98" href="#__codelineno-3-98"></a><span class="c1"># and running both would double-pin the country.</span>
-<a id="__codelineno-3-99" name="__codelineno-3-99" href="#__codelineno-3-99"></a><span class="c1"># PUMPERLY_DE_EV_SOURCE=bnetza</span>
-<a id="__codelineno-3-100" name="__codelineno-3-100" href="#__codelineno-3-100"></a>
-<a id="__codelineno-3-101" name="__codelineno-3-101" href="#__codelineno-3-101"></a><span class="c1"># Stations a run must refresh before the BNetzA scraper is allowed to prune</span>
-<a id="__codelineno-3-102" name="__codelineno-3-102" href="#__codelineno-3-102"></a><span class="c1"># stale rows or retire OpenChargeMap's German ones. A safety floor: a degraded</span>
-<a id="__codelineno-3-103" name="__codelineno-3-103" href="#__codelineno-3-103"></a><span class="c1"># fetch must not be able to delete a working map.</span>
-<a id="__codelineno-3-104" name="__codelineno-3-104" href="#__codelineno-3-104"></a><span class="c1"># PUMPERLY_BNETZA_MIN_STATIONS=10000</span>
+<a id="__codelineno-3-93" name="__codelineno-3-93" href="#__codelineno-3-93"></a><span class="c1"># Germany EV chargers: which source supplies them. Defaults to "ocpdb", the Open</span>
+<a id="__codelineno-3-94" name="__codelineno-3-94" href="#__codelineno-3-94"></a><span class="c1"># ChargePoint Database via MobiData BW: the BNetzA register merged with the</span>
+<a id="__codelineno-3-95" name="__codelineno-3-95" href="#__codelineno-3-95"></a><span class="c1"># operators' own feeds, plus ad-hoc €/kWh prices. No API key, no signup.</span>
+<a id="__codelineno-3-96" name="__codelineno-3-96" href="#__codelineno-3-96"></a><span class="c1"># "bnetza" uses the BNetzA Ladesäulenregister alone (no prices), "ocm" keeps</span>
+<a id="__codelineno-3-97" name="__codelineno-3-97" href="#__codelineno-3-97"></a><span class="c1"># OpenChargeMap. Only one ever runs. ocpdb and bnetza retire the other</span>
+<a id="__codelineno-3-98" name="__codelineno-3-98" href="#__codelineno-3-98"></a><span class="c1"># sources' German rows on their first healthy run; ocm does not, so switching</span>
+<a id="__codelineno-3-99" name="__codelineno-3-99" href="#__codelineno-3-99"></a><span class="c1"># to it leaves the `ocpdb-`/`bnetza-` rows behind to delete by hand.</span>
+<a id="__codelineno-3-100" name="__codelineno-3-100" href="#__codelineno-3-100"></a><span class="c1"># PUMPERLY_DE_EV_SOURCE=ocpdb</span>
+<a id="__codelineno-3-101" name="__codelineno-3-101" href="#__codelineno-3-101"></a>
+<a id="__codelineno-3-102" name="__codelineno-3-102" href="#__codelineno-3-102"></a><span class="c1"># Stations a run must refresh before the OCPDB scraper is allowed to prune</span>
+<a id="__codelineno-3-103" name="__codelineno-3-103" href="#__codelineno-3-103"></a><span class="c1"># stale rows or retire the BNetzA/OpenChargeMap German ones.</span>
+<a id="__codelineno-3-104" name="__codelineno-3-104" href="#__codelineno-3-104"></a><span class="c1"># PUMPERLY_OCPDB_MIN_STATIONS=10000</span>
+<a id="__codelineno-3-105" name="__codelineno-3-105" href="#__codelineno-3-105"></a>
+<a id="__codelineno-3-106" name="__codelineno-3-106" href="#__codelineno-3-106"></a><span class="c1"># Days an OCPDB operator feed may go without refreshing before its prices are</span>
+<a id="__codelineno-3-107" name="__codelineno-3-107" href="#__codelineno-3-107"></a><span class="c1"># ignored (its chargers then show unpriced). Failed feeds are always ignored.</span>
+<a id="__codelineno-3-108" name="__codelineno-3-108" href="#__codelineno-3-108"></a><span class="c1"># PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS=3</span>
+<a id="__codelineno-3-109" name="__codelineno-3-109" href="#__codelineno-3-109"></a>
+<a id="__codelineno-3-110" name="__codelineno-3-110" href="#__codelineno-3-110"></a><span class="c1"># Stations a run must refresh before the BNetzA scraper is allowed to prune</span>
+<a id="__codelineno-3-111" name="__codelineno-3-111" href="#__codelineno-3-111"></a><span class="c1"># stale rows or retire OpenChargeMap's German ones. A safety floor: a degraded</span>
+<a id="__codelineno-3-112" name="__codelineno-3-112" href="#__codelineno-3-112"></a><span class="c1"># fetch must not be able to delete a working map.</span>
+<a id="__codelineno-3-113" name="__codelineno-3-113" href="#__codelineno-3-113"></a><span class="c1"># PUMPERLY_BNETZA_MIN_STATIONS=10000</span>
 </code></pre></div>
 </details>
 <p>Only <code>DATABASE_URL</code> is required. The default value already matches the shipped compose file: user <code>pumperly</code>, password <code>pumperly</code>, host <code>pumperly-db</code>, port 5432. The app reaches the database by its container name on the compose network.</p>

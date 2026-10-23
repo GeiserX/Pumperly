@@ -1807,6 +1807,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ocpdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OCPDB (Open ChargePoint Database)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#orphan-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2390,6 +2401,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ocpdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OCPDB (Open ChargePoint Database)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#orphan-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2619,7 +2641,7 @@
 <h2 id="bbox">Bounding box (bbox)<a class="headerlink" href="#bbox" title="Permanent link">&para;</a></h2>
 <p>A rectangle on the map, given as four numbers: <code>minLon,minLat,maxLon,maxLat</code>. The map sends the visible area as a bounding box to <a href="../api/#stations"><code>/api/stations</code></a>.</p>
 <h2 id="bnetza">BNetzA<a class="headerlink" href="#bnetza" title="Permanent link">&para;</a></h2>
-<p>The Bundesnetzagentur, Germany's federal network agency. It publishes the Ladesäulenregister, the official register of public charge points in Germany. Every operator of a public charge point must file its chargers there. Pumperly downloads the register as one file, with no API key, and uses it as Germany's default EV source. Its <a href="#scraper-key">scraper key</a> is <code>EV_DE_BNETZA</code>. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
+<p>The Bundesnetzagentur, Germany's federal network agency. It publishes the Ladesäulenregister, the official register of public charge points in Germany. Every operator of a public charge point must file its chargers there. Pumperly can download the register as one file, with no API key, when <code>PUMPERLY_DE_EV_SOURCE=bnetza</code>. By default it uses <a href="#ocpdb">OCPDB</a>, which contains the register. Its <a href="#scraper-key">scraper key</a> is <code>EV_DE_BNETZA</code>. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
 <h2 id="corridor">Corridor<a class="headerlink" href="#corridor" title="Permanent link">&para;</a></h2>
 <p>The strip of land either side of a planned route in which Pumperly looks for stations. Its half-width is set in kilometres, from 0.5 to 50, and defaults to 5. A station is in the corridor when its shortest distance to the route line, measured on the globe, is within that width. The corridor slider in the route panel changes it. See <a href="../../using/routes/">Planning a route</a> and <a href="../api/#route-stations"><code>POST /api/route-stations</code></a>.</p>
 <h2 id="currency">Currency<a class="headerlink" href="#currency" title="Permanent link">&para;</a></h2>
@@ -2638,9 +2660,9 @@
 <h2 id="enabled-countries">Enabled countries<a class="headerlink" href="#enabled-countries" title="Permanent link">&para;</a></h2>
 <p>The countries an instance scrapes. They come from <a href="../environment-variables/#pumperly_enabled_countries"><code>PUMPERLY_ENABLED_COUNTRIES</code></a>, a comma-separated list of country codes or <a href="#scraper-key">scraper keys</a>. When it is unset, every country with a scraper is enabled. Enabling a country also enables its <a href="#ev-xx-key">EV_XX key</a>. Disabling a country stops its scrapers. It does not delete the rows already stored. See <a href="../../configuration/countries-and-schedule/">Countries and scrape schedule</a>.</p>
 <h2 id="ev-xx-key">EV_XX key<a class="headerlink" href="#ev-xx-key" title="Permanent link">&para;</a></h2>
-<p>The <a href="#scraper-key">scraper key</a> for a country's EV chargers from <a href="#ocm">OpenChargeMap</a>, where <code>XX</code> is the country code: <code>EV_FR</code>, <code>EV_IT</code> and so on. Listing <code>FR</code> in the <a href="#enabled-countries">enabled countries</a> turns on <code>EV_FR</code> too, unless <a href="../environment-variables/#pumperly_ev_enabled"><code>PUMPERLY_EV_ENABLED</code></a> is <code>0</code>. <code>EV_US</code> exists without a matching fuel scraper, so listing <code>US</code> gives EV chargers only. Spain and Germany each have a second EV key, <code>EV_ES_REVE</code> and <code>EV_DE_BNETZA</code>, and only one of each pair ever runs. See <a href="#handover">handover</a>.</p>
+<p>The <a href="#scraper-key">scraper key</a> for a country's EV chargers from <a href="#ocm">OpenChargeMap</a>, where <code>XX</code> is the country code: <code>EV_FR</code>, <code>EV_IT</code> and so on. Listing <code>FR</code> in the <a href="#enabled-countries">enabled countries</a> turns on <code>EV_FR</code> too, unless <a href="../environment-variables/#pumperly_ev_enabled"><code>PUMPERLY_EV_ENABLED</code></a> is <code>0</code>. <code>EV_US</code> exists without a matching fuel scraper, so listing <code>US</code> gives EV chargers only. Spain and Germany have more EV keys: <code>EV_ES_REVE</code> for Spain, <code>EV_DE_OCPDB</code> and <code>EV_DE_BNETZA</code> for Germany. Only one key per country ever runs. See <a href="#handover">handover</a>.</p>
 <h2 id="external-id">External ID<a class="headerlink" href="#external-id" title="Permanent link">&para;</a></h2>
-<p>A station's identifier at its <a href="#source">source</a>. Together with the country code it is the key a scraper writes on: a re-import updates the same row instead of adding a new one, and share links use this pair. For <a href="#bnetza">BNetzA</a> chargers the ID is built from the coordinates, so it changes when an operator corrects a position. Some sources get a prefix, such as <code>ocm-</code> for <a href="#ocm">OpenChargeMap</a> and <code>reve-</code> for <a href="#reve">REVE</a>. The database's own UUID can change, so do not store it. See <a href="../data-model/">Data model</a>.</p>
+<p>A station's identifier at its <a href="#source">source</a>. Together with the country code it is the key a scraper writes on: a re-import updates the same row instead of adding a new one, and share links use this pair. For <a href="#bnetza">BNetzA</a> and <a href="#ocpdb">OCPDB</a> chargers the ID is built from the coordinates, so it changes when an operator corrects a position. Some sources get a prefix, such as <code>ocm-</code> for <a href="#ocm">OpenChargeMap</a> and <code>reve-</code> for <a href="#reve">REVE</a>. The database's own UUID can change, so do not store it. See <a href="../data-model/">Data model</a>.</p>
 <h2 id="fuel-code">Fuel code<a class="headerlink" href="#fuel-code" title="Permanent link">&para;</a></h2>
 <p>The short code Pumperly uses for a fuel, such as <code>B7</code> for diesel or <code>E10</code> for petrol with up to 10% ethanol. The core codes, such as <code>E5</code>, <code>E10</code> and <code>B7</code>, follow the European standard EN 16942. <code>EV</code> is a code too, for charge points. See <a href="../fuel-types/">Fuel types</a>.</p>
 <h2 id="fuelo">Fuelo.net<a class="headerlink" href="#fuelo" title="Permanent link">&para;</a></h2>
@@ -2648,21 +2670,23 @@
 <h2 id="geojson">GeoJSON<a class="headerlink" href="#geojson" title="Permanent link">&para;</a></h2>
 <p>A standard JSON format for map data. Pumperly returns stations as a GeoJSON <code>FeatureCollection</code> of <code>Point</code> features, and routes as <code>LineString</code> geometries. Coordinates are always <code>[longitude, latitude]</code>.</p>
 <h2 id="handover">Handover<a class="headerlink" href="#handover" title="Permanent link">&para;</a></h2>
-<p>The switch from one <a href="#source">source</a> to another for the same data, done without leaving the map empty in between. For Spain, <a href="#reve">REVE</a> takes over EV chargers from <a href="#ocm">OpenChargeMap</a> once a REVE key is set. REVE fills in slowly, over about a day and a half, so the OpenChargeMap rows stay until REVE holds 95% of its registry by default, and are deleted then. For Germany, <a href="#bnetza">BNetzA</a> takes over after its first healthy run, because the register arrives complete in one file. That run must refresh a minimum number of stations before it may delete anything, so a broken download cannot remove working rows. Sweden's fuel scraper uses the same kind of floor when it retires the rows of an older source. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
+<p>The switch from one <a href="#source">source</a> to another for the same data, done without leaving the map empty in between. For Spain, <a href="#reve">REVE</a> takes over EV chargers from <a href="#ocm">OpenChargeMap</a> once a REVE key is set. REVE fills in slowly, over about a day and a half, so the OpenChargeMap rows stay until REVE holds 95% of its registry by default, and are deleted then. For Germany, <a href="#ocpdb">OCPDB</a> or <a href="#bnetza">BNetzA</a> takes over after its first healthy run, because each arrives complete in one run. That run must refresh a minimum number of stations before it may delete anything, so a broken download cannot remove working rows. Sweden's fuel scraper uses the same kind of floor when it retires the rows of an older source. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
 <h2 id="latest-price">Latest price<a class="headerlink" href="#latest-price" title="Permanent link">&para;</a></h2>
 <p>The price Pumperly shows for a station and fuel: the stored price with the newest <code>reported_at</code> time. <code>reported_at</code> is when Pumperly's scraper stored the price, not when the source published it.</p>
 <h2 id="ndjson">NDJSON<a class="headerlink" href="#ndjson" title="Permanent link">&para;</a></h2>
 <p>Newline-delimited JSON: one complete JSON object per line. <a href="../api/#route-detour"><code>POST /api/route-detour</code></a> streams its results in this format, so each station's detour appears as soon as it is known.</p>
 <h2 id="ocm">OCM (OpenChargeMap)<a class="headerlink" href="#ocm" title="Permanent link">&para;</a></h2>
 <p><a href="https://openchargemap.org">OpenChargeMap</a>, a crowdsourced, worldwide registry of EV charge points, published under the Open Database License. It is Pumperly's default EV source for every country except Germany. It needs a free API key in <a href="../environment-variables/#pumperly_ocm_api_key"><code>PUMPERLY_OCM_API_KEY</code></a>. Without one, the OpenChargeMap scrapers fetch nothing. See <a href="../../data/ev-sources/">EV charging sources</a> and <a href="../../configuration/api-keys/">API keys</a>.</p>
+<h2 id="ocpdb">OCPDB (Open ChargePoint Database)<a class="headerlink" href="#ocpdb" title="Permanent link">&para;</a></h2>
+<p>A German charge point database run by MobiData BW. It merges the <a href="#bnetza">BNetzA</a> register with the operators' own feeds, which carry ad-hoc prices. It is Germany's default EV source and the only one with prices: the cheapest ad-hoc tariff per kWh, plus any session and per-minute fees. It needs no API key. Its <a href="#scraper-key">scraper key</a> is <code>EV_DE_OCPDB</code>. See <a href="../../data/ev-sources/#ocpdb">EV charging sources</a>.</p>
 <h2 id="orphan-cleanup">Orphan cleanup<a class="headerlink" href="#orphan-cleanup" title="Permanent link">&para;</a></h2>
-<p>The last step of a scraper run. It deletes the country's fuel stations that no longer have a price from any source. EV chargers are never removed this way, because they have no prices. If any batch of station writes failed in the run, the cleanup is skipped. That stops it from deleting stations whose update never landed.</p>
+<p>The last step of a scraper run. It deletes the country's fuel stations that no longer have a price from any source. EV chargers are never removed this way, priced or not. If any batch of station writes failed in the run, the cleanup is skipped. That stops it from deleting stations whose update never landed.</p>
 <h2 id="photon">Photon<a class="headerlink" href="#photon" title="Permanent link">&para;</a></h2>
 <p>An open-source geocoder built on OpenStreetMap data. A geocoder turns a place name into coordinates. Pumperly calls Photon for the search box on the map, through <a href="../api/#geocode"><code>/api/geocode</code></a>. Without <a href="../environment-variables/#photon_url"><code>PHOTON_URL</code></a> the search returns no results. See <a href="../../configuration/geocoding-photon/">Geocoding with Photon</a>.</p>
 <h2 id="postgis">PostGIS<a class="headerlink" href="#postgis" title="Permanent link">&para;</a></h2>
 <p>The spatial extension for PostgreSQL. It stores each station's position as a point and answers location questions such as "which stations are inside this box" or "which are within 5 km of this line". Pumperly needs a PostgreSQL database with PostGIS enabled. See <a href="../data-model/">Data model</a>.</p>
 <h2 id="price-band">Price band<a class="headerlink" href="#price-band" title="Permanent link">&para;</a></h2>
-<p>The range of prices Pumperly accepts for a currency, such as 200 to 2,000 for Hungarian forints. A scraper drops any price outside its band before storing it. That catches placeholders and prices in the wrong unit. See <a href="../currencies/#price-bands">Price bands</a>.</p>
+<p>The range of prices Pumperly accepts for a currency, such as 200 to 2,000 for Hungarian forints. EV prices have their own range: 0.10 to 2.00 EUR per kWh. A scraper drops any price outside its band before storing it. That catches placeholders and prices in the wrong unit. See <a href="../currencies/#price-bands">Price bands</a>.</p>
 <h2 id="rate-limit">Rate limit<a class="headerlink" href="#rate-limit" title="Permanent link">&para;</a></h2>
 <p>A cap on how many requests one client IP may send to an endpoint per minute. It applies to the three route endpoints only. Going over it returns <code>429 Too many requests</code>. See <a href="../api/#rate-limits">Rate limits</a>.</p>
 <h2 id="reve">REVE (Mapa REVE)<a class="headerlink" href="#reve" title="Permanent link">&para;</a></h2>
@@ -2674,7 +2698,7 @@
 <h2 id="scraper">Scraper<a class="headerlink" href="#scraper" title="Permanent link">&para;</a></h2>
 <p>The code that downloads one <a href="#source">source's</a> data, turns it into Pumperly's stations and prices, and stores it. Each one handles one country, or one country's EV chargers. Scrapers run inside the app on a timer. See <a href="../../data/how-scrapers-work/">How scrapers work</a>.</p>
 <h2 id="scraper-key">Scraper key<a class="headerlink" href="#scraper-key" title="Permanent link">&para;</a></h2>
-<p>The name a scraper is scheduled and configured under. Fuel scrapers use the country code, such as <code>ES</code>. EV scrapers use an <a href="#ev-xx-key">EV_XX key</a>. A few have their own names: <code>AU_NSW</code> for New South Wales, <code>EV_ES_REVE</code>, <code>EV_DE_BNETZA</code>, and <code>STATIC_&lt;SOURCE&gt;</code> for each <a href="#static-dataset">static dataset</a>. The per-scraper interval variable uses the same key, as in <code>PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE</code>.</p>
+<p>The name a scraper is scheduled and configured under. Fuel scrapers use the country code, such as <code>ES</code>. EV scrapers use an <a href="#ev-xx-key">EV_XX key</a>. A few have their own names: <code>AU_NSW</code> for New South Wales, <code>EV_ES_REVE</code>, <code>EV_DE_BNETZA</code>, <code>EV_DE_OCPDB</code>, and <code>STATIC_&lt;SOURCE&gt;</code> for each <a href="#static-dataset">static dataset</a>. The per-scraper interval variable uses the same key, as in <code>PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE</code>.</p>
 <h2 id="source">Source<a class="headerlink" href="#source" title="Permanent link">&para;</a></h2>
 <p>The place a scraper gets its data from: a government feed, a commercial API or a community site. Each price row stores its source name, such as <code>miteco</code> for Spain's ministry or <code>anwb</code> for the Netherlands, Belgium and Luxembourg. EV sources store no prices. A scraper run replaces only the prices of its own source in its own country, so sources never overwrite each other. See <a href="../../data/coverage/">Data sources</a>.</p>
 <h2 id="static-dataset">Static dataset<a class="headerlink" href="#static-dataset" title="Permanent link">&para;</a></h2>
