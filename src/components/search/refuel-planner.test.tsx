@@ -462,6 +462,22 @@ describe("RefuelPlanner", () => {
       expect(planSpy.mock.lastCall![0].stations.map((s: { id: string }) => s.id)).toEqual(["ok"]);
     });
 
+    it("plans by time only when the filters leave no priced charger", async () => {
+      const chargers = [
+        makeStation("dear", { price: 0.99, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 150 }),
+        makeStation("slow", { price: 0.49, fuelType: "EV", routeFraction: 0.3, detourMin: 0, powerKw: 22 }),
+        makeStation("free", { price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0, powerKw: 150 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300, maxPrice: 0.8 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      expect(planSpy.mock.lastCall![0].timeValuePerHour).toBe(15);
+      await userEvent.selectOptions(screen.getByLabelText("planner.minChargerKw"), "50");
+      const input = planSpy.mock.lastCall![0];
+      expect(input.stations.map((s: { id: string }) => s.id)).toEqual(["free"]);
+      expect(input.timeValuePerHour).toBe(1);
+      expect(screen.queryByText(/planner.timeValue/)).not.toBeInTheDocument();
+    });
+
     it("converts the session fee from the tariff's currency", async () => {
       Object.assign(currencyState, { currency: "HUF", symbol: "Ft", decimals: 0, rate: 400, rates: { base: "EUR", rates: { HUF: 400 }, date: "2026-10-22" } });
       const chargers = [

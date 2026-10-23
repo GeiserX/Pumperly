@@ -18,6 +18,13 @@ const EV_MAX_CHARGE_PCT = 80;
 /** "Min charger power" choices, kW; 0 = any (including chargers with unknown power). */
 const MIN_CHARGER_KW_OPTIONS = [0, 50, 150] as const;
 
+/** Whether a charger passes the detour and power filters; a detour still loading passes. */
+function evEligible(p: StationGeoJSON["properties"], maxDetour: number | null | undefined, minChargerKw: number): boolean {
+  if (p.detourMin != null && (p.detourMin < 0 || (maxDetour != null && p.detourMin > maxDetour))) return false;
+  // A power filter can't vouch for a charger whose power is unknown.
+  return !(minChargerKw > 0 && !((p.powerKw ?? 0) >= minChargerKw));
+}
+
 interface RefuelPlannerProps {
   /** `ev` plans in kWh, by price when chargers on the route have one, else by time only. */
   mode?: "fuel" | "ev";
@@ -99,11 +106,12 @@ export function RefuelPlanner({
   // Same for the value of time; null shows the saved (and planned) value.
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
-  // EV plans use money only when some charger on the route has a price in the
-  // display currency. Chargers without a price still compete, at 0: most
+  // EV plans use money only when some charger the filters leave has a price in
+  // the display currency. Chargers without a price still compete, at 0: most
   // countries publish none, and dropping them could leave a cross-border route
-  // with no plan. With no priced charger at all, only detour and charging time count.
-  const evPriced = ev && stations.some((s) => s.properties.price != null && s.properties.price > 0 && s.properties.currency === currency);
+  // with no plan. With no such priced charger, only detour and charging time count.
+  const evPriced = ev && stations.some(({ properties: p }) =>
+    evEligible(p, maxDetour, minChargerKw) && p.price != null && p.price > 0 && p.currency === currency && (maxPrice == null || p.price <= maxPrice));
   const usesMoney = !ev || evPriced;
 
   // The time value is stored in EUR: without a rate for the display currency it
@@ -130,12 +138,11 @@ export function RefuelPlanner({
     const candidates = stations.flatMap((s) => {
       const p = s.properties;
       if (ev) {
-        if (p.detourMin == null || p.detourMin < 0 || (maxDetour != null && p.detourMin > maxDetour)) return [];
-        // A power filter can't vouch for a charger whose power is unknown.
-        if (minChargerKw > 0 && !((p.powerKw ?? 0) >= minChargerKw)) return [];
+        if (p.detourMin == null || !evEligible(p, maxDetour, minChargerKw)) return [];
+        if (maxPrice != null && p.price != null && p.price > maxPrice && p.currency === currency) return [];
         const base = { id: p.id, km: (p.routeFraction ?? 0) * routeKm, detourMin: p.detourMin, minutesPerPct: minutesPerPct(evProfile, p.powerKw) };
         if (!evPriced || p.price == null || p.price <= 0) return [{ ...base, price: 0 }];
-        if (p.currency !== currency || (maxPrice != null && p.price > maxPrice)) return [];
+        if (p.currency !== currency) return [];
         // The session fee is in the tariff's own currency; the price is already converted.
         const fee = p.evFees?.sessionFee;
         return [{ ...base, price: p.price, ...(fee != null ? { stopFee: convert(fee, p.originalCurrency ?? p.currency) } : {}) }];
