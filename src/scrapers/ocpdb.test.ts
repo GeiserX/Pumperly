@@ -194,6 +194,31 @@ describe("summarizeTariff", () => {
     expect(summarizeTariff(tariff)?.fees).toEqual({});
   });
 
+  // ChargePoint 132894.
+  it("is null when unrestricted energy prices disagree", () => {
+    const tariff: Tariff = {
+      ...CHARGECLOUD,
+      elements: [
+        { price_components: [{ type: "ENERGY", price: 1.6 }] },
+        { price_components: [{ type: "ENERGY", price: 0.412 }] },
+        { price_components: [{ type: "ENERGY", price: 0.16 }] },
+      ],
+    };
+    expect(summarizeTariff(tariff)).toBeNull();
+  });
+
+  it("keeps a tariff whose extra energy prices are restricted or repeat the first", () => {
+    const tariff: Tariff = {
+      ...CHARGECLOUD,
+      elements: [
+        { price_components: [{ type: "ENERGY", price: 0.49 }] },
+        { price_components: [{ type: "ENERGY", price: 0.49 }] },
+        { price_components: [{ type: "ENERGY", price: 0.39 }], restrictions: { start_time: "22:00", end_time: "06:00" } },
+      ],
+    };
+    expect(summarizeTariff(tariff)?.energy).toBe(0.49);
+  });
+
   it("is null without a per-kWh price", () => {
     const t: Tariff = { id: "1", source: "x", currency: "EUR", elements: [{ price_components: [{ type: "FLAT", price: 5 }] }] };
     expect(summarizeTariff(t)).toBeNull();

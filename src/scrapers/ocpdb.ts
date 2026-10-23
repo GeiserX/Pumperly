@@ -239,7 +239,7 @@ function cheaper(a: TariffSummary, b: TariffSummary | null | undefined): boolean
 /**
  * Reduce a tariff to what a pin can show: gross €/kWh plus the fees on top.
  * Null when the tariff has no per-kWh price (a flat- or time-only tariff
- * cannot be ranked against the rest).
+ * cannot be ranked against the rest), or more than one unrestricted one.
  */
 export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
   let energy: number | null = null;
@@ -249,6 +249,7 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
   let sessionFee = 0;
   const rules: SessionFeeRule[] = [];
   let perMinute: { price: number; afterSec: number } | null = null;
+  const unrestrictedEnergy = new Set<number>();
   const energyPrices = new Set(
     tariff.elements.flatMap((e) => e.price_components.filter((c) => c.type === "ENERGY").map((c) => grossPrice(c, tariff))),
   );
@@ -262,6 +263,7 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
         // Restricted energy prices (by duration, power...) are the exception;
         // the first one listed is the headline rate.
         if (energy == null) energy = price;
+        if (!restricted) unrestrictedEnergy.add(price);
       } else if (c.type === "FLAT") {
         if (!restricted) sessionFee += price;
         else rules.push(feeRule(price, element.restrictions ?? {}));
@@ -273,7 +275,9 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
     }
   }
 
-  if (energy == null) return null;
+  // Several always-on kWh rates that disagree (132894 lists 1.6, 0.412 and
+  // 0.16 net) can't say which one a driver pays: leave the tariff unpriced.
+  if (energy == null || unrestrictedEnergy.size > 1) return null;
   const fees: EvFees = {};
   const highest = Math.max(sessionFee, ...rules.map((r) => r.fee));
   if (highest > 0) {
