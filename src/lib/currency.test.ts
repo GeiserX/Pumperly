@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CURRENCIES, isValidExchangeRates, type Currency, type CurrencyInfo } from "./currency";
+import { CURRENCIES, currencyForLanguages, isValidExchangeRates, type Currency, type CurrencyInfo } from "./currency";
 
 describe("CURRENCIES", () => {
   it("is a non-empty array", () => {
@@ -92,5 +92,32 @@ describe("isValidExchangeRates", () => {
     expect(isValidExchangeRates(null)).toBe(false);
     expect(isValidExchangeRates(undefined)).toBe(false);
     expect(isValidExchangeRates("nope")).toBe(false);
+  });
+});
+
+describe("currencyForLanguages", () => {
+  it("keeps EUR for a Spanish list that ends in en-US (Android WebView)", () => {
+    expect(currencyForLanguages(["es-ES", "en-US"])).toBe("EUR");
+    expect(currencyForLanguages(["es-ES", "es", "en-US", "en"])).toBe("EUR");
+  });
+
+  it("uses the first region's currency", () => {
+    expect(currencyForLanguages(["en-US"])).toBe("USD");
+    expect(currencyForLanguages(["en-GB", "en-US"])).toBe("GBP");
+    expect(currencyForLanguages(["de-CH", "de-DE"])).toBe("CHF");
+  });
+
+  it("skips languages without a region", () => {
+    expect(currencyForLanguages(["pl", "pl-PL"])).toBe("PLN");
+  });
+
+  it("reads the region after a script subtag", () => {
+    expect(currencyForLanguages(["zh-Hant-TW"])).toBe("TWD");
+  });
+
+  it("falls back to EUR", () => {
+    expect(currencyForLanguages([])).toBe("EUR");
+    expect(currencyForLanguages(["es"])).toBe("EUR");
+    expect(currencyForLanguages(["not a locale"])).toBe("EUR");
   });
 });
