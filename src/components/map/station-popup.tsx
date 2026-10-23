@@ -72,7 +72,10 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
   const fees = properties.evFees;
   const feeParts = [
     fees?.perMinute != null &&
-      `+${fees.perMinute.toFixed(2)} ${feeSymbol}/min` +
+      // Under a cent a minute would round to +0.00, so show it per hour.
+      (fees.perMinute < 0.01
+        ? `+${(fees.perMinute * 60).toFixed(2)} ${feeSymbol}/h`
+        : `+${fees.perMinute.toFixed(2)} ${feeSymbol}/min`) +
         (fees.afterMin ? ` ${t("popup.feeAfter").replace("{n}", String(fees.afterMin))}` : ""),
     // A fee that varies lists every option; the single number is the highest.
     ...(fees?.sessionFeeRules ?? (fees?.sessionFee != null ? [{ fee: fees.sessionFee }] : [])).map(

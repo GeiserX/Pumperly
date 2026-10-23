@@ -158,6 +158,13 @@ describe("StationPopup", () => {
     expect(screen.getByText("+0.10 €/min")).toBeInTheDocument();
   });
 
+  it("shows a per-minute fee under a cent per hour", () => {
+    render(
+      <StationPopup station={makeStation({ fuelType: "EV", price: 0.59, evFees: { perMinute: 0.003 } })} onClose={() => {}} />,
+    );
+    expect(screen.getByText("+0.18 €/h")).toBeInTheDocument();
+  });
+
   it("lists every option of a session fee that varies", () => {
     render(
       <StationPopup

@@ -49,7 +49,10 @@ import { otherGermanyEvPrefixes } from "./germany-ev-source";
 //    one seen is a blocking fee starting 30-240 min in (EnBW 0.2017 net
 //    after 30 min, Wirelane 0.20 after 45 min, Chargecloud 0.06 after
 //    4 h). Those match the per-minute blocking fees operators advertise.
-//    Per hour they would be too small to block anyone.
+//    Per hour they would be too small to block anyone. Two feed errors are
+//    dropped: a TIME price equal to the tariff's ENERGY price (Chargecloud
+//    repeats the kWh rate as an always-on TIME component), and anything
+//    above MAX_PER_MINUTE (EcoMovement 133247 publishes 14.28/min).
 //
 // Like bnetza.ts, run() sweeps afterwards, because base.run() never
 // garbage-collects EV rows.
@@ -94,6 +97,10 @@ const DEAD_EVSE_STATUSES = new Set(["REMOVED", "PLANNED"]);
 
 // German standard VAT, for prices marked net that don't say at what rate.
 const DE_VAT_PCT = 19;
+
+// Highest believable per-minute fee. Blocking fees seen run 0.05-0.24/min,
+// so this leaves wide headroom while catching unit errors like 14.28/min.
+const MAX_PER_MINUTE = 1;
 
 // Session size used to fold a session fee into a per-kWh figure when ranking
 // tariffs: a typical fast-charge top-up.
@@ -242,6 +249,9 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
   let sessionFee = 0;
   const rules: SessionFeeRule[] = [];
   let perMinute: { price: number; afterSec: number } | null = null;
+  const energyPrices = new Set(
+    tariff.elements.flatMap((e) => e.price_components.filter((c) => c.type === "ENERGY").map((c) => grossPrice(c, tariff))),
+  );
 
   for (const element of tariff.elements) {
     const afterSec = element.restrictions?.min_duration ?? 0;
@@ -255,7 +265,7 @@ export function summarizeTariff(tariff: OcpdbTariff): TariffSummary | null {
       } else if (c.type === "FLAT") {
         if (!restricted) sessionFee += price;
         else rules.push(feeRule(price, element.restrictions ?? {}));
-      } else if (c.type === "TIME" && price > 0) {
+      } else if (c.type === "TIME" && price > 0 && price <= MAX_PER_MINUTE && !energyPrices.has(price)) {
         // Several TIME steps: the first one that costs anything is the fee
         // a driver will actually meet.
         if (perMinute == null || afterSec < perMinute.afterSec) perMinute = { price, afterSec };

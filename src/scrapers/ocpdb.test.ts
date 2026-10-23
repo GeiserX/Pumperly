@@ -171,6 +171,29 @@ describe("summarizeTariff", () => {
     });
   });
 
+  // Chargecloud 133462/133483/133484: the kWh rate repeated as an always-on
+  // TIME component, ahead of the real blocking fee.
+  it("ignores a TIME price that repeats the energy price", () => {
+    const tariff: Tariff = {
+      ...CHARGECLOUD,
+      elements: [
+        { price_components: [{ type: "ENERGY", price: 0.56 }] },
+        { price_components: [{ type: "TIME", price: 0.56 }] },
+        { price_components: [{ type: "TIME", price: 0.05 }], restrictions: { min_duration: 14400 } },
+      ],
+    };
+    expect(summarizeTariff(tariff)?.fees).toEqual({ perMinute: 0.05, afterMin: 240 });
+  });
+
+  // EcoMovement 133247.
+  it("ignores an implausible per-minute fee", () => {
+    const tariff: Tariff = {
+      ...CHARGECLOUD,
+      elements: [{ price_components: [{ type: "ENERGY", price: 0.59 }, { type: "TIME", price: 14.28 }] }],
+    };
+    expect(summarizeTariff(tariff)?.fees).toEqual({});
+  });
+
   it("is null without a per-kWh price", () => {
     const t: Tariff = { id: "1", source: "x", currency: "EUR", elements: [{ price_components: [{ type: "FLAT", price: 5 }] }] };
     expect(summarizeTariff(t)).toBeNull();
