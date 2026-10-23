@@ -518,7 +518,14 @@ describe("OcpdbScraper.fetch", () => {
 
   /** Routes each URL to a page; records every URL requested. */
   function stubApi(
-    opts: { sources?: unknown[]; tariffs?: unknown[]; locationsTotal?: number; failOnce?: string; failAlways?: string } = {},
+    opts: {
+      sources?: unknown[];
+      tariffs?: unknown[];
+      locationsTotal?: number;
+      failOnce?: string;
+      failAlways?: string;
+      broken?: boolean;
+    } = {},
   ) {
     const urls: string[] = [];
     const failed = new Set<string>();
@@ -551,9 +558,9 @@ describe("OcpdbScraper.fetch", () => {
         }
         const offset = Number(new URL(url).searchParams.get("offset"));
         // One location per page, a degree of latitude apart so none merge.
-        // The first page also carries one record the schema rejects.
+        // With `broken`, the first page also carries one record the schema rejects.
         const items: unknown[] = [location({ lat: 48 + offset / 1000, evses: [offset === 0 ? "enbw" : "cc"] })];
-        if (offset === 0) items.push({ source: "broken" });
+        if (offset === 0 && opts.broken) items.push({ source: "broken" });
         return page(items, opts.locationsTotal ?? 1);
       }),
     );
@@ -572,16 +579,11 @@ describe("OcpdbScraper.fetch", () => {
     expect(stations).toHaveLength(3);
   });
 
-  it("skips records that fail to parse instead of failing the run", async () => {
-    stubApi();
+  it("fails the run on a record that does not parse, so the current prices stay", async () => {
+    stubApi({ broken: true });
     const { OcpdbScraper } = await import("./ocpdb");
-    vi.spyOn(console, "log").mockImplementation(() => {});
 
-    const { stations, prices } = await new OcpdbScraper().fetch();
-
-    expect(stations).toHaveLength(1);
-    expect(prices).toEqual([expect.objectContaining({ fuelType: "EV", price: 0.79 })]);
-    expect(vi.mocked(console.log).mock.calls.flat().join(" ")).toMatch(/1 unparseable/);
+    await expect(new OcpdbScraper().fetch()).rejects.toThrow(/1 unparseable OCPDB records/);
   });
 
   // TotalEnergies tariffs on EcoMovement (132622, 132721, 132724, 133685) give

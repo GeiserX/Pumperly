@@ -651,6 +651,10 @@ export class OcpdbScraper extends BaseScraper {
       fetchAll("tariff-associations", AssociationSchema),
       fetchAll("locations?country=DEU", LocationSchema),
     ]);
+    // A dropped tariff or association would silently unprice its stations, and
+    // a dropped location would be swept: keep the current rows instead.
+    const invalid = tariffs.invalid + associations.invalid + locations.invalid;
+    if (invalid > 0) throw new Error(`[${this.source}] DE: ${invalid} unparseable OCPDB records`);
     const live = liveSources(sources, new Date(), MAX_FEED_AGE_DAYS);
     const stale = [...new Set(tariffs.items.map((t) => t.source))].filter((s) => !live.has(s));
     if (stale.length > 0) {
@@ -665,8 +669,7 @@ export class OcpdbScraper extends BaseScraper {
     console.log(
       `[${this.source}] DE: ${tariffs.items.length} tariffs → ${tariffsByEvse.size} priced EVSEs; ` +
         `${stats.locations} locations → ${stations.length} stations, ${stats.priced} priced ` +
-        `(merged ${stats.merged}, skipped ${stats.noLiveEvse} without live EVSE, ${stats.notGermany} outside DE, ` +
-        `${tariffs.invalid + associations.invalid + locations.invalid} unparseable)`,
+        `(merged ${stats.merged}, skipped ${stats.noLiveEvse} without live EVSE, ${stats.notGermany} outside DE)`,
     );
 
     return { stations, prices };
