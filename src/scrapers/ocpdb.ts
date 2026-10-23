@@ -587,24 +587,26 @@ async function fetchPage(path: string, offset: number): Promise<z.infer<typeof P
  * cost the country.
  */
 async function fetchAll<T>(path: string, schema: z.ZodType<T>): Promise<{ items: T[]; invalid: number }> {
-  const first = await fetchPage(path, 0);
-  const offsets: number[] = [];
-  for (let o = PAGE_SIZE; o < first.total_count; o += PAGE_SIZE) offsets.push(o);
-
-  const pages: unknown[][] = [first.items];
-  for (let i = 0; i < offsets.length; i += CONCURRENCY) {
-    const batch = await Promise.all(offsets.slice(i, i + CONCURRENCY).map((o) => fetchPage(path, o)));
-    for (const p of batch) pages.push(p.items);
-  }
-
   const items: T[] = [];
   let invalid = 0;
-  for (const page of pages) {
+  // Parse each page as it lands and let the raw JSON go: holding all ~100
+  // location pages until the end peaked at ~800 MB RSS.
+  const keep = (page: unknown[]) => {
     for (const raw of page) {
       const r = schema.safeParse(raw);
       if (r.success) items.push(r.data);
       else invalid++;
     }
+  };
+
+  const first = await fetchPage(path, 0);
+  keep(first.items);
+  const offsets: number[] = [];
+  for (let o = PAGE_SIZE; o < first.total_count; o += PAGE_SIZE) offsets.push(o);
+
+  for (let i = 0; i < offsets.length; i += CONCURRENCY) {
+    const batch = await Promise.all(offsets.slice(i, i + CONCURRENCY).map((o) => fetchPage(path, o)));
+    for (const p of batch) keep(p.items);
   }
   return { items, invalid };
 }
