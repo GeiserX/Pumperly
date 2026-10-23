@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { fuelTypeEnum } from "@/types/fuel";
-import type { StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
+import type { EvFees, StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
 
 const MAX_COORDINATES = 2000;
 const MAX_RESULTS = 5000;
@@ -58,6 +58,8 @@ interface StationRow {
   distance_m: number;
   /** EV query only. */
   max_power_kw?: number | null;
+  /** EV query only: fees on top of the per-kWh price. */
+  ev_fees?: EvFees | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -117,12 +119,21 @@ export async function POST(request: NextRequest) {
             s.id, s.external_id AS external_id, s.country AS country,
             s.name, s.brand, s.address, s.city,
             ST_X(s.geom) AS longitude, ST_Y(s.geom) AS latitude,
-            NULL::float AS price, 'EUR' AS currency,
-            NULL::timestamptz AS reported_at,
+            fp.price::float AS price, COALESCE(fp.currency, 'EUR') AS currency,
+            fp.reported_at, fp.ev_fees,
             s.max_power_kw::int AS max_power_kw,
             ST_LineLocatePoint(r.g::geometry, s.geom)::float AS route_fraction,
             ST_Distance(s.geom::geography, r.g::geography)::float AS distance_m
-          FROM stations s, route r
+          FROM stations s
+          CROSS JOIN route r
+          LEFT JOIN LATERAL (
+            SELECT price, currency, reported_at, ev_fees
+            FROM fuel_prices
+            WHERE station_id = s.id
+              AND fuel_type = 'EV'
+            ORDER BY reported_at DESC NULLS LAST
+            LIMIT 1
+          ) fp ON true
           WHERE s.station_type IN ('ev_charger', 'both')
             AND s.geom && ST_Expand(r.g::geometry, $2, $3)
             AND ST_DWithin(s.geom::geography, r.g::geography, $4)
@@ -187,6 +198,7 @@ export async function POST(request: NextRequest) {
         ...(row.price != null ? { price: row.price } : {}),
         ...(row.reported_at ? { reportedAt: new Date(row.reported_at).toISOString() } : {}),
         ...(row.max_power_kw != null ? { powerKw: row.max_power_kw } : {}),
+        ...(row.ev_fees ? { evFees: row.ev_fees } : {}),
         routeFraction: row.route_fraction,
         // detourMin is computed later via /api/route-detour (Valhalla-based)
       },

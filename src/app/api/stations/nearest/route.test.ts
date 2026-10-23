@@ -103,7 +103,7 @@ describe("stations/nearest API", () => {
     expect(callArgs[4]).toBe(10);
   });
 
-  it("queries EV stations without price join", async () => {
+  it("keeps unpriced EV chargers in the results", async () => {
     vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([{
       ...mockRow,
       price: null,
@@ -122,6 +122,26 @@ describe("stations/nearest API", () => {
     expect(sqlArg).toContain("station_type");
     expect(sqlArg).toContain("s.max_power_kw::int AS max_power_kw");
     expect(response.data.features[0].properties.powerKw).toBe(150);
+  });
+
+  it("returns an EV charger's price and fees from an outer price join", async () => {
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([{
+      ...mockRow,
+      price: 0.79,
+      currency: "EUR",
+      max_power_kw: 22,
+      ev_fees: { sessionFee: 1.5 },
+    }]);
+
+    const response = (await GET(makeRequest({
+      ...validParams,
+      fuel: "EV",
+    }) as any)) as any;
+
+    expect(response.data.features[0].properties).toMatchObject({ price: 0.79, evFees: { sessionFee: 1.5 } });
+    const sqlArg = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0][0] as string;
+    expect(sqlArg).toContain("LEFT JOIN LATERAL");
+    expect(sqlArg).toContain("fuel_type = 'EV'");
   });
 
   it("sets cache-control header", async () => {

@@ -125,11 +125,12 @@ describe("route-stations API", () => {
     expect(sql).not.toContain("ST_GeomFromText($1, 4326)::geography");
   });
 
-  it("queries EV stations without price join", async () => {
+  it("keeps unpriced EV chargers along the route", async () => {
     const { prisma } = await import("@/lib/db");
     const evRow = { ...mockStationRow, price: null, reported_at: null, max_power_kw: 150 };
     const unknownKw = { ...evRow, id: "unknown-kw", max_power_kw: null };
-    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([evRow, unknownKw]);
+    const priced = { ...evRow, id: "priced", price: 0.79, currency: "EUR", ev_fees: { perMinute: 0.24, afterMin: 30 } };
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([evRow, unknownKw, priced]);
 
     const { POST } = await import("./route");
     const response = (await POST(makeRequest({
@@ -139,23 +140,31 @@ describe("route-stations API", () => {
     }) as any)) as any;
 
     expect(response.status).toBe(200);
-    expect(response.data.features).toHaveLength(2);
-    // EV query should not include price
+    expect(response.data.features).toHaveLength(3);
+    // Unpriced charger rows (price NULL) carry no price
     expect(response.data.features[0].properties.price).toBeUndefined();
+    expect(response.data.features[0].properties).not.toHaveProperty("evFees");
+    // Priced chargers carry the €/kWh and the fee note.
+    expect(response.data.features[2].properties).toMatchObject({
+      price: 0.79,
+      evFees: { perMinute: 0.24, afterMin: 30 },
+    });
     // Charger power passes through; unknown power is omitted, not null.
     expect(response.data.features[0].properties.powerKw).toBe(150);
     expect(response.data.features[1].properties).not.toHaveProperty("powerKw");
 
     expect(vi.mocked(prisma.$queryRawUnsafe)).toHaveBeenCalledTimes(1);
     const sql = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0][0] as string;
-    // EV branch: type filter, same CTE-based spatial WHERE, no price JOIN LATERAL.
+    // EV branch: type filter, same CTE-based spatial WHERE, and an OUTER price
+    // join so unpriced chargers stay on the map.
     expect(sql).toContain("WITH route AS (SELECT ST_GeomFromText($1, 4326) AS g)");
     expect(sql).toContain("s.station_type IN ('ev_charger', 'both')");
     // EV branch binds: WKT=$1, dx=$2, dy=$3, meters=$4 (no fuel param).
     expect(sql).toContain("s.geom && ST_Expand(r.g::geometry, $2, $3)");
     expect(sql).toContain("ST_DWithin(s.geom::geography, r.g::geography, $4)");
     expect(sql).toContain("LIMIT 5000");
-    expect(sql).not.toContain("JOIN LATERAL");
+    expect(sql).toContain("LEFT JOIN LATERAL");
+    expect(sql).toContain("fuel_type = 'EV'");
     expect(sql).toContain("s.max_power_kw::int AS max_power_kw");
   });
 
