@@ -12,18 +12,23 @@ describe("resolveGermanyEvSource", () => {
 
   // What the scheduler produces once EV_XX codes are derived.
   const SCHEDULED = ["DE", "FR", "EV_DE", "EV_FR", "EV_US"];
-  // What `--country=all` produces: both German sources are registered.
-  const ALL = ["DE", "FR", "EV_DE", "EV_FR", "EV_DE_BNETZA", "EV_US"];
+  // What `--country=all` produces: every German source is registered.
+  const ALL = ["DE", "FR", "EV_DE", "EV_FR", "EV_DE_BNETZA", "EV_DE_OCPDB", "EV_US"];
+  const GERMAN = ["EV_DE", "EV_DE_BNETZA", "EV_DE_OCPDB"];
+  const german = (codes: string[]) => codes.filter((c) => GERMAN.includes(c));
 
   it("uses BNetzA for Germany by default", () => {
-    expect(resolveGermanyEvSource(SCHEDULED)).toContain("EV_DE_BNETZA");
-    expect(resolveGermanyEvSource(SCHEDULED)).not.toContain("EV_DE");
+    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_BNETZA"]);
+  });
+
+  it("uses OCPDB when PUMPERLY_DE_EV_SOURCE=ocpdb", () => {
+    vi.stubEnv("PUMPERLY_DE_EV_SOURCE", "ocpdb");
+    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_OCPDB"]);
   });
 
   it("keeps OpenChargeMap when PUMPERLY_DE_EV_SOURCE=ocm", () => {
     vi.stubEnv("PUMPERLY_DE_EV_SOURCE", "ocm");
-    expect(resolveGermanyEvSource(SCHEDULED)).toContain("EV_DE");
-    expect(resolveGermanyEvSource(SCHEDULED)).not.toContain("EV_DE_BNETZA");
+    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE"]);
   });
 
   it("is case- and whitespace-insensitive about the opt-out", () => {
@@ -32,15 +37,16 @@ describe("resolveGermanyEvSource", () => {
   });
 
   it("falls back to BNetzA when the override is not a source it knows", () => {
-    vi.stubEnv("PUMPERLY_DE_EV_SOURCE", "nonsense");
-    expect(resolveGermanyEvSource(SCHEDULED)).toContain("EV_DE_BNETZA");
+    for (const source of ["nonsense", "constructor", "toString"]) {
+      vi.stubEnv("PUMPERLY_DE_EV_SOURCE", source);
+      expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_BNETZA"]);
+    }
   });
 
   it("collapses --country=all down to one German EV source", () => {
-    for (const source of ["ocm", ""]) {
+    for (const source of ["ocm", "bnetza", "ocpdb", ""]) {
       vi.stubEnv("PUMPERLY_DE_EV_SOURCE", source);
-      const out = resolveGermanyEvSource(ALL);
-      expect(out.filter((c) => c === "EV_DE" || c === "EV_DE_BNETZA")).toHaveLength(1);
+      expect(german(resolveGermanyEvSource(ALL))).toHaveLength(1);
     }
   });
 

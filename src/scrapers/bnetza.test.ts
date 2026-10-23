@@ -497,7 +497,7 @@ describe("BNetzAScraper cleanup", () => {
     // removes once BNetzA is the chosen source.
     expect(stub.queries[2].sql).toMatch(/DELETE FROM stations/);
     expect(stub.queries[2].sql).toMatch(/station_type = 'ev_charger'/);
-    expect(stub.queries[2].params).toEqual(["DE", ["ocm-%"]]);
+    expect(stub.queries[2].params).toEqual(["DE", ["ocm-%", "ocpdb-%"]]);
   });
 
   it("leaves yesterday's rows alone when a degraded fetch refreshed too few of them", async () => {

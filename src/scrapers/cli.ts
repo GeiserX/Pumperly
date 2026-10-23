@@ -44,6 +44,7 @@ import { OCMScraper } from "./ocm";
 import { REVEScraper } from "./reve";
 import { resolveSpainEvSource } from "./spain-ev-source";
 import { BNetzAScraper } from "./bnetza";
+import { OcpdbScraper } from "./ocpdb";
 import { resolveGermanyEvSource } from "./germany-ev-source";
 
 // ---------------------------------------------------------------------------
@@ -145,6 +146,8 @@ const SCRAPERS: Record<string, Array<() => BaseScraper>> = {
   EV_ES_REVE: [() => new REVEScraper()],
   // Germany's official EV registry — supersedes EV_DE by default, keyless
   EV_DE_BNETZA: [() => new BNetzAScraper()],
+  // Germany's register + operator feeds with ad-hoc prices — opt-in, PUMPERLY_DE_EV_SOURCE=ocpdb
+  EV_DE_OCPDB: [() => new OcpdbScraper()],
 };
 
 function usage(): never {

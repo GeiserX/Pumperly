@@ -57,6 +57,9 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   EV_ES_REVE: 1,
   // Germany BNetzA Ladesäulenregister — one bulk TSV, regenerated daily.
   EV_DE_BNETZA: 24,
+  // Germany OCPDB — register + operator feeds with ad-hoc tariffs; the
+  // operator feeds refresh several times a day.
+  EV_DE_OCPDB: 6,
 };
 
 // Node-only scraper scheduler, loaded from instrumentation.ts. Kept in its own
@@ -114,6 +117,7 @@ export async function registerNode() {
   const { REVEScraper } = await import("./scrapers/reve");
   const { resolveSpainEvSource } = await import("./scrapers/spain-ev-source");
   const { BNetzAScraper } = await import("./scrapers/bnetza");
+  const { OcpdbScraper } = await import("./scrapers/ocpdb");
   const { resolveGermanyEvSource } = await import("./scrapers/germany-ev-source");
   const { StaticScraper } = await import("./scrapers/static");
   const { STATIC_DATASETS } = await import("./scrapers/data");
@@ -205,6 +209,8 @@ export async function registerNode() {
     EV_ES_REVE: () => new REVEScraper(),
     // Germany's official EV registry — supersedes EV_DE by default, keyless
     EV_DE_BNETZA: () => new BNetzAScraper(),
+    // Germany's register + operator feeds with ad-hoc prices — opt-in, PUMPERLY_DE_EV_SOURCE=ocpdb
+    EV_DE_OCPDB: () => new OcpdbScraper(),
   };
 
   // Register community-contributed static datasets (see scrapers/data/README.md).
@@ -257,10 +263,12 @@ export async function registerNode() {
     );
   }
 
-  // Germany likewise — see scrapers/germany-ev-source.ts, and scrapers/bnetza.ts
-  // for the sweep that retires the OpenChargeMap rows once BNetzA has landed.
+  // Germany likewise — see scrapers/germany-ev-source.ts, and the sweeps in
+  // scrapers/bnetza.ts and scrapers/ocpdb.ts that retire the other sources' rows.
   countries = resolveGermanyEvSource(countries);
-  if (countries.includes("EV_DE_BNETZA")) {
+  if (countries.includes("EV_DE_OCPDB")) {
+    console.log("[scraper] Germany EV: using OCPDB (BNetzA register + operator feeds, with prices)");
+  } else if (countries.includes("EV_DE_BNETZA")) {
     console.log(
       "[scraper] Germany EV: using the BNetzA Ladesäulenregister instead of OpenChargeMap",
     );
