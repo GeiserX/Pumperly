@@ -12,7 +12,7 @@ A rectangle on the map, given as four numbers: `minLon,minLat,maxLon,maxLat`. Th
 
 ## BNetzA {#bnetza}
 
-The Bundesnetzagentur, Germany's federal network agency. It publishes the Ladesäulenregister, the official register of public charge points in Germany. Every operator of a public charge point must file its chargers there. Pumperly downloads the register as one file, with no API key, and uses it as Germany's default EV source. Its [scraper key](#scraper-key) is `EV_DE_BNETZA`. See [EV charging sources](../data/ev-sources.md).
+The Bundesnetzagentur, Germany's federal network agency. It publishes the Ladesäulenregister, the official register of public charge points in Germany. Every operator of a public charge point must file its chargers there. Pumperly can download the register as one file, with no API key, when `PUMPERLY_DE_EV_SOURCE=bnetza`. By default it uses [OCPDB](#ocpdb), which contains the register. Its [scraper key](#scraper-key) is `EV_DE_BNETZA`. See [EV charging sources](../data/ev-sources.md).
 
 ## Corridor {#corridor}
 
@@ -45,11 +45,11 @@ The countries an instance scrapes. They come from [`PUMPERLY_ENABLED_COUNTRIES`]
 
 ## EV_XX key {#ev-xx-key}
 
-The [scraper key](#scraper-key) for a country's EV chargers from [OpenChargeMap](#ocm), where `XX` is the country code: `EV_FR`, `EV_IT` and so on. Listing `FR` in the [enabled countries](#enabled-countries) turns on `EV_FR` too, unless [`PUMPERLY_EV_ENABLED`](environment-variables.md#pumperly_ev_enabled) is `0`. `EV_US` exists without a matching fuel scraper, so listing `US` gives EV chargers only. Spain and Germany each have a second EV key, `EV_ES_REVE` and `EV_DE_BNETZA`, and only one of each pair ever runs. See [handover](#handover).
+The [scraper key](#scraper-key) for a country's EV chargers from [OpenChargeMap](#ocm), where `XX` is the country code: `EV_FR`, `EV_IT` and so on. Listing `FR` in the [enabled countries](#enabled-countries) turns on `EV_FR` too, unless [`PUMPERLY_EV_ENABLED`](environment-variables.md#pumperly_ev_enabled) is `0`. `EV_US` exists without a matching fuel scraper, so listing `US` gives EV chargers only. Spain and Germany have more EV keys: `EV_ES_REVE` for Spain, `EV_DE_OCPDB` and `EV_DE_BNETZA` for Germany. Only one key per country ever runs. See [handover](#handover).
 
 ## External ID {#external-id}
 
-A station's identifier at its [source](#source). Together with the country code it is the key a scraper writes on: a re-import updates the same row instead of adding a new one, and share links use this pair. For [BNetzA](#bnetza) chargers the ID is built from the coordinates, so it changes when an operator corrects a position. Some sources get a prefix, such as `ocm-` for [OpenChargeMap](#ocm) and `reve-` for [REVE](#reve). The database's own UUID can change, so do not store it. See [Data model](data-model.md).
+A station's identifier at its [source](#source). Together with the country code it is the key a scraper writes on: a re-import updates the same row instead of adding a new one, and share links use this pair. For [BNetzA](#bnetza) and [OCPDB](#ocpdb) chargers the ID is built from the coordinates, so it changes when an operator corrects a position. Some sources get a prefix, such as `ocm-` for [OpenChargeMap](#ocm) and `reve-` for [REVE](#reve). The database's own UUID can change, so do not store it. See [Data model](data-model.md).
 
 ## Fuel code {#fuel-code}
 
@@ -65,7 +65,7 @@ A standard JSON format for map data. Pumperly returns stations as a GeoJSON `Fea
 
 ## Handover {#handover}
 
-The switch from one [source](#source) to another for the same data, done without leaving the map empty in between. For Spain, [REVE](#reve) takes over EV chargers from [OpenChargeMap](#ocm) once a REVE key is set. REVE fills in slowly, over about a day and a half, so the OpenChargeMap rows stay until REVE holds 95% of its registry by default, and are deleted then. For Germany, [BNetzA](#bnetza) takes over after its first healthy run, because the register arrives complete in one file. That run must refresh a minimum number of stations before it may delete anything, so a broken download cannot remove working rows. Sweden's fuel scraper uses the same kind of floor when it retires the rows of an older source. See [EV charging sources](../data/ev-sources.md).
+The switch from one [source](#source) to another for the same data, done without leaving the map empty in between. For Spain, [REVE](#reve) takes over EV chargers from [OpenChargeMap](#ocm) once a REVE key is set. REVE fills in slowly, over about a day and a half, so the OpenChargeMap rows stay until REVE holds 95% of its registry by default, and are deleted then. For Germany, [OCPDB](#ocpdb) or [BNetzA](#bnetza) takes over after its first healthy run, because each arrives complete in one run. That run must refresh a minimum number of stations before it may delete anything, so a broken download cannot remove working rows. Sweden's fuel scraper uses the same kind of floor when it retires the rows of an older source. See [EV charging sources](../data/ev-sources.md).
 
 ## Latest price {#latest-price}
 
@@ -79,9 +79,13 @@ Newline-delimited JSON: one complete JSON object per line. [`POST /api/route-det
 
 [OpenChargeMap](https://openchargemap.org), a crowdsourced, worldwide registry of EV charge points, published under the Open Database License. It is Pumperly's default EV source for every country except Germany. It needs a free API key in [`PUMPERLY_OCM_API_KEY`](environment-variables.md#pumperly_ocm_api_key). Without one, the OpenChargeMap scrapers fetch nothing. See [EV charging sources](../data/ev-sources.md) and [API keys](../configuration/api-keys.md).
 
+## OCPDB (Open ChargePoint Database) {#ocpdb}
+
+A German charge point database run by MobiData BW. It merges the [BNetzA](#bnetza) register with the operators' own feeds, which carry ad-hoc prices. It is Germany's default EV source and the only one with prices: the cheapest ad-hoc tariff per kWh, plus any session and per-minute fees. It needs no API key. Its [scraper key](#scraper-key) is `EV_DE_OCPDB`. See [EV charging sources](../data/ev-sources.md#ocpdb).
+
 ## Orphan cleanup {#orphan-cleanup}
 
-The last step of a scraper run. It deletes the country's fuel stations that no longer have a price from any source. EV chargers are never removed this way, because they have no prices. If any batch of station writes failed in the run, the cleanup is skipped. That stops it from deleting stations whose update never landed.
+The last step of a scraper run. It deletes the country's fuel stations that no longer have a price from any source. EV chargers are never removed this way, priced or not. If any batch of station writes failed in the run, the cleanup is skipped. That stops it from deleting stations whose update never landed.
 
 ## Photon {#photon}
 
@@ -93,7 +97,7 @@ The spatial extension for PostgreSQL. It stores each station's position as a poi
 
 ## Price band {#price-band}
 
-The range of prices Pumperly accepts for a currency, such as 200 to 2,000 for Hungarian forints. A scraper drops any price outside its band before storing it. That catches placeholders and prices in the wrong unit. See [Price bands](currencies.md#price-bands).
+The range of prices Pumperly accepts for a currency, such as 200 to 2,000 for Hungarian forints. EV prices have their own range: 0.10 to 2.00 EUR per kWh. A scraper drops any price outside its band before storing it. That catches placeholders and prices in the wrong unit. See [Price bands](currencies.md#price-bands).
 
 ## Rate limit {#rate-limit}
 
@@ -117,7 +121,7 @@ The code that downloads one [source's](#source) data, turns it into Pumperly's s
 
 ## Scraper key {#scraper-key}
 
-The name a scraper is scheduled and configured under. Fuel scrapers use the country code, such as `ES`. EV scrapers use an [EV_XX key](#ev-xx-key). A few have their own names: `AU_NSW` for New South Wales, `EV_ES_REVE`, `EV_DE_BNETZA`, and `STATIC_<SOURCE>` for each [static dataset](#static-dataset). The per-scraper interval variable uses the same key, as in `PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE`.
+The name a scraper is scheduled and configured under. Fuel scrapers use the country code, such as `ES`. EV scrapers use an [EV_XX key](#ev-xx-key). A few have their own names: `AU_NSW` for New South Wales, `EV_ES_REVE`, `EV_DE_BNETZA`, `EV_DE_OCPDB`, and `STATIC_<SOURCE>` for each [static dataset](#static-dataset). The per-scraper interval variable uses the same key, as in `PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE`.
 
 ## Source {#source}
 

@@ -346,7 +346,7 @@ The command line in [`src/scrapers/cli.ts`](https://github.com/GeiserX/Pumperly/
 ```bash
 npm run scraper:run -- --country=FR
 npm run scraper:run -- --country=ES,PT --once
-npm run scraper:run -- --country=EV_DE_BNETZA
+npm run scraper:run -- --country=EV_DE_OCPDB
 npm run scraper:run -- --country=all
 ```
 
@@ -359,7 +359,7 @@ The codes are the scheduler's codes:
 
 - A country code such as `ES` runs that country's fuel scraper. `AU` runs both Australian sources, Western Australia and New South Wales.
 - `EV_XX` runs Open Charge Map for country `XX`, for example `EV_FR` or `EV_US`.
-- `EV_ES_REVE` and `EV_DE_BNETZA` run the Spanish and German official charger registries.
+- `EV_ES_REVE` runs the Spanish official charger registry. `EV_DE_OCPDB` and `EV_DE_BNETZA` run the two German official sources.
 - `all` runs every scraper. For Spain and Germany it picks one EV source, the same way the app does. Naming `EV_ES` or `EV_DE` yourself runs Open Charge Map for that country regardless.
 
 An unknown code prints the list of valid ones and exits.

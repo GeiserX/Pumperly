@@ -134,7 +134,7 @@ flowchart LR
 
 ## What it does not do
 
-- It has no prices for EV charging. The sources publish charger locations, not tariffs.
+- It has EV charging prices for Germany only. Elsewhere the sources publish charger locations, not tariffs.
 - It has no fuel prices for the United States, only chargers. No national price feed exists.
 - It does not route without Valhalla, and its search box finds nothing without Photon. The shipped compose file starts neither.
 - It does not store prices for a paused or blocked source. The last good prices stay on the map, and each popup says how old they are.

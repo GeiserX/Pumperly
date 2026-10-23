@@ -8,11 +8,11 @@ This page lists every API key Pumperly can use: where to get it, what it unlocks
 |---|---|---|---|
 | [`TANKERKOENIG_API_KEY`](#tankerkonig-germany) | Tankerkönig | Germany's fuel prices | No German fuel prices. Each run fails and the last prices stay. |
 | [`FUELPRICES_DK_API_KEY`](#fuelpricesdk-denmark) | fuelprices.dk | Denmark's fuel prices | A fallback feed is tried, and it no longer answers. |
-| [`PUMPERLY_OCM_API_KEY`](#open-charge-map) | Open Charge Map | EV chargers in every country without an official registry | No chargers from Open Charge Map. Germany still gets chargers from BNetzA. |
+| [`PUMPERLY_OCM_API_KEY`](#open-charge-map) | Open Charge Map | EV chargers in every country without an official registry | No chargers from Open Charge Map. Germany still gets chargers from OCPDB. |
 | [`PUMPERLY_REVE_API_KEY`](#mapa-reve-spain) | Mapa REVE | Spain's chargers from the official registry | Spain's chargers come from Open Charge Map instead. |
 | [`NSW_FUEL_API_KEY`](#nsw-fuelcheck-australia) and [`NSW_FUEL_API_SECRET`](#nsw-fuelcheck-australia) | NSW FuelCheck | Fuel prices in New South Wales, Australia | Only Western Australia updates. |
 
-Every other source, in every other country, is keyless. That includes Germany's charger registry, the [BNetzA Ladesäulenregister](../data/ev-sources.md). [Fuel price sources](../data/fuel-sources.md) and [EV charging sources](../data/ev-sources.md) list them all.
+Every other source, in every other country, is keyless. That includes Germany's charger sources, the [Open ChargePoint Database](../data/ev-sources.md#ocpdb) and the [BNetzA Ladesäulenregister](../data/ev-sources.md#bnetza). [Fuel price sources](../data/fuel-sources.md) and [EV charging sources](../data/ev-sources.md) list them all.
 
 ## Setting a key {#setting-a-key}
 
@@ -107,7 +107,7 @@ Keys are read when the app starts. Restart it after adding or changing one.
 - **Get a key:** create a free account at [openchargemap.org](https://openchargemap.org) and create an API key there.
 - **Variable:** [`PUMPERLY_OCM_API_KEY`](../reference/environment-variables.md#pumperly_ocm_api_key).
 - **How it is used:** the key goes in the `X-API-Key` header. Each `EV_<CC>` scraper runs once a day by default. A small country takes one request. The API returns at most 5,000 chargers per request, so for a large country the scraper splits the map into smaller boxes. By default it sends one request at a time across all countries, with 600 ms between requests, and at most 800 requests per country per run. [Open Charge Map tuning](../reference/environment-variables.md#open-charge-map-tuning) lists the settings.
-- **Without it:** every Open Charge Map scraper skips its run and writes nothing. Chargers already in the database stay. Germany still gets chargers from the keyless BNetzA register, and Spain from REVE if you set that key. The log shows, for each country:
+- **Without it:** every Open Charge Map scraper skips its run and writes nothing. Chargers already in the database stay. Germany still gets chargers from the keyless OCPDB, and Spain from REVE if you set that key. The log shows, for each country:
 
     ```text
     [ocm] PUMPERLY_OCM_API_KEY not set, skipping

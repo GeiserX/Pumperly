@@ -37,6 +37,7 @@ Each scheduled scraper has a key. You use keys in [`PUMPERLY_ENABLED_COUNTRIES`]
 | `EV_<CC>` | EV chargers for one country from Open Charge Map | `EV_FR`, `EV_US` |
 | `EV_ES_REVE` | Spain's chargers from Mapa REVE, the official registry | `EV_ES_REVE` |
 | `EV_DE_BNETZA` | Germany's chargers from the BNetzA Ladesäulenregister | `EV_DE_BNETZA` |
+| `EV_DE_OCPDB` | Germany's chargers and their prices from the Open ChargePoint Database | `EV_DE_OCPDB` |
 | `STATIC_<SOURCE>` | A community dataset committed to the repository | none ship today |
 
 `<CC>` is an [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code. The 39 fuel-price countries are listed in [the country table](#default-country-and-fuel). The United States has chargers only, under `EV_US`, because it has no national fuel price source.
@@ -68,7 +69,7 @@ With [`PUMPERLY_EV_ENABLED=0`](../reference/environment-variables.md#pumperly_ev
 | `ES,PT,FR` | Fuel prices and chargers for the three countries |
 | `AU,AU_NSW` | Fuel prices for Western Australia and New South Wales, and Australia's chargers |
 | `US` | Chargers in the United States only |
-| `EV_DE` | Germany's chargers only, from the BNetzA register by default |
+| `EV_DE` | Germany's chargers only, from OCPDB by default |
 | `ES,XX` | Same as `ES`. `XX` is ignored. |
 
 The value also sets the `enabledCountries` list that [`/api/config`](../reference/api.md) and `/api/stats` report. That list only holds the 39 fuel-price country codes, so `US`, `AU_NSW` and `EV_` entries never appear in it.
@@ -86,32 +87,34 @@ Some sources are blocked or paused upstream, so a country can be enabled and sti
 
 ## Spain and Germany: one EV source each {#spain-and-germany-ev-sources}
 
-Spain and Germany each have two possible charger sources: Open Charge Map, which is crowdsourced, and an official registry. The two overlap heavily, so running both would put two pins on most chargers. The scheduler always keeps exactly one per country. Listing both keys does not change that.
+Spain and Germany each have more than one possible charger source: Open Charge Map, which is crowdsourced, and an official one. Germany has two official ones, the BNetzA register and OCPDB, which contains that register. The sources overlap heavily, so running two would put two pins on most chargers. The scheduler always keeps exactly one per country. Listing several keys does not change that.
 
-| Country | Official registry | Picked when | Otherwise |
+| Country | Official source | Picked when | Otherwise |
 |---|---|---|---|
 | Spain | Mapa REVE (`EV_ES_REVE`) | [`PUMPERLY_REVE_API_KEY`](../reference/environment-variables.md#pumperly_reve_api_key) is set | Open Charge Map (`EV_ES`) |
-| Germany | BNetzA Ladesäulenregister (`EV_DE_BNETZA`) | Always, unless the next column applies | Open Charge Map (`EV_DE`) when [`PUMPERLY_DE_EV_SOURCE=ocm`](../reference/environment-variables.md#pumperly_de_ev_source) |
+| Germany | Open ChargePoint Database (`EV_DE_OCPDB`) | Always, unless the next column applies | The BNetzA register (`EV_DE_BNETZA`) when [`PUMPERLY_DE_EV_SOURCE=bnetza`](../reference/environment-variables.md#pumperly_de_ev_source), Open Charge Map (`EV_DE`) when it is `ocm` |
 
 The log shows the choice at start-up:
 
 ```text
 [scraper] Spain EV: using Mapa REVE (official registry) instead of OpenChargeMap
-[scraper] Germany EV: using the BNetzA Ladesäulenregister instead of OpenChargeMap
+[scraper] Germany EV: using OCPDB (BNetzA register + operator feeds, with prices)
 ```
 
-Each registry deletes Open Charge Map's rows for its country once it has taken over:
+Each official source deletes the other sources' rows for its country once it has taken over:
 
-- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map rows. "Healthy" means it refreshed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](../reference/environment-variables.md#pumperly_bnetza_min_stations) stations.
+- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) stations.
+- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it refreshed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](../reference/environment-variables.md#pumperly_bnetza_min_stations) stations.
 - **REVE** fills in over many hourly runs. Open Charge Map's Spanish rows stay on the map until REVE holds [`PUMPERLY_REVE_CUTOVER_RATIO`](../reference/environment-variables.md#pumperly_reve_cutover_ratio) of the registry, 95% by default. Until then, expect two pins on many Spanish chargers. [API keys](api-keys.md#mapa-reve-spain) has the timing.
 
-!!! warning "Switching back leaves the registry's rows behind"
-    Nothing deletes a registry's rows if you switch back to Open Charge Map. Open Charge Map then adds its own, and most chargers get two pins. After switching Germany back to `ocm`, or removing the REVE key, delete the registry rows yourself:
+!!! warning "Switching back leaves the official rows behind"
+    Open Charge Map deletes nothing when you switch back to it. It adds its own rows, and most chargers get two pins. After switching Germany to `ocm`, or removing the REVE key, delete the official rows yourself. Switching between `ocpdb` and `bnetza` needs nothing: each deletes the other's rows.
 
     ```sql
     -- Germany, after PUMPERLY_DE_EV_SOURCE=ocm
     DELETE FROM stations
-    WHERE country = 'DE' AND station_type = 'ev_charger' AND external_id LIKE 'bnetza-%';
+    WHERE country = 'DE' AND station_type = 'ev_charger'
+      AND (external_id LIKE 'ocpdb-%' OR external_id LIKE 'bnetza-%');
 
     -- Spain, after removing PUMPERLY_REVE_API_KEY
     DELETE FROM stations
@@ -134,7 +137,7 @@ The defaults follow how often each source changes:
 | 1 hour | `FR`, `DE`, `EV_ES_REVE` |
 | 2 hours | `AT` |
 | 4 hours | `GB` |
-| 6 hours | `SI`, `NL`, `BE`, `DK`, `NO`, `IS`, `CY` |
+| 6 hours | `SI`, `NL`, `BE`, `DK`, `NO`, `IS`, `CY`, `EV_DE_OCPDB` |
 | 12 hours | every other fuel key, including `AU_NSW` |
 | 24 hours | every `EV_<CC>` key and `EV_DE_BNETZA` |
 

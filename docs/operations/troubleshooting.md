@@ -162,6 +162,7 @@ The ranges, from [`src/scrapers/base.ts`](https://github.com/GeiserX/Pumperly/bl
 | Prices | Accepted range |
 |--------|----------------|
 | Any price of 0 or less | Always rejected |
+| `EV`, per kWh | `EUR` only, from 0.10 to 2.00 |
 | `H2`, `CNG`, `LNG` and `ADBLUE`, in any currency | At least 0.05 and below 100 |
 | EUR, GBP and CHF | From `PUMPERLY_PRICE_MIN` to `PUMPERLY_PRICE_MAX`, by default 0.30 to 4.00 |
 | Other currencies | A fixed band per currency, listed below |

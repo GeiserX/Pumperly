@@ -70,7 +70,7 @@ Each fuel has a code, such as `B7` for regular diesel or `EV` for charging. The 
 
 The first fuel you see is the instance default. The operator sets it with [`PUMPERLY_DEFAULT_FUEL`](../reference/environment-variables.md#pumperly_default_fuel). Without it, Pumperly uses the default fuel of the country in [`PUMPERLY_DEFAULT_COUNTRY`](../reference/environment-variables.md#pumperly_default_country).
 
-On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, and chargers carry no price. See [EV charging](ev-charging.md).
+On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, priced or not. Only German chargers have prices. See [EV charging](ev-charging.md).
 
 Changing the fuel clears the max-price filter and resets the max detour to 5 minutes.
 

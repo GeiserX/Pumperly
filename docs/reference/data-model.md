@@ -33,6 +33,7 @@ erDiagram
         varchar currency
         timestamptz reported_at
         varchar source
+        jsonb ev_fees
     }
 ```
 
@@ -88,6 +89,12 @@ The shipped files, included here word for word:
     --8<-- "prisma/migrations/20260930000000_station_max_power_kw/migration.sql"
     ```
 
+=== "EV fees migration"
+
+    ```sql
+    --8<-- "prisma/migrations/20261022000000_fuel_price_ev_fees/migration.sql"
+    ```
+
 ## `stations`
 
 One row per place: a fuel station, an EV charger, or a site that is both.
@@ -104,7 +111,7 @@ One row per place: a fuel station, an EV charger, or a site that is both.
 | `province` | `text` | Yes | Region, state or county, when the source gives one. |
 | `station_type` | `varchar(20)` | No | `fuel`, `ev_charger` or `both`. Defaults to `fuel`. |
 | `geom` | `geometry(Point, 4326)` | Yes | The position, as a PostGIS point in WGS84 longitude and latitude. Scrapers always set it. |
-| `max_power_kw` | `smallint` | Yes | EV chargers: highest single-connector power in kW, set by the BNetzA, OCM and REVE scrapers. `null` for fuel stations and chargers with no published power. |
+| `max_power_kw` | `smallint` | Yes | EV chargers: highest single-connector power in kW, set by the OCPDB, BNetzA, OCM and REVE scrapers. `null` for fuel stations and chargers with no published power. |
 | `created_at` | `timestamptz` | No | When the row was first inserted. Never changed afterwards. |
 | `updated_at` | `timestamptz` | No | When a scraper run last wrote this station. Every successful upsert sets it to the current time, even when nothing changed. |
 
@@ -113,7 +120,7 @@ One row per place: a fuel station, an EV charger, or a site that is both.
 | Value | Written by | Shown for |
 | --- | --- | --- |
 | `fuel` | Fuel price scrapers | Fuel searches, joined to `fuel_prices` |
-| `ev_charger` | OpenChargeMap, Mapa REVE and BNetzA scrapers | The `EV` filter, without prices |
+| `ev_charger` | OCPDB, OpenChargeMap, Mapa REVE and BNetzA scrapers | The `EV` filter, with the newest `EV` price when one exists |
 | `both` | Accepted by the scraper contract. No built-in scraper writes it. | The `EV` filter, and fuel searches when it has prices |
 
 `geom` stores longitude first, as PostGIS does. To read it back as numbers, use `ST_X(geom)` for longitude and `ST_Y(geom)` for latitude.
@@ -127,12 +134,24 @@ One row per price of one fuel at one station.
 | `id` | `bigint` | No | Row id, from a sequence. |
 | `station_id` | `uuid` | No | The station, `stations.id`. Deleting a station deletes its prices. |
 | `fuel_type` | `varchar(20)` | No | A fuel code such as `E5`, `E10` or `B7`. See [Fuel types](fuel-types.md). The database does not check the value. The `RawFuelPrice` type limits scrapers to codes from the list when the code is compiled. |
-| `price` | `decimal` | No | Price per litre in `currency`, with three decimals. Gas fuels sold by weight, such as CNG in some countries, are per kilogram. |
+| `price` | `decimal` | No | Price per litre in `currency`, with three decimals. Gas fuels sold by weight, such as CNG in some countries, are per kilogram. `EV` prices are per kWh. |
 | `currency` | `varchar(3)` | No | ISO 4217 code of `price`, such as `EUR` or `SEK`. Defaults to `EUR`. Scrapers always set it. |
-| `reported_at` | `timestamptz` | No | When Pumperly wrote the price, not when the source last changed it. |
+| `reported_at` | `timestamptz` | No | When Pumperly wrote the price, not when the source last changed it. The OCPDB scraper is the exception: it writes when the tariff's operator feed last refreshed. |
 | `source` | `varchar(50)` | No | The name of the scraper source that wrote the row. See [`source`](#source). |
+| `ev_fees` | `jsonb` | Yes | `EV` rows only: charges on top of the per-kWh price, in `currency`. See [`ev_fees`](#ev_fees). `null` for fuel rows and for tariffs with no extra charges. |
 
-`EV` is a valid fuel code for API requests, but no price row ever carries it. An `EV` search queries stations by `station_type` instead. EV chargers have no rows in this table.
+An `EV` search queries stations by `station_type`, then joins each one to its newest `EV` row here, if any. Only the [OCPDB scraper](../data/ev-sources.md#ocpdb) writes `EV` rows, so only German chargers have prices. Every other charger has no rows in this table and shows unpriced.
+
+### `ev_fees` {#ev_fees}
+
+The JSON object holds the parts of a charging tariff that a per-kWh price cannot express. Every field is optional.
+
+| Field | Meaning |
+| --- | --- |
+| `sessionFee` | A fixed fee per charging session. When the fee varies, this is the highest one, and that is the value cost estimates use. |
+| `sessionFeeRules` | Present only when the session fee varies. A list of `{ fee, from?, to?, days?, other? }`: `from` and `to` are local `HH:MM` times, `days` are ISO weekdays (1 is Monday), and `other: true` means further conditions apply. |
+| `perMinute` | A blocking fee per minute. |
+| `afterMin` | Minutes into the session at which `perMinute` starts. `0` means from the start. |
 
 Nothing stops two rows for the same station and fuel. Readers take the newest one by `reported_at`. The example query [below](#reading-the-newest-price) shows the pattern.
 
@@ -168,11 +187,12 @@ To keep sources apart, scrapers prefix the upstream id with a short tag. Some ex
 | `ocm` (OpenChargeMap, every country) | `ocm-<POI id>` |
 | `reve` (Mapa REVE, Spain) | `reve-<location id>` |
 | `bnetza` (BNetzA register, Germany) | `bnetza-<latitude>_<longitude>`, rounded to 5 decimals. The register has one row per charging device, and the scraper merges the rows at one position into one station. |
+| `ocpdb` (Open ChargePoint Database, Germany) | `ocpdb-<latitude>_<longitude>`, rounded to 5 decimals, from the location that anchors the pin. Locations within 25 m of each other merge into one station. |
 | `miteco` (Spain) | The ministry's station id, with no prefix |
 
 Some older scrapers use the upstream id without a prefix, as `miteco` does. A new scraper should use a prefix. [Adding a country](../data/adding-a-country.md#choosing-source-and-externalid) gives the rules.
 
-`stations` has no `source` column. For EV chargers, which have no prices, the `external_id` prefix is the only record of where a row came from. That is how the Mapa REVE and BNetzA scrapers find the OpenChargeMap rows they replace: `external_id LIKE 'ocm-%'`.
+`stations` has no `source` column. For EV chargers, most of which have no prices, the `external_id` prefix is the only record of where a row came from. That is how the EV scrapers find the rows of the sources they replace: Mapa REVE deletes `external_id LIKE 'ocm-%'` in Spain, and OCPDB and BNetzA each delete the other German prefixes among `ocm-`, `bnetza-` and `ocpdb-`.
 
 ## `source`
 

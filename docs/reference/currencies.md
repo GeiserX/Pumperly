@@ -181,10 +181,11 @@ A price band is the range of prices Pumperly accepts for one currency. It catche
 The rules live in `BaseScraper.run()` in [`src/scrapers/base.ts`](https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/base.ts). For each price, in this order:
 
 1. A price of zero or less is dropped.
-2. `CNG`, `LNG`, `H2` and `ADBLUE` are kept if the price is at least 0.05 and below 100, whatever the currency. The rest of this list does not apply to them.
-3. A price in `EUR`, `GBP` or `CHF` is kept if it is from [`PUMPERLY_PRICE_MIN`](environment-variables.md#pumperly_price_min) to [`PUMPERLY_PRICE_MAX`](environment-variables.md#pumperly_price_max). The defaults are 0.30 and 4.00. The same two numbers apply to all three currencies.
-4. Any other currency is checked against its row in the table below. Both ends are inclusive.
-5. A currency with no row is checked against a wide default of 0.1 to 100,000.
+2. `EV` prices are per kWh. They are kept only in `EUR`, from 0.10 to 2.00. The rest of this list does not apply to them.
+3. `CNG`, `LNG`, `H2` and `ADBLUE` are kept if the price is at least 0.05 and below 100, whatever the currency. The rest of this list does not apply to them.
+4. A price in `EUR`, `GBP` or `CHF` is kept if it is from [`PUMPERLY_PRICE_MIN`](environment-variables.md#pumperly_price_min) to [`PUMPERLY_PRICE_MAX`](environment-variables.md#pumperly_price_max). The defaults are 0.30 and 4.00. The same two numbers apply to all three currencies.
+5. Any other currency is checked against its row in the table below. Both ends are inclusive.
+6. A currency with no row is checked against a wide default of 0.1 to 100,000.
 
 | Currency | Minimum | Maximum |
 |---|---|---|
