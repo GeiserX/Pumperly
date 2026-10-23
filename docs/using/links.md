@@ -87,7 +87,7 @@ A station link without a valid `lat` and `lng` is ignored, and the map opens as 
 
 **A link to an EV charger must carry `fuel=EV`.**
 
-The map loads stations for one fuel at a time. On a fuel layer it loads only stations with a price for that fuel. Chargers have no fuel price, so they load only on the EV layer.
+The map loads stations for one fuel at a time. A layer other than EV loads only stations with a price for that fuel. A charger's only price, when it has one, is an `EV` price, so it loads only on the EV layer.
 
 A charger link without `fuel=EV` opens on the instance's default fuel. The charger never loads, so the popup never opens. You land on the right spot, but the charger is not there.
 

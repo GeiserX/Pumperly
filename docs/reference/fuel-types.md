@@ -26,7 +26,7 @@ The core codes, such as `E5`, `E10`, `B7`, `B10`, `LPG`, `CNG`, `LNG` and `H2`, 
 | `CNG` | GNC | gas | Compressed natural gas, including biomethane sold as CNG. |
 | `LNG` | GNL | gas | Liquefied natural gas, mostly for trucks. |
 | `H2` | Hidrógeno | hydrogen | Hydrogen for fuel-cell vehicles. |
-| `EV` | EV Charging | electric | Electric vehicle charge points. Has no price. See [below](#ev). |
+| `EV` | EV Charging | electric | Electric vehicle charge points. Priced per kWh where the source publishes it. See [below](#ev). |
 | `ADBLUE` | AdBlue | other | Diesel exhaust fluid, the urea solution diesel engines inject into their exhaust. |
 
 The labels are fixed strings. They show as written in every language the app supports. Only the category headings in the fuel picker are translated.
