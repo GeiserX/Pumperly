@@ -22,9 +22,8 @@ import { otherGermanyEvPrefixes } from "./germany-ev-source";
 // Licence: BNetzA and EnBW are CC BY 4.0, the other feeds CC0 (see
 //          components/nav/legal-modal.tsx). No API key, no signup.
 //
-// An alternative to the BNetzA scraper for Germany's EV chargers
-// (PUMPERLY_DE_EV_SOURCE=ocpdb): same register, plus ad-hoc tariffs for ~97k
-// EVSEs, which BNetzA does not publish.
+// Replaces the BNetzA scraper as Germany's default EV source: same register,
+// plus ad-hoc tariffs for ~97k EVSEs, which BNetzA does not publish.
 //
 // THREE THINGS SHAPE THIS FILE.
 //

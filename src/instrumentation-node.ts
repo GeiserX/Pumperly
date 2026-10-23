@@ -207,9 +207,9 @@ export async function registerNode() {
     EV_US: () => new OCMScraper("US"),
     // Spain's official EV registry — supersedes EV_ES when a key is set (#121)
     EV_ES_REVE: () => new REVEScraper(),
-    // Germany's official EV registry — supersedes EV_DE by default, keyless
+    // Germany's official EV registry — keyless, PUMPERLY_DE_EV_SOURCE=bnetza
     EV_DE_BNETZA: () => new BNetzAScraper(),
-    // Germany's register + operator feeds with ad-hoc prices — opt-in, PUMPERLY_DE_EV_SOURCE=ocpdb
+    // Germany's register + operator feeds with ad-hoc prices — the default DE EV source
     EV_DE_OCPDB: () => new OcpdbScraper(),
   };
 

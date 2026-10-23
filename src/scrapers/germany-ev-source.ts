@@ -13,9 +13,8 @@
 // `ocm-` rows (see scrapers/bnetza.ts), a single stray OpenChargeMap run puts
 // every one of them straight back, and nothing garbage-collects EV rows.
 //
-// BNetzA wins by default: it is official, it needs no key, and it is the more
-// complete of the register-based sources. `PUMPERLY_DE_EV_SOURCE=ocpdb` adds
-// prices; `=ocm` keeps OpenChargeMap.
+// OCPDB wins by default: it is the only one with prices, and it contains the
+// register. `PUMPERLY_DE_EV_SOURCE=bnetza` or `=ocm` are the escape hatches.
 // The OCPDB and BNetzA sweeps retire the other sources' rows (see
 // scrapers/ocpdb.ts and scrapers/bnetza.ts); OpenChargeMap has no sweep, so
 // switching to it leaves the `ocpdb-`/`bnetza-` rows to delete by hand.
@@ -48,7 +47,7 @@ export function otherGermanyEvPrefixes(own: GermanyEvPrefix): string[] {
  *
  * Returns `codes` unchanged when Germany has no EV scraper enabled at all (e.g.
  * PUMPERLY_EV_ENABLED=0). Otherwise exactly one survives: the one named by
- * PUMPERLY_DE_EV_SOURCE (ocm | bnetza | ocpdb), BNetzA when unset or unknown.
+ * PUMPERLY_DE_EV_SOURCE (ocm | bnetza | ocpdb), OCPDB when unset or unknown.
  */
 export function resolveGermanyEvSource(codes: string[]): string[] {
   const all = Object.values(GERMANY_EV_CODES);
@@ -56,6 +55,6 @@ export function resolveGermanyEvSource(codes: string[]): string[] {
   const rest = codes.filter((c) => !all.includes(c));
   if (!hasGermanyEv) return rest;
   const chosen = process.env.PUMPERLY_DE_EV_SOURCE?.trim().toLowerCase() ?? "";
-  rest.push(Object.hasOwn(GERMANY_EV_CODES, chosen) ? GERMANY_EV_CODES[chosen] : GERMANY_EV_CODES.bnetza);
+  rest.push(Object.hasOwn(GERMANY_EV_CODES, chosen) ? GERMANY_EV_CODES[chosen] : GERMANY_EV_CODES.ocpdb);
   return rest;
 }

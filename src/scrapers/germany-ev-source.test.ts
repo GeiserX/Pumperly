@@ -17,13 +17,13 @@ describe("resolveGermanyEvSource", () => {
   const GERMAN = ["EV_DE", "EV_DE_BNETZA", "EV_DE_OCPDB"];
   const german = (codes: string[]) => codes.filter((c) => GERMAN.includes(c));
 
-  it("uses BNetzA for Germany by default", () => {
-    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_BNETZA"]);
+  it("uses OCPDB for Germany by default", () => {
+    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_OCPDB"]);
   });
 
-  it("uses OCPDB when PUMPERLY_DE_EV_SOURCE=ocpdb", () => {
-    vi.stubEnv("PUMPERLY_DE_EV_SOURCE", "ocpdb");
-    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_OCPDB"]);
+  it("uses BNetzA when PUMPERLY_DE_EV_SOURCE=bnetza", () => {
+    vi.stubEnv("PUMPERLY_DE_EV_SOURCE", "bnetza");
+    expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_BNETZA"]);
   });
 
   it("keeps OpenChargeMap when PUMPERLY_DE_EV_SOURCE=ocm", () => {
@@ -36,10 +36,10 @@ describe("resolveGermanyEvSource", () => {
     expect(resolveGermanyEvSource(SCHEDULED)).toContain("EV_DE");
   });
 
-  it("falls back to BNetzA when the override is not a source it knows", () => {
+  it("falls back to OCPDB when the override is not a source it knows", () => {
     for (const source of ["nonsense", "constructor", "toString"]) {
       vi.stubEnv("PUMPERLY_DE_EV_SOURCE", source);
-      expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_BNETZA"]);
+      expect(german(resolveGermanyEvSource(SCHEDULED))).toEqual(["EV_DE_OCPDB"]);
     }
   });
 
