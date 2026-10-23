@@ -185,13 +185,24 @@ describe("summarizeTariff", () => {
     expect(summarizeTariff(tariff)?.fees).toEqual({ perMinute: 0.05, afterMin: 240 });
   });
 
-  // EcoMovement 133247.
-  it("ignores an implausible per-minute fee", () => {
+  // EcoMovement 133247 (14.28/min) and 133278 (0.397/min from minute 0).
+  it.each([14.28, 0.397])("ignores an implausible per-minute fee of %s", (fee) => {
     const tariff: Tariff = {
       ...CHARGECLOUD,
-      elements: [{ price_components: [{ type: "ENERGY", price: 0.59 }, { type: "TIME", price: 14.28 }] }],
+      elements: [{ price_components: [{ type: "ENERGY", price: 0.59 }, { type: "TIME", price: fee }] }],
     };
     expect(summarizeTariff(tariff)?.fees).toEqual({});
+  });
+
+  it("keeps a blocking fee at the cap", () => {
+    const tariff: Tariff = {
+      ...CHARGECLOUD,
+      elements: [
+        { price_components: [{ type: "ENERGY", price: 0.59 }] },
+        { price_components: [{ type: "TIME", price: 0.3 }], restrictions: { min_duration: 3600 } },
+      ],
+    };
+    expect(summarizeTariff(tariff)?.fees).toEqual({ perMinute: 0.3, afterMin: 60 });
   });
 
   // ChargePoint 132894.
@@ -324,6 +335,16 @@ describe("liveSources", () => {
 });
 
 describe("mergeLocations", () => {
+  // Two feed sites 10 m apart with no register site: whichever comes first
+  // anchors the pin. The API promises no order, so the anchor must not depend on it.
+  it("anchors the same pin whatever order the feed lists its sites in", () => {
+    const a = location({ source: "datex2_ecomovement", lat: 48.7758, evses: ["a"] });
+    const b = location({ source: "datex2_ecomovement", lat: 48.7758 + 10 * METRES, evses: ["b"] });
+    const ids = (locs: Location[]) => mergeLocations(locs, new Map()).stations.map((st) => st.externalId);
+    expect(ids([a, b])).toEqual(ids([b, a]));
+    expect(ids([a, b])).toHaveLength(1);
+  });
+
   const tariffs = evseTariffs(
     [ENBW, CHARGECLOUD],
     [
@@ -525,6 +546,8 @@ describe("OcpdbScraper.fetch", () => {
       failOnce?: string;
       failAlways?: string;
       broken?: boolean;
+      /** Extra valid locations on the first page, ~111 m apart so none merge. */
+      extra?: number;
     } = {},
   ) {
     const urls: string[] = [];
@@ -561,6 +584,7 @@ describe("OcpdbScraper.fetch", () => {
         // With `broken`, the first page also carries one record the schema rejects.
         const items: unknown[] = [location({ lat: 48 + offset / 1000, evses: [offset === 0 ? "enbw" : "cc"] })];
         if (offset === 0 && opts.broken) items.push({ source: "broken" });
+        if (offset === 0) for (let i = 0; i < (opts.extra ?? 0); i++) items.push(location({ lat: 50 + i / 1000, evses: ["cc"] }));
         return page(items, opts.locationsTotal ?? 1);
       }),
     );
@@ -579,11 +603,19 @@ describe("OcpdbScraper.fetch", () => {
     expect(stations).toHaveLength(3);
   });
 
-  it("fails the run on a record that does not parse, so the current prices stay", async () => {
+  it("skips a lone record that does not parse, so one bad location cannot freeze the country", async () => {
+    stubApi({ broken: true, extra: 300 });
+    const { OcpdbScraper } = await import("./ocpdb");
+
+    const { stations } = await new OcpdbScraper().fetch();
+    expect(stations).toHaveLength(301);
+  });
+
+  it("fails the run when many records do not parse, so the current prices stay", async () => {
     stubApi({ broken: true });
     const { OcpdbScraper } = await import("./ocpdb");
 
-    await expect(new OcpdbScraper().fetch()).rejects.toThrow(/1 unparseable OCPDB records/);
+    await expect(new OcpdbScraper().fetch()).rejects.toThrow(/1 of 2 locations unparseable/);
   });
 
   // TotalEnergies tariffs on EcoMovement (132622, 132721, 132724, 133685) give

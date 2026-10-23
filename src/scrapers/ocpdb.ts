@@ -100,9 +100,17 @@ const DEAD_EVSE_STATUSES = new Set(["REMOVED", "PLANNED"]);
 // German standard VAT, for prices marked net that don't say at what rate.
 const DE_VAT_PCT = 19;
 
-// Highest believable per-minute fee. Blocking fees seen run 0.05-0.24/min,
-// so this leaves wide headroom while catching unit errors like 14.28/min.
-const MAX_PER_MINUTE = 1;
+// Highest believable per-minute fee. Blocking fees seen run 0.05-0.24/min.
+// Above this the value is a unit or feed error (0.40/min from minute 0,
+// 0.60/min after 5 min, 14.28/min), and showing it would scare drivers off
+// a charger for a fee nobody charges.
+const MAX_PER_MINUTE = 0.3;
+
+// Share of a collection that may fail to parse before the run gives up.
+// Below it the odd record is skipped (one bad location must not freeze the
+// country); above it the schema or the feed changed, and the current rows
+// stay until someone looks.
+const MAX_INVALID_SHARE = 0.005;
 
 // Session size used to fold a session fee into a per-kWh figure when ranking
 // tariffs: a typical fast-charge top-up.
@@ -426,11 +434,17 @@ export function mergeLocations(
 ): { stations: RawStation[]; prices: RawFuelPrice[]; stats: OcpdbParseStats } {
   const stats: OcpdbParseStats = { locations: locations.length, notGermany: 0, noLiveEvse: 0, merged: 0, priced: 0 };
 
-  // Stable sort: equal ranks keep upstream order, so the anchors (and the
-  // externalIds) don't shuffle between runs.
+  // Equal ranks go by coordinates, not upstream order, which the API does not
+  // promise: the anchors (and so the externalIds) must not shuffle between runs.
   const ordered = locations
     .map((loc, i) => ({ loc, i, rank: SOURCE_RANK[loc.source] ?? DEFAULT_RANK }))
-    .sort((a, b) => a.rank - b.rank || a.i - b.i)
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        a.loc.coordinates.latitude - b.loc.coordinates.latitude ||
+        a.loc.coordinates.longitude - b.loc.coordinates.longitude ||
+        a.i - b.i,
+    )
     .map((x) => x.loc);
 
   const grid = new Map<string, Pin[]>();
@@ -589,10 +603,10 @@ async function fetchPage(path: string, offset: number): Promise<z.infer<typeof P
 
 /**
  * Every item of a paginated collection, each parsed with `schema`. Items that
- * fail to parse are counted and skipped, not fatal: one odd location must not
- * cost the country.
+ * fail to parse are counted and skipped; fetch() fails the run only when too
+ * many do (MAX_INVALID_SHARE), so one odd location cannot cost the country.
  */
-async function fetchAll<T>(path: string, schema: z.ZodType<T>): Promise<{ items: T[]; invalid: number }> {
+async function fetchAll<T>(path: string, schema: z.ZodType<T>): Promise<{ items: T[]; invalid: number; total: number }> {
   const items: T[] = [];
   let invalid = 0;
   // Parse each page as it lands and let the raw JSON go: holding all ~100
@@ -614,7 +628,7 @@ async function fetchAll<T>(path: string, schema: z.ZodType<T>): Promise<{ items:
     const batch = await Promise.all(offsets.slice(i, i + CONCURRENCY).map((o) => fetchPage(path, o)));
     for (const p of batch) keep(p.items);
   }
-  return { items, invalid };
+  return { items, invalid, total: items.length + invalid };
 }
 
 /**
@@ -651,10 +665,16 @@ export class OcpdbScraper extends BaseScraper {
       fetchAll("tariff-associations", AssociationSchema),
       fetchAll("locations?country=DEU", LocationSchema),
     ]);
-    // A dropped tariff or association would silently unprice its stations, and
-    // a dropped location would be swept: keep the current rows instead.
+    // A few bad records are skipped: their stations go unpriced or drop out
+    // until the feed fixes them. Many mean the shape changed, and a run on a
+    // fraction of the data would unprice or sweep the rest: keep the current rows.
+    const collections = { tariffs, associations, locations };
+    for (const [name, c] of Object.entries(collections)) {
+      if (c.invalid > c.total * MAX_INVALID_SHARE) {
+        throw new Error(`[${this.source}] DE: ${c.invalid} of ${c.total} ${name} unparseable`);
+      }
+    }
     const invalid = tariffs.invalid + associations.invalid + locations.invalid;
-    if (invalid > 0) throw new Error(`[${this.source}] DE: ${invalid} unparseable OCPDB records`);
     const live = liveSources(sources, new Date(), MAX_FEED_AGE_DAYS);
     const stale = [...new Set(tariffs.items.map((t) => t.source))].filter((s) => !live.has(s));
     if (stale.length > 0) {
@@ -669,7 +689,7 @@ export class OcpdbScraper extends BaseScraper {
     console.log(
       `[${this.source}] DE: ${tariffs.items.length} tariffs → ${tariffsByEvse.size} priced EVSEs; ` +
         `${stats.locations} locations → ${stations.length} stations, ${stats.priced} priced ` +
-        `(merged ${stats.merged}, skipped ${stats.noLiveEvse} without live EVSE, ${stats.notGermany} outside DE)`,
+        `(merged ${stats.merged}, skipped ${stats.noLiveEvse} without live EVSE, ${stats.notGermany} outside DE, ${invalid} unparseable)`,
     );
 
     return { stations, prices };

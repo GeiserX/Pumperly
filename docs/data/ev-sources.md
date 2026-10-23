@@ -243,7 +243,11 @@ A charger can have several tariffs. The pin shows one:
 The fees on top of the per-kWh price are stored in [`ev_fees`](../reference/data-model.md#ev_fees):
 
 - **Session fee:** fixed fees that always apply are added up. When the fee depends on the time of day, the weekday or other conditions, every option is kept and the popup lists them. The highest is the one used to rank tariffs and to cost a planned stop.
-- **Per-minute fee:** the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute.
+- **Per-minute fee:** the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute. Two feed errors are dropped: a time charge equal to the tariff's kWh price, and anything above 0.30 per minute, which no operator charges.
+
+### Records that do not parse {#ocpdb-bad-records}
+
+A record the scraper cannot read is skipped and counted in the run's log line, so one bad location from a feed does not stop Germany from updating. When more than 0.5 % of the tariffs, the tariff associations or the locations fail to parse, the feed's shape has most likely changed: the run fails and writes nothing, and the stations and prices from the last good run stay.
 
 ### When the feed health is unavailable {#ocpdb-feed-health}
 
