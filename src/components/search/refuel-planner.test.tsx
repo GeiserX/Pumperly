@@ -458,6 +458,18 @@ describe("RefuelPlanner", () => {
       expect(screen.queryByText(/ · \d+\.\d\d €$/)).not.toBeInTheDocument();
     });
 
+    it("plans by time when the only priced charger has no detour yet", async () => {
+      const chargers = [
+        makeStation("pending", { price: 0.59, fuelType: "EV", routeFraction: 0.3, detourMin: undefined }),
+        makeStation("free", { price: null, currency: undefined, fuelType: "EV", routeFraction: 0.6, detourMin: 0 }),
+      ];
+      renderPlanner({ mode: "ev", stations: chargers, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      const input = planSpy.mock.lastCall![0];
+      expect(input.stations).toEqual([expect.objectContaining({ id: "free", price: 0 })]);
+      expect(input.timeValuePerHour).toBe(1);
+    });
+
     it("still drops chargers priced in another currency or above the price filter", async () => {
       const chargers = [
         makeStation("ok", { price: 0.59, fuelType: "EV", routeFraction: 0.3, detourMin: 0 }),

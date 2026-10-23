@@ -116,7 +116,8 @@ export function RefuelPlanner({
     if (!ev) return null;
     const prices = stations
       .map(({ properties: p }) => p)
-      .filter((p) => evEligible(p, maxDetour, minChargerKw) && p.price != null && p.price > 0 && p.currency === currency && (maxPrice == null || p.price <= maxPrice))
+      // Only chargers the plan can use: a detour still unknown keeps one out.
+      .filter((p) => p.detourMin != null && evEligible(p, maxDetour, minChargerKw) && p.price != null && p.price > 0 && p.currency === currency && (maxPrice == null || p.price <= maxPrice))
       .map((p) => p.price as number)
       .sort((a, b) => a - b);
     if (prices.length === 0) return null;
