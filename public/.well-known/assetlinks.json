@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pumperly.app",
+      "sha256_cert_fingerprints": [
+        "D6:D2:EF:3D:0B:9B:25:AF:99:50:F5:68:AC:2A:A7:08:71:41:2A:83:EE:33:B1:B2:C2:07:E5:FB:61:9B:3D:EE"
+      ]
+    }
+  }
+]
