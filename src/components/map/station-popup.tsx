@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import type { StationGeoJSON } from "@/types/station";
+import type { SessionFeeRule, StationGeoJSON } from "@/types/station";
 import { FUEL_TYPE_MAP } from "@/types/fuel";
 import { useI18n } from "@/lib/i18n";
 import { useCurrency, CURRENCIES } from "@/lib/currency";
@@ -25,12 +25,28 @@ function timeAgo(iso: string, t: (key: string) => string): string {
   return `${t("popup.updated")} ${days}d`;
 }
 
+/** "06:00–22:00, Mon–Fri" for a session fee that only applies sometimes. */
+function feeRuleText(rule: SessionFeeRule, locale: string, t: (key: string) => string): string {
+  const parts: string[] = [];
+  if (rule.from || rule.to) parts.push(`${rule.from ?? "00:00"}–${rule.to ?? "24:00"}`);
+  if (rule.days?.length) {
+    // 2024-01-01 was a Monday, so day n of that week is ISO weekday n.
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+    const name = (d: number) => fmt.format(new Date(Date.UTC(2024, 0, d)));
+    const d = rule.days;
+    const run = d.length > 2 && d.every((v, i) => i === 0 || v === d[i - 1] + 1);
+    parts.push(run ? `${name(d[0])}–${name(d[d.length - 1])}` : d.map(name).join(", "));
+  }
+  if (rule.other) parts.push(t("popup.feeConditions"));
+  return parts.length > 0 ? ` (${parts.join(", ")})` : "";
+}
+
 function symbolFor(code: string): string {
   return CURRENCIES.find((c) => c.code === code)?.symbol ?? code;
 }
 
 export function StationPopup({ station, onClose }: StationPopupProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { decimals: userDecimals, rateInfo } = useCurrency();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -47,6 +63,22 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
   const stationCurrency = CURRENCIES.find((c) => c.code === properties.currency);
   const displaySymbol = stationCurrency?.symbol ?? properties.currency;
   const displayDecimals = isConverted ? userDecimals : (stationCurrency?.decimals ?? 3);
+
+  // Chargers are priced per kWh, everything else per litre.
+  const isEV = properties.fuelType === "EV";
+  const unit = isEV ? "/kWh" : "/L";
+  // Fees stay in the tariff's own currency: they are not converted.
+  const feeSymbol = symbolFor(properties.originalCurrency ?? properties.currency);
+  const fees = properties.evFees;
+  const feeParts = [
+    fees?.perMinute != null &&
+      `+${fees.perMinute.toFixed(2)} ${feeSymbol}/min` +
+        (fees.afterMin ? ` ${t("popup.feeAfter").replace("{n}", String(fees.afterMin))}` : ""),
+    // A fee that varies lists every option; the single number is the highest.
+    ...(fees?.sessionFeeRules ?? (fees?.sessionFee != null ? [{ fee: fees.sessionFee }] : [])).map(
+      (rule) => `+${rule.fee.toFixed(2)} ${feeSymbol} ${t("popup.perSession")}${feeRuleText(rule, locale, t)}`,
+    ),
+  ].filter(Boolean);
 
   const lat = geometry.coordinates[1];
   const lng = geometry.coordinates[0];
@@ -121,21 +153,25 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
                 {properties.price.toFixed(displayDecimals)}
               </span>
               <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                {displaySymbol}/L
+                {displaySymbol}{unit}
               </span>
             </div>
             <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
               {fuelInfo?.label ?? properties.fuelType}
+              {isEV && properties.powerKw != null && <span> · {properties.powerKw} kW</span>}
               {properties.reportedAt && (
                 <span className="ml-1.5 text-gray-500/80 dark:text-gray-400/70">
                   · {timeAgo(properties.reportedAt, t)}
                 </span>
               )}
             </p>
+            {feeParts.length > 0 && (
+              <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">{feeParts.join(" · ")}</p>
+            )}
             {/* Conversion info */}
             {isConverted && properties.originalPrice != null && (
               <p className="mt-1.5 border-t border-gray-200/60 pt-1.5 text-[9px] leading-tight text-gray-500 dark:border-gray-700 dark:text-gray-300">
-                {properties.originalPrice.toFixed(CURRENCIES.find((c) => c.code === properties.originalCurrency)?.decimals ?? 3)} {symbolFor(properties.originalCurrency!)}/L
+                {properties.originalPrice.toFixed(CURRENCIES.find((c) => c.code === properties.originalCurrency)?.decimals ?? 3)} {symbolFor(properties.originalCurrency!)}{unit}
                 {conversionNote && (
                   <span className="ml-1">· {conversionNote}</span>
                 )}
@@ -143,7 +179,7 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
             )}
           </div>
         ) : properties.fuelType === "EV" ? (
-          // Chargers have no prices yet; their power is what tells them apart.
+          // An unpriced charger: its power is what tells it apart.
           <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800">
             {properties.powerKw != null ? (
               <div className="flex items-baseline gap-1">
@@ -156,7 +192,8 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
               <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-200">{t("popup.powerUnknown")}</p>
             )}
             <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-              {t("popup.maxPower")} · {t("popup.noPrice")} {fuelInfo?.label ?? properties.fuelType}
+              {/* Chargers the feeds list but no feed prices: say so, so a blank price doesn't read as a bug. */}
+              {t("popup.maxPower")} · {t("popup.priceNotPublished")}
             </p>
           </div>
         ) : (

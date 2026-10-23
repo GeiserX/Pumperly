@@ -13,7 +13,7 @@ vi.mock("react-map-gl/maplibre", () => ({
 
 // i18n: echo the key back so we can assert on stable identifiers.
 vi.mock("@/lib/i18n", () => ({
-  useI18n: () => ({ t: (k: string) => k }),
+  useI18n: () => ({ t: (k: string) => k, locale: "en" }),
 }));
 
 // currency: native display (not converted). Keep the real CURRENCIES table so
@@ -118,11 +118,74 @@ describe("StationPopup", () => {
     expect(screen.getByText("150")).toBeInTheDocument();
     expect(screen.getByText("kW")).toBeInTheDocument();
     expect(screen.getByText(/popup.maxPower/)).toBeInTheDocument();
+    expect(screen.getByText(/popup.priceNotPublished/)).toBeInTheDocument();
+    expect(screen.queryByText(/popup.noPrice/)).not.toBeInTheDocument();
   });
 
   it("says so when an EV charger's power is unknown", () => {
     render(<StationPopup station={makeStation({ fuelType: "EV", price: null })} onClose={() => {}} />);
     expect(screen.getByText("popup.powerUnknown")).toBeInTheDocument();
     expect(screen.queryByText("kW")).not.toBeInTheDocument();
+  });
+
+  it("prices a charger per kWh and shows its power next to the label", () => {
+    render(<StationPopup station={makeStation({ fuelType: "EV", price: 0.79, powerKw: 22 })} onClose={() => {}} />);
+    expect(screen.getByText("0.790")).toBeInTheDocument();
+    expect(screen.getByText("€/kWh")).toBeInTheDocument();
+    expect(screen.queryByText("€/L")).not.toBeInTheDocument();
+    expect(screen.getByText(/· 22 kW/)).toBeInTheDocument();
+  });
+
+  it("lists a charger's per-minute and session fees", () => {
+    render(
+      <StationPopup
+        station={makeStation({
+          fuelType: "EV",
+          price: 0.46,
+          evFees: { perMinute: 0.06, afterMin: 240, sessionFee: 1.5 },
+        })}
+        onClose={() => {}}
+      />,
+    );
+    // i18n is mocked to echo keys, so the "after {n} min" phrase shows as its key.
+    expect(screen.getByText("+0.06 €/min popup.feeAfter · +1.50 € popup.perSession")).toBeInTheDocument();
+  });
+
+  it("shows a per-minute fee that applies from the start without an 'after'", () => {
+    render(
+      <StationPopup station={makeStation({ fuelType: "EV", price: 0.59, evFees: { perMinute: 0.1 } })} onClose={() => {}} />,
+    );
+    expect(screen.getByText("+0.10 €/min")).toBeInTheDocument();
+  });
+
+  it("lists every option of a session fee that varies", () => {
+    render(
+      <StationPopup
+        station={makeStation({
+          fuelType: "EV",
+          price: 0.49,
+          evFees: {
+            sessionFee: 1,
+            sessionFeeRules: [
+              { fee: 0.5, from: "06:00", to: "22:00", days: [1, 2, 3, 4, 5] },
+              { fee: 1, from: "22:00", to: "06:00" },
+              { fee: 0.8, days: [6, 7], other: true },
+            ],
+          },
+        })}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "+0.50 € popup.perSession (06:00–22:00, Mon–Fri) · +1.00 € popup.perSession (22:00–06:00) · " +
+          "+0.80 € popup.perSession (Sat, Sun, popup.feeConditions)",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no fee line for a charger without fees", () => {
+    render(<StationPopup station={makeStation({ fuelType: "EV", price: 0.59 })} onClose={() => {}} />);
+    expect(screen.queryByText(/\/min|popup.perSession/)).not.toBeInTheDocument();
   });
 });
