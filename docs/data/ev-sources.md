@@ -8,7 +8,7 @@ This page describes where Pumperly's EV charging locations come from, how each s
 |---|---|---|---|---|
 | [Open Charge Map](#open-charge-map) | Every supported country and the United States | `PUMPERLY_OCM_API_KEY` | 24 h | Open Database License (ODbL) |
 | [Mapa REVE](#mapa-reve) | Spain | `PUMPERLY_REVE_API_KEY` | 1 h | Non-commercial use, credit Red Eléctrica de España |
-| [Open ChargePoint Database (OCPDB)](#ocpdb) | Germany, with prices | None | 6 h | CC BY 4.0 for the register and EnBW, CC0 for the other feeds |
+| [Open ChargePoint Database (OCPDB)](#ocpdb) | Germany, with prices | None | 6 h | dl-de/by-2-0 (MobiData BW); the register and EnBW are CC BY 4.0 |
 | [BNetzA Ladesäulenregister](#bnetza) | Germany | None | 24 h | CC BY 4.0, credit "Bundesnetzagentur.de" |
 
 Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced. OCPDB contains the BNetzA register and adds the operators' own feeds, which carry ad-hoc tariffs.
@@ -214,7 +214,7 @@ The [Open ChargePoint Database](https://api.mobidata-bw.de/ocpdb/) is run by Mob
 | Station ids | `ocpdb-<latitude>_<longitude>` |
 | Every | 6 h |
 | API key | None |
-| Licence | The register and EnBW are CC BY 4.0, the other feeds CC0. The attribution is in the app's legal notice. |
+| Licence | The bundle is [dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0), credited to MobiData BW. Within it the register and EnBW are CC BY 4.0. Some feeds declare no licence of their own, so the bundle's licence is the one that covers them. The attribution is in the app's legal notice. |
 
 ### How the data is read {#ocpdb-reading}
 
@@ -317,6 +317,8 @@ The floor counts only rows this run wrote, not rows already in the database. A b
 
 Open Charge Map deletes nothing when it takes over. Official sources delete Open Charge Map's rows, and OCPDB and BNetzA delete each other's, but nothing deletes the official rows once their scraper stops running and Open Charge Map runs instead. If you switch Spain or Germany back to Open Charge Map, the official pins stay, and Open Charge Map adds its own next to them.
 
+Rolling back to a Pumperly release from before OCPDB has the same effect in Germany. That release's BNetzA scraper does not know the `ocpdb-` rows, so it leaves them in place and adds its own pins next to them, and every German charger shows twice.
+
 To clear the old rows after switching back, delete them in `psql` against the Pumperly database:
 
 === "Spain, after removing the REVE key"
@@ -335,6 +337,15 @@ To clear the old rows after switching back, delete them in `psql` against the Pu
     WHERE country = 'DE'
       AND station_type = 'ev_charger'
       AND (external_id LIKE 'ocpdb-%' OR external_id LIKE 'bnetza-%');
+    ```
+
+=== "Germany, after rolling back to a release without OCPDB"
+
+    ```sql
+    DELETE FROM stations
+    WHERE country = 'DE'
+      AND station_type = 'ev_charger'
+      AND external_id LIKE 'ocpdb-%';
     ```
 
 A charger's prices are deleted with it, so nothing else needs deleting. [Backing up the database](../operations/backup-and-restore.md) explains how to take a backup first.

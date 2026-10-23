@@ -19,7 +19,9 @@ import { otherGermanyEvPrefixes } from "./germany-ev-source";
 //          DATEX II feeds from Mobilithek (EnBW, EcoMovement, Chargecloud,
 //          Wirelane, e-clearing.net, Tesla, ...). Freshness per source:
 //          /ocpdb/api/public/v1/sources
-// Licence: BNetzA and EnBW are CC BY 4.0, the other feeds CC0 (see
+// Licence: the bundle is dl-de/by-2-0 (MobiData BW); within it BNetzA and
+//          EnBW are CC BY 4.0. Not every feed declares a licence of its own,
+//          so the bundle's is the one credited (see
 //          components/nav/legal-modal.tsx). No API key, no signup.
 //
 // Replaces the BNetzA scraper as Germany's default EV source: same register,

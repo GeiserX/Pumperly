@@ -42,7 +42,7 @@ One table per kind of source. The pages under Data sources explain each source i
 |---|---|---|
 | [Open Charge Map](https://openchargemap.org) | All supported countries + United States (EV-only) | ODbL |
 | [Mapa REVE](https://www.mapareve.es) (Red Eléctrica de España) | Spain — official operator-reported registry | Non-commercial, attribution required |
-| [Open ChargePoint Database](https://api.mobidata-bw.de/ocpdb/) (MobiData BW) | Germany — the Ladesäulenregister merged with operator feeds, with ad-hoc prices | CC BY 4.0 for the register and EnBW, CC0 for the other feeds |
+| [Open ChargePoint Database](https://api.mobidata-bw.de/ocpdb/) (MobiData BW) | Germany — the Ladesäulenregister merged with operator feeds, with ad-hoc prices | dl-de/by-2-0 (MobiData BW); the register and EnBW are CC BY 4.0 |
 | [Ladesäulenregister](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html) (Bundesnetzagentur) | Germany — official operator-reported registry, ~74,000 locations | CC BY 4.0, attribution "Bundesnetzagentur.de" |
 
 Spain uses Mapa REVE when `PUMPERLY_REVE_API_KEY` is set: it is the registry every Spanish charge point operator files into, so it is authoritative where Open Charge Map is crowdsourced. The two overlap heavily, so Open Charge Map stops being scraped for Spain immediately, its existing Spanish rows stay visible while REVE backfills, and they are deleted once REVE reaches 95% of the registry. Expect duplicate Spanish pins until then.
