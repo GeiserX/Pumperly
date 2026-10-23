@@ -417,6 +417,21 @@ describe("mergeLocations", () => {
     expect(prices[0].reportedAt).toEqual(refreshed);
   });
 
+  it("keeps register sites a few metres apart separate", () => {
+    const { stations, stats } = mergeLocations(
+      [location(), location({ lat: 48.7758 + 10 * METRES, operator: { name: "Stadtwerke Stuttgart" } })],
+      tariffs,
+    );
+    expect(stats.merged).toBe(0);
+    expect(stations.map((s) => s.brand)).toEqual(["EnBW mobility+ AG und Co.KG", "Stadtwerke Stuttgart"]);
+  });
+
+  it("merges register rows that share a site at 5 dp", () => {
+    const { stations, stats } = mergeLocations([location(), location({ lat: 48.775801 })], tariffs);
+    expect(stats.merged).toBe(1);
+    expect(stations).toHaveLength(1);
+  });
+
   it("keeps locations further apart than the merge radius separate", () => {
     const { stations } = mergeLocations([location(), location({ lat: 48.7758 + 40 * METRES })], tariffs);
     expect(stations).toHaveLength(2);

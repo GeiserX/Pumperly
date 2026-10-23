@@ -32,7 +32,10 @@ import { otherGermanyEvPrefixes } from "./germany-ev-source";
 //    CPO) and with coordinates a few metres off. Measured on 2026-10-22:
 //    ~4.7k EcoMovement and ~4.9k Chargecloud locations sit within 25 m of a
 //    register location, many at 0 m. Hence mergeLocations(): a 25 m greedy
-//    merge, register first so its coordinates anchor the pins.
+//    merge of feeds onto the register, register first so its coordinates
+//    anchor the pins. Register sites only merge with each other at 5 dp, as
+//    in bnetza.ts: 25 m would fold ~9k distinct register sites together,
+//    ~850 of them run by another operator.
 //
 // 2. VAT is inconsistent across feeds. EcoMovement and EnBW publish net
 //    prices with `taxes: [VAT 19%]` and `tax_included: false`, Wirelane
@@ -62,7 +65,7 @@ const PAGE_TIMEOUT_MS = 120_000;
 // Germany's bounding box, padded. Same as bnetza.ts.
 const DE_BBOX = { latMin: 47, latMax: 56, lonMin: 5.5, lonMax: 15.5 };
 
-/** Locations closer than this fold into one pin. */
+/** Feed locations closer than this to a pin fold into it. */
 const MERGE_RADIUS_M = 25;
 // Grid cell for the merge lookup, in degrees. ~111 m of latitude, so a 3×3
 // neighbourhood always covers the merge radius.
@@ -71,12 +74,14 @@ const GRID_DEG = 0.001;
 // Baked into every externalId. Changing it re-mints every row.
 const COORD_PRECISION = 5;
 
+const REGISTER_SOURCE = "bnetza_api";
+
 // Lower rank wins the anchor. The register first: its coordinates are the
 // official ones and it covers every operator. Then the feeds that carry
 // prices, so a priced pin keeps the operator's own name when the register has
 // no entry nearby.
 const SOURCE_RANK: Record<string, number> = {
-  bnetza_api: 0,
+  [REGISTER_SOURCE]: 0,
   datex2_enbw: 1,
   datex2_ecomovement: 2,
   datex2_chargecloud: 3,
@@ -413,6 +418,7 @@ export function mergeLocations(
     .map((x) => x.loc);
 
   const grid = new Map<string, Pin[]>();
+  const byKey = new Map<string, Pin>();
   const pins: Pin[] = [];
   const cell = (lat: number, lon: number) => `${Math.floor(lat / GRID_DEG)}:${Math.floor(lon / GRID_DEG)}`;
 
@@ -451,12 +457,14 @@ export function mergeLocations(
       if (powerKw != null && evsePower[i] === powerKw) top = cheaperOffer(offer, top);
     }
 
-    // Fold into an existing pin within the merge radius, if any.
+    // Fold into an existing pin: a register site only into one at the same
+    // 5 dp key, a feed into the nearest within the merge radius.
+    const key = stationKey(latitude, longitude);
     const gy = Math.floor(latitude / GRID_DEG);
     const gx = Math.floor(longitude / GRID_DEG);
-    let target: Pin | null = null;
+    let target: Pin | null = loc.source === REGISTER_SOURCE ? (byKey.get(key) ?? null) : null;
     let best = MERGE_RADIUS_M;
-    for (let dy = -1; dy <= 1; dy++) {
+    for (let dy = -1; dy <= 1 && loc.source !== REGISTER_SOURCE; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
         for (const pin of grid.get(`${gy + dy}:${gx + dx}`) ?? []) {
           const d = distanceM(pin.station.latitude, pin.station.longitude, latitude, longitude);
@@ -482,7 +490,6 @@ export function mergeLocations(
       continue;
     }
 
-    const key = stationKey(latitude, longitude);
     const street = loc.address?.trim() ?? "";
     const postcode = loc.postal_code?.trim() ?? "";
     const site = loc.name?.trim() || street;
@@ -505,6 +512,7 @@ export function mergeLocations(
       site,
     };
     pins.push(pin);
+    byKey.set(key, pin);
     const k = cell(latitude, longitude);
     const bucket = grid.get(k);
     if (bucket) bucket.push(pin);
