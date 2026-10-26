@@ -75,6 +75,6 @@
     "deepmerge-ts": "^8.0.1",
     "@babel/core": "^7.29.6",
     "mysql2": "^3.24.3",
-    "undici": "^8.10.2"
+    "undici": "^8.12.2"
   }
 }
