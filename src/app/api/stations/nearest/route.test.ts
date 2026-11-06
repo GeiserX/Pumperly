@@ -89,8 +89,21 @@ describe("stations/nearest API", () => {
     await GET(makeRequest(validParams) as any);
 
     const callArgs = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0];
-    // Non-EV query: (sql, lon, lat, radiusDeg, limit, fuel)
+    // Non-EV query: (sql, lon, lat, radiusM, limit, fuel)
     expect(callArgs[4]).toBe(5);
+  });
+
+  it.each(["B7", "EV"])("measures %s distance and radius on the sphere, in metres", async (fuel) => {
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await GET(makeRequest({ ...validParams, fuel }) as any);
+
+    const [sql, , , radius] = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0] as [string, ...unknown[]];
+    expect(radius).toBe(10000);
+    expect(sql).toContain("ST_Distance(s.geom::geography");
+    expect(sql).toMatch(/ST_DWithin\(\s*s\.geom::geography,/);
+    expect(sql).not.toContain("111.32");
   });
 
   it("accepts custom limit parameter", async () => {

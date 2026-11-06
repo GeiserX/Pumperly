@@ -76,8 +76,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const isEV = fuel === "EV";
-    // Approximate degree conversion for ST_DWithin on geometry (not geography)
-    const radiusDeg = radius_km / 111.32;
+    // Distance and radius are measured on the sphere (geography, metres), so a
+    // kilometre east-west counts the same as a kilometre north-south. Planar
+    // degrees * 111.32 overstated east-west distance by 1/cos(lat). The
+    // filter uses the functional GiST stations_geom_geography_idx.
+    const radiusM = radius_km * 1000;
 
     const rows: NearestStationRow[] = isEV
       ? await prisma.$queryRawUnsafe(
@@ -97,7 +100,7 @@ export async function GET(request: NextRequest) {
             fp.reported_at,
             fp.ev_fees,
             s.max_power_kw::int AS max_power_kw,
-            (ST_Distance(s.geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)) * 111.32)::float AS distance_km
+            (ST_Distance(s.geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) / 1000)::float AS distance_km
           FROM stations s
           LEFT JOIN LATERAL (
             SELECT price, currency, reported_at, ev_fees
@@ -109,8 +112,8 @@ export async function GET(request: NextRequest) {
           ) fp ON true
           WHERE s.station_type IN ('ev_charger', 'both')
             AND ST_DWithin(
-              s.geom,
-              ST_SetSRID(ST_MakePoint($1, $2), 4326),
+              s.geom::geography,
+              ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
               $3
             )
           ORDER BY distance_km ASC
@@ -118,7 +121,7 @@ export async function GET(request: NextRequest) {
           `,
           lon,
           lat,
-          radiusDeg,
+          radiusM,
           limit,
         )
       : await prisma.$queryRawUnsafe(
@@ -136,7 +139,7 @@ export async function GET(request: NextRequest) {
             fp.price::float AS price,
             COALESCE(fp.currency, 'EUR') AS currency,
             fp.reported_at,
-            (ST_Distance(s.geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)) * 111.32)::float AS distance_km
+            (ST_Distance(s.geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) / 1000)::float AS distance_km
           FROM stations s
           JOIN LATERAL (
             SELECT price, currency, reported_at
@@ -147,8 +150,8 @@ export async function GET(request: NextRequest) {
             LIMIT 1
           ) fp ON true
           WHERE ST_DWithin(
-            s.geom,
-            ST_SetSRID(ST_MakePoint($1, $2), 4326),
+            s.geom::geography,
+            ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
             $3
           )
           ORDER BY distance_km ASC
@@ -156,7 +159,7 @@ export async function GET(request: NextRequest) {
           `,
           lon,
           lat,
-          radiusDeg,
+          radiusM,
           limit,
           fuel,
         );
