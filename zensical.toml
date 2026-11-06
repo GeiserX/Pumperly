@@ -1,0 +1,151 @@
+# Generated from mkdocs.yml by mkdocs-to-zensical.py; the why of every block is in
+# new-repo/templates/zensical.toml. Edit this file, not mkdocs.yml, which is gone.
+
+[project]
+site_name = "Pumperly"
+site_url = "https://geiserx.github.io/Pumperly/"
+site_description = "Open-source map of fuel prices and EV chargers with a route planner that finds the cheapest stops. Live prices from 22 countries. Self-hostable."
+repo_url = "https://github.com/GeiserX/Pumperly"
+repo_name = "GeiserX/Pumperly"
+edit_uri = "edit/main/docs/"
+strict = true
+extra_css = ["stylesheets/theme.css"]
+exclude_docs = """
+[A-Z]*.md
+design/
+research/
+notes/
+requirements-docs.txt
+"""
+nav = [
+  { Home = "index.md" },
+  { "Get started" = [
+      { "Run with Docker Compose" = "getting-started/docker-compose.md" },
+      { "What happens on first start" = "getting-started/first-start.md" },
+      { "Full stack with routing and geocoding" = "getting-started/full-stack.md" },
+      { "Run on Kubernetes with Helm" = "getting-started/kubernetes.md" },
+    ] },
+  { "Using Pumperly" = [
+      { "The map" = "using/map.md" },
+      { "Planning a route" = "using/routes.md" },
+      { "EV charging" = "using/ev-charging.md" },
+      { "Share links and deep links" = "using/links.md" },
+    ] },
+  { "Data sources" = [
+      { "Coverage and status" = "data/coverage.md" },
+      { "Sources at a glance" = "data/sources-at-a-glance.md" },
+      { "Fuel price sources" = "data/fuel-sources.md" },
+      { "EV charging sources" = "data/ev-sources.md" },
+      { "How scrapers work" = "data/how-scrapers-work.md" },
+      { "Adding a country" = "data/adding-a-country.md" },
+    ] },
+  { Configuration = [
+      { "Countries and scrape schedule" = "configuration/countries-and-schedule.md" },
+      { "Routing with Valhalla" = "configuration/routing-valhalla.md" },
+      { "Geocoding with Photon" = "configuration/geocoding-photon.md" },
+      { "API keys" = "configuration/api-keys.md" },
+    ] },
+  { Operations = [
+      { Upgrading = "operations/upgrading.md" },
+      { "Backing up the database" = "operations/backup-and-restore.md" },
+      { "Monitoring and troubleshooting" = "operations/troubleshooting.md" },
+    ] },
+  { Reference = [
+      { "Environment variables" = "reference/environment-variables.md" },
+      { "HTTP API" = "reference/api.md" },
+      { "Data model" = "reference/data-model.md" },
+      { "Fuel types" = "reference/fuel-types.md" },
+      { "Currencies and exchange rates" = "reference/currencies.md" },
+      { Glossary = "reference/glossary.md" },
+    ] },
+  { Project = [
+      { Roadmap = "roadmap.md" },
+      { "Related projects" = "related.md" },
+      { Development = "development.md" },
+    ] },
+]
+
+[project.validation]
+invalid_links = true
+invalid_link_anchors = true
+
+[project.theme]
+language = "en"
+variant = "modern"
+logo = "images/logo.svg"
+favicon = "images/icon.svg"
+font = false
+features = [
+  "navigation.tabs",
+  "navigation.sections",
+  "navigation.expand",
+  "navigation.top",
+  "content.code.copy",
+  "content.action.edit",
+  "search.highlight",
+  "toc.follow",
+  "navigation.instant",
+  "navigation.instant.progress",
+  "content.action.copy",
+]
+icon.repo = "fontawesome/brands/github"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to dark mode"
+
+[[project.extra.social]]
+icon = "fontawesome/solid/gas-pump"
+link = "https://pumperly.com"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/GeiserX/Pumperly"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/docker"
+link = "https://hub.docker.com/r/drumsergio/pumperly"
+
+[[project.extra.social]]
+icon = "simple/artifacthub"
+link = "https://artifacthub.io/packages/helm/pumperly/pumperly"
+
+[project.plugins.search]
+
+[project.plugins.redirects.redirect_maps]
+"contributing.md" = "development.md"
+"getting-started/development.md" = "development.md"
+"integrations.md" = "related.md"
+"features.md" = "index.md"
+
+[project.plugins.llmstxt.sections]
+Documentation = ["*.md", "*/*.md"]
+
+[project.markdown_extensions]
+admonition = {}
+"pymdownx.details" = {}
+"pymdownx.superfences".custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+"pymdownx.tabbed".alternate_style = true
+"pymdownx.highlight".anchor_linenums = true
+"pymdownx.inlinehilite" = {}
+"pymdownx.snippets".base_path = [".", "docs"]
+"pymdownx.snippets".check_paths = true
+"pymdownx.mark" = {}
+attr_list = {}
+md_in_html = {}
+"pymdownx.emoji".emoji_index = "zensical.extensions.emoji.twemoji"
+"pymdownx.emoji".emoji_generator = "zensical.extensions.emoji.to_svg"
+tables = {}
+toc.permalink = true

@@ -28,6 +28,10 @@
    #047857 is the same hue at 5.5:1. */
 [data-md-color-scheme="default"] {
   --md-typeset-a-color:         #047857;
+  /* Zensical's modern theme paints the active nav item in the accent, so the
+     light scheme takes the darker emerald there too. */
+  --md-accent-fg-color:         #047857;
+  --md-accent-fg-color--transparent: #0478571a;
 }
 
 /* Give the header logo a fixed size so it does not crowd the site name. */
@@ -42,9 +46,15 @@
    .md-header__topic and the page title in a second one, and swaps them on
    scroll. Styling both would change every page title too. */
 .md-header__topic:first-child .md-ellipsis {
-  color: #ffffff;
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+/* That colour only on the dark scheme: Zensical's modern header takes the page
+   background, so on the light scheme it is white and a light name would vanish.
+   There the name keeps the default text colour. */
+[data-md-color-scheme="slate"] .md-header__topic:first-child .md-ellipsis {
+  color: #ffffff;
 }
 
 /* Keep the mark and the name close, so they read as one unit. */

@@ -166,36 +166,26 @@ Both paths follow the [data-source rule](#rules-that-come-first).
 
 ## Build the docs locally
 
-The site is built with MkDocs Material and published at <https://geiserx.github.io/Pumperly>.
+The site is built with [Zensical](https://zensical.org/) and published at <https://geiserx.github.io/Pumperly>.
 
 ```bash
 pip install -r docs/requirements-docs.txt
-mkdocs serve           # live preview at http://127.0.0.1:8000
-mkdocs build --strict  # what CI runs
+python -m zensical serve                    # live preview at http://localhost:8000
+python -m zensical build --clean --strict   # what CI runs, then:
+python -I .github/scripts/site-check.py site
 ```
 
-The strict build fails on any warning, including a broken link, a missing anchor, an absolute link between pages or a missing snippet include.
+The strict build fails on a broken link, a missing anchor or a missing snippet include. `site-check.py` fails on what the build lets through: a page in no nav entry, a nav entry for a missing file, a missing image, a link rooted at `/` and a raw `<title>` tag in a page.
 
-- Every new page needs an entry in the `nav` section of `mkdocs.yml`.
-- MkDocs builds every Markdown file under `docs/`. A file that must not become a page goes in `exclude_docs`.
+- Every new page needs an entry in the `nav` list of `zensical.toml`.
+- Zensical builds every Markdown file under `docs/`. A file that must not become a page goes in `exclude_docs`.
 - Link between pages with relative paths, such as `[Data model](reference/data-model.md)` from this page. Link to repository files with full `https://github.com/GeiserX/Pumperly/blob/main/...` addresses.
 - Include a shipped file instead of copying it. A line `--8<-- "docker/docker-compose.yml"` inside a code block pulls the file in at build time, so the page cannot drift from it. A missing file fails the build.
 
-A pull request that touches `docs/`, `mkdocs.yml`, `docker/docker-compose.yml` or `.env.example` runs the strict build. A merge to `main` that touches them publishes the site.
-
-!!! warning "Some included files do not trigger the docs workflow"
-    The workflow watches only the paths above. Several pages include other files:
-
-    - `charts/pumperly/values.yaml`, on [Run on Kubernetes with Helm](getting-started/kubernetes.md#the-full-values-file)
-    - `prisma/schema.prisma` and both `prisma/migrations/*/migration.sql` files, on [Data model](reference/data-model.md)
-    - `.github/workflows/reve-key-renewal.yml`, on [EV charging sources](data/ev-sources.md#reve-key-renewal)
-
-    A change to one of these files does not rebuild the site. The published page keeps the old copy until the next docs change reaches `main`. A pull request that renames or deletes one of them also skips the strict build, so the broken include only fails the next docs change.
-
-    When your change touches one of these files, run `mkdocs build --strict` locally. After the merge, run the Documentation workflow by hand from the Actions tab to publish the new copy.
+Every pull request runs the strict build and the site check. A merge to `main` that touches `docs/`, `zensical.toml` or a file the pages include publishes the site. The included files are `docker/docker-compose.yml`, `.env.example`, `charts/pumperly/values.yaml`, everything under `prisma/` and `.github/workflows/reve-key-renewal.yml`; a new include needs its path added to the `paths` list of `.github/workflows/docs.yml`.
 
 !!! note "The site shares its branch with the Helm repository"
-    The `gh-pages` branch also serves the Helm chart index. The docs workflow syncs the built site into that branch and keeps `index.yaml` and the chart packages. Never run `mkdocs gh-deploy`: it replaces the whole branch and breaks `helm repo add`.
+    The `gh-pages` branch also serves the Helm chart index. The docs workflow syncs the built site into that branch and keeps `index.yaml` and the chart packages. Never replace the whole branch, and never move the site to the Pages artifact flow: either breaks `helm repo add`.
 
 ## Branches, commits and pull requests
 
@@ -230,7 +220,7 @@ A pull request runs these checks, depending on the files it changes. Fix any tha
 | CI: Build | Same | `npm run build` |
 | CI: CI Summary | Same | Fails when any of the three above failed |
 | CodeQL: Analyze | Changes under `src/`, `prisma/` or the package files | Static analysis of the JavaScript and TypeScript |
-| Documentation: build (strict) | Docs changes | `mkdocs build --strict` |
+| Docs: build (strict) | Every pull request | `python -m zensical build --clean --strict`, then `site-check.py` on the built site |
 
 [CodeRabbit](https://www.coderabbit.ai/) reviews every pull request automatically. Read each of its comments, and fix the ones that are right or reply saying why not. It skips draft pull requests and titles containing `WIP`, so open the pull request as ready for review.
 
