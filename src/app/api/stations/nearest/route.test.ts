@@ -93,16 +93,16 @@ describe("stations/nearest API", () => {
     expect(callArgs[4]).toBe(5);
   });
 
-  it("measures distance and radius on the sphere, in metres", async () => {
+  it.each(["B7", "EV"])("measures %s distance and radius on the sphere, in metres", async (fuel) => {
     vi.mocked(prisma.$queryRawUnsafe).mockResolvedValue([]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await GET(makeRequest(validParams) as any);
+    await GET(makeRequest({ ...validParams, fuel }) as any);
 
-    const [sql, , , radius] = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0];
+    const [sql, , , radius] = vi.mocked(prisma.$queryRawUnsafe).mock.calls[0] as [string, ...unknown[]];
     expect(radius).toBe(10000);
     expect(sql).toContain("ST_Distance(s.geom::geography");
-    expect(sql).toContain("ST_DWithin(\n            s.geom::geography");
+    expect(sql).toMatch(/ST_DWithin\(\s*s\.geom::geography,/);
     expect(sql).not.toContain("111.32");
   });
 
