@@ -1,0 +1,449 @@
+# EV charging sources
+
+This page describes where Pumperly's EV charging locations come from, how each source is read and which settings tune it. EV chargers carry a location, an operator and an address. German chargers from OCPDB also carry a price per kWh and any fees on top. Every other charger has no price.
+
+## The sources
+
+| Source | Covers | Key | Every | Licence |
+| --- | --- | --- | --- | --- |
+| [Open Charge Map](<#open-charge-map>) | Every supported country and the United States | `PUMPERLY_OCM_API_KEY` | 24 h | Open Database License (ODbL) |
+| [Mapa REVE](<#mapa-reve>) | Spain | `PUMPERLY_REVE_API_KEY` | 1 h | Non-commercial use, credit Red Eléctrica de España |
+| [Open ChargePoint Database (OCPDB)](<#ocpdb>) | Germany, with prices | None | 6 h | dl-de/by-2-0 (MobiData BW); the register and EnBW are CC BY 4.0 |
+| [BNetzA Ladesäulenregister](<#bnetza>) | Germany | None | 24 h | CC BY 4.0, credit "Bundesnetzagentur.de" |
+
+Open Charge Map is crowdsourced: anyone can add or edit a charger. Mapa REVE and the BNetzA register are official registries that charge point operators must file into, so they are authoritative where Open Charge Map is crowdsourced. OCPDB contains the BNetzA register and adds the operators' own feeds, which carry ad-hoc tariffs.
+
+Only OCPDB's prices are stored. Mapa REVE also publishes connector tariffs, but its scraper leaves them out.
+
+## Which source a country uses
+
+Every other country uses Open Charge Map. Spain and Germany also have official sources, and each country uses exactly one source at a time. Running two would put two pins on almost every charger, because the sources overlap heavily.
+
+```
+flowchart TD
+    ES[Spain] --> K{PUMPERLY_REVE_API_KEY set?}
+    K -- Yes --> REVE[Mapa REVE, EV_ES_REVE]
+    K -- No --> OCMES[Open Charge Map, EV_ES]
+    DE[Germany] --> S{PUMPERLY_DE_EV_SOURCE}
+    S -- ocm --> OCMDE[Open Charge Map, EV_DE]
+    S -- bnetza --> BNETZA[BNetzA register, EV_DE_BNETZA]
+    S -- anything else --> OCPDB[OCPDB, EV_DE_OCPDB]
+```
+
+The scheduler and the manual scraper command apply the same rule, from [`spain-ev-source.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/spain-ev-source.ts>) and [`germany-ev-source.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/germany-ev-source.ts>). In the scheduler, `PUMPERLY_EV_ENABLED=0` turns off every EV source at once.
+
+> [!WARNING]
+>
+> **Naming a source by hand overrides the rule**
+>
+> The manual command `npm run scraper:run -- --country=all` picks one source per country, like the scheduler. Naming a scraper explicitly, such as `--country=EV_ES`, runs it even when the other source is active. One such run puts back every Open Charge Map row the registry had retired. They stay, as duplicates, until the registry's next error-free run deletes them again.
+
+## Open Charge Map
+
+[Open Charge Map](<https://openchargemap.org>) is a community database of charging locations worldwide. Pumperly runs one scraper per country, keyed `EV_<code>`, for example `EV_FR` or `EV_US`. The code is in [`src/scrapers/ocm.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/ocm.ts>).
+
+|  |  |
+| --- | --- |
+| Source key | `ocm` |
+| Station ids | `ocm-<id>` |
+| Every | 24 h |
+| API key | `PUMPERLY_OCM_API_KEY`. Free: sign in at openchargemap.org and open **My Profile**, then **My API Keys** |
+| Licence | Open Database License (ODbL) |
+
+### What is imported
+
+Only chargers marked operational are requested. Each one becomes a station with:
+
+- **Brand:** the operator's name.
+- **Name:** the location's title, or the operator followed by "Charging" when there is no title.
+- **Address:** the first address line and the postcode.
+- **Town and province:** as Open Charge Map records them.
+
+### Without an API key
+
+The scrapers still run on schedule. Each one logs `PUMPERLY_OCM_API_KEY not set, skipping` and writes nothing. Because the run returned no stations, the scheduler reports it with one error. German chargers still load from OCPDB or the BNetzA register, which need no key.
+
+### How a large country is fetched
+
+Open Charge Map returns at most 5,000 results per request and cuts the rest off without saying so. Small countries fit in one request. Large ones, such as the United States, Germany, the United Kingdom and France, do not.
+
+The first request for a country has no bounding box. When it comes back full, the scraper splits the whole world into four boxes and asks for each one, still filtered by country code. It keeps splitting any box that comes back full. Boxes share edges, so results are merged by their Open Charge Map id.
+
+Open Charge Map also under-reports large boxes: a box wider than about 2 degrees can return far fewer results than it holds. So a box wider than the trusted span is split again whenever it returns anything, even when it is not full.
+
+Splitting stops at any of these limits:
+
+- a box narrower than 0.05 degrees, about 5 km;
+- the request budget for the country, 800 requests by default;
+- 15 minutes of active request time for the country.
+
+When a limit stops the split, the scraper logs `coverage may be partial` and keeps everything it found.
+
+### Rate limits
+
+All Open Charge Map scrapers share one rate limit on Open Charge Map's side, so they share one queue on Pumperly's side:
+
+- **One request at a time across all countries,** by default. Time spent waiting in this queue does not count against a country's 15-minute budget.
+- **A 600 ms pause before each tile request.**
+- **HTTP 429 is retried four times.** The scraper waits for the time the `Retry-After` header gives. Without the header it waits 1, 2, 4 and then 8 seconds. It keeps its place in the queue while it waits, which pauses all Open Charge Map traffic until the limit recovers. A fifth 429 fails that country's run, and nothing from it is written.
+
+### Settings
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `PUMPERLY_OCM_API_KEY` | unset | API key. Without it, nothing is fetched. |
+| `PUMPERLY_OCM_MAX_CONCURRENCY` | `1` | Open Charge Map requests allowed at once, across all countries. |
+| `PUMPERLY_OCM_TILE_DELAY_MS` | `600` | Pause before each tile request, in milliseconds. |
+| `PUMPERLY_OCM_MAX_REQUESTS` | `800` | Request budget per country per run. |
+| `PUMPERLY_OCM_TRUST_SPAN_DEG` | `2` | Widest box, in degrees, whose result count is trusted without splitting. |
+
+The scrapers read these values once, when the app starts. A value that is not a number, or is out of range, falls back to the default.
+
+> [!NOTE]
+>
+> **Chargers removed from Open Charge Map stay on the map**
+>
+> The shared scraper pipeline only deletes fuel stations that lost their prices. It never deletes EV chargers. A charger that disappears from Open Charge Map keeps its pin in Pumperly. The only runs that delete Open Charge Map rows are the Spanish and German handovers described below.
+
+## Mapa REVE, Spain
+
+[Mapa REVE](<https://www.mapareve.es>) is Spain's official register of charging points, run by Red Eléctrica de España (REE). Every Spanish charge point operator files into it. The code is in [`src/scrapers/reve.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/reve.ts>).
+
+|  |  |
+| --- | --- |
+| Source key | `reve` |
+| Scraper key | `EV_ES_REVE` |
+| Station ids | `reve-<id>` |
+| Every | 1 h |
+| API key | `PUMPERLY_REVE_API_KEY`. Free, request it at [mapareve.es/api-contacto](<https://www.mapareve.es/api-contacto>). Keys expire after about a year |
+| Licence | Non-commercial use only. Red Eléctrica de España must be credited, and the data must not be altered or misrepresented |
+
+### The rate limit shapes everything
+
+The API allows **5 requests per hour** and returns at most 100 locations per request. The register holds about 14,500 locations across about 146 pages. There is no bulk export. So a complete pass takes about 30 hours at the hard limit, and one run can never fetch the whole register.
+
+The scraper works with that limit. Each hourly run fetches a few pages and saves them, and the register fills in over successive runs. Saving a station that already exists updates it in place, and the pipeline never deletes EV chargers. So each run adds to what the previous runs saved.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `PUMPERLY_REVE_PAGES_PER_RUN` | `4` | Pages per run, capped at 5. A value below 1 or not a number falls back to 4. The default leaves one request per hour spare for a manual run. |
+| `PUMPERLY_REVE_CUTOVER_RATIO` | `0.95` | Share of the register that must be stored before Open Charge Map's Spanish rows are deleted. Must be above 0 and at most 1. |
+
+At the default of 4 pages per run, the first full load takes about 37 hours. At 5 it takes about 30.
+
+### Which pages a run fetches
+
+The scraper stores no cursor. It works out the first page of each run from the clock:
+
+```
+first page = (hours since 1 January 1970 × pages per run) mod total pages
+```
+
+A restart, a redeploy or a fresh install therefore carries on from wherever the clock points, with no state to save or lose. After a full pass the window wraps around and starts again, and that is how existing locations get refreshed.
+
+The first run after the app starts does not yet know how many pages exist. It fetches page 1, reads the page count from the response headers, then spends the rest of its budget on the pages the clock points to.
+
+When the API answers HTTP 429, the hourly budget is spent. The API sends no `Retry-After` and the window is a whole hour, so the scraper stops and saves what it has. The next run continues.
+
+> [!WARNING]
+>
+> **Keep REVE hourly**
+>
+> `PUMPERLY_SCRAPE_INTERVAL_HOURS` also applies to `EV_ES_REVE`. A global value of `24` means one run per day, which stretches a full pass from days to weeks. To use a global interval and keep REVE hourly, also set `PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE=1`. A per-scraper setting always wins over the global one.
+
+### What is imported
+
+- **Brand:** the operator's trade name, taken from the `owner` field before `-`. For example, `Qwello - www.qwello.es` becomes `Qwello`. When `owner` is empty, the legal name in `cpo_name` is used.
+- **Name:** REVE does not send one, so the scraper builds it from the brand and the highest connector power at the location, for example `Qwello — 150 kW`. Without a brand it uses `Punto de recarga`.
+- **Address:** the street address and the postcode.
+- **Province:** converted from the INE province code, spelled the same way as the Spanish fuel data.
+
+### The handover from Open Charge Map
+
+REVE and Open Charge Map overlap heavily in Spain: most REVE locations sit within 50 m of an Open Charge Map pin. The switch works like this:
+
+```
+sequenceDiagram
+    participant Admin
+    participant Scheduler
+    participant REVE as REVE scraper
+    participant DB as Database
+    Admin->>Scheduler: Set PUMPERLY_REVE_API_KEY, restart
+    Scheduler->>Scheduler: Stop scheduling EV_ES (Open Charge Map)
+    loop Every hour
+        Scheduler->>REVE: Run EV_ES_REVE
+        REVE->>DB: Save up to 4 pages of locations
+        REVE->>DB: Count stored REVE rows
+        alt Below 95% of the register
+            Note over DB: Open Charge Map rows for Spain stay
+        else At or above 95%, and the run had no errors
+            REVE->>DB: Delete every Spanish Open Charge Map charger
+        end
+    end
+```
+
+Open Charge Map stops being scraped for Spain at once. Its existing Spanish rows stay while REVE fills in, so the map is never empty of chargers. **Expect two pins for many chargers during that time.** Once the stored REVE rows reach the cutover ratio of the register's total, the next error-free run deletes every Spanish Open Charge Map charger. The check needs the register's total from the API, so it never runs on a guess.
+
+### Renewing the key
+
+REVE keys expire about a year after they are issued. Nothing fails loudly when a key lapses. Each run logs an HTTP error, and the Spanish chargers already stored stay on the map but stop being refreshed. Open Charge Map does not come back for Spain, because the key is still set.
+
+The repository carries a scheduled GitHub Actions workflow, [`.github/workflows/reve-key-renewal.yml`](<https://github.com/GeiserX/Pumperly/blob/main/.github/workflows/reve-key-renewal.yml>), for the project's own key. Once a year, a week before that key expires, it opens an issue titled "Renew the Mapa REVE API key (expires )" with the renewal steps. If such an issue is already open, it adds a comment instead. It can also be run by hand from the Actions tab.
+
+The workflow only tracks the project's own key. If you run your own instance, keep your own reminder. The renewal steps are the same:
+
+1. Request a new key at [mapareve.es/api-contacto](<https://www.mapareve.es/api-contacto>). State that the use is non-commercial. The key arrives by email with its new expiry date.
+2. Set `PUMPERLY_REVE_API_KEY` to the new key and restart the app.
+3. Check the key with one request. HTTP `200` means it works. `401` or `403` means it is wrong.
+
+   ```
+   curl -sS -o /dev/null -w '%{http_code}\n' \
+     -H "x-api-key: $NEW_KEY" \
+     'https://www.mapareve.es/api/external/v1/locations?limit=1&page=1'
+   ```
+
+   This request counts against the hourly limit of 5.
+4. In a fork that uses the workflow, update both the `schedule` cron and `KEY_EXPIRY` to a week before the new expiry date.
+
+> [!NOTE]
+>
+> **The workflow file**
+>
+> ````
+> name: REVE API key renewal reminder
+>
+> # The Mapa REVE API key that feeds Spain's EV charging data expires once a year.
+> # When it does, the REVE scraper starts failing and Spanish charger data quietly
+> # goes stale — nothing else breaks, so it would go unnoticed for a long time.
+> #
+> # This opens an issue a week before expiry with the renewal steps in it.
+> #
+> # Renewing? Change BOTH the `schedule` cron below and KEY_EXPIRY to the new
+> # date, so next year's reminder still lands a week early.
+> #
+> # Current key expires: 2027-08-21  →  reminder fires 2027-08-14.
+>
+> on:
+>   schedule:
+>     # 08:00 UTC on 14 August, every year (a week before the 21 August expiry).
+>     - cron: "0 8 14 8 *"
+>   workflow_dispatch:
+>
+> permissions:
+>   contents: read
+>   issues: write
+>
+> env:
+>   KEY_EXPIRY: "2027-08-21"
+>
+> jobs:
+>   remind:
+>     name: Open renewal issue
+>     runs-on: ubuntu-latest
+>     steps:
+>       - name: Open (or update) the renewal issue
+>         env:
+>           GH_TOKEN: ${{ github.token }}
+>           GH_REPO: ${{ github.repository }}
+>         run: |
+>           set -euo pipefail
+>
+>           TITLE="Renew the Mapa REVE API key (expires ${KEY_EXPIRY})"
+>
+>           # Don't stack a new issue on top of last year's if one is still open.
+>           EXISTING=$(gh issue list --state open --search '"Renew the Mapa REVE API key" in:title' \
+>             --json number --jq '.[0].number // empty')
+>
+>           BODY=$(cat <<'EOF'
+>           The Mapa REVE API key behind Spain's EV charging data expires on __EXPIRY__.
+>
+>           Nothing breaks loudly when it lapses: the scraper logs an HTTP error and
+>           Spanish charger data simply stops being refreshed. Renew before the date.
+>
+>           ## How to renew
+>
+>           1. Request a new key at https://www.mapareve.es/api-contacto — it is free.
+>              Say the use is non-commercial and name Pumperly. Approval arrives by
+>              email, usually within a few days, with the key and its new expiry.
+>           2. Update the running deployment's `PUMPERLY_REVE_API_KEY` and redeploy.
+>              The key is an environment variable — it is never committed.
+>           3. Confirm it works. A single request is enough:
+>
+>              ```
+>              curl -sS -o /dev/null -w '%{http_code}\n' \
+>                -H "x-api-key: $NEW_KEY" \
+>                'https://www.mapareve.es/api/external/v1/locations?limit=1&page=1'
+>              ```
+>
+>              `200` means good, `401`/`403` means the key is wrong.
+>           4. Update `.github/workflows/reve-key-renewal.yml` — both the `schedule`
+>              cron and `KEY_EXPIRY` — to a week before the new expiry date, so this
+>              reminder keeps working.
+>           5. Close this issue.
+>
+>           ## Worth knowing
+>
+>           - The API allows **5 requests per hour**, 100 locations per page. A full
+>             reload of the ~14.5k-location registry takes about 30 hours, so a lapsed
+>             key is not instantly recoverable — the data refills gradually.
+>           - Terms of use: non-commercial only, Red Eléctrica de España must be
+>             credited as the source, and the data must not be altered or
+>             misrepresented. The credit lives in the in-app legal modal.
+>
+>           _Opened automatically by `.github/workflows/reve-key-renewal.yml`._
+>           EOF
+>           )
+>           BODY=${BODY//__EXPIRY__/$KEY_EXPIRY}
+>
+>           if [ -n "$EXISTING" ]; then
+>             echo "Issue #$EXISTING is already open — adding a comment instead."
+>             gh issue comment "$EXISTING" --body "$BODY"
+>           else
+>             gh issue create --title "$TITLE" --body "$BODY"
+>           fi
+> ````
+
+## Open ChargePoint Database (OCPDB), Germany
+
+The [Open ChargePoint Database](<https://api.mobidata-bw.de/ocpdb/>) is run by MobiData BW for the state of Baden-Württemberg, but covers all of Germany. It merges the BNetzA register with the operators' own DATEX II feeds from Mobilithek: EnBW, EcoMovement, Chargecloud, Wirelane, e-clearing.net, Tesla and others. Those feeds carry ad-hoc tariffs, the price a driver pays without a contract, for about 97,000 charge points. It is Germany's default source. The code is in [`src/scrapers/ocpdb.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/ocpdb.ts>).
+
+|  |  |
+| --- | --- |
+| Source key | `ocpdb` |
+| Scraper key | `EV_DE_OCPDB` |
+| Station ids | `ocpdb-<latitude>_<longitude>` |
+| Every | 6 h |
+| API key | None |
+| Licence | The bundle is [dl-de/by-2-0](<https://www.govdata.de/dl-de/by-2-0>), credited to MobiData BW. Within it the register and EnBW are CC BY 4.0. Some feeds declare no licence of their own, so the bundle's licence is the one that covers them. The attribution is in the app's legal notice. |
+
+### How the data is read
+
+Each run reads four endpoints in parallel: locations, tariffs, the links from tariffs to charge points, and the health of each operator feed. The OCPI endpoints are paged, 1,000 items per request. Each page, and the feed-health request, is retried once.
+
+- **Only German locations with a live charge point are kept.** Locations outside a padded bounding box around Germany, and charge points marked removed or planned, are skipped and counted.
+- **Locations within 25 m merge into one pin.** A charger reported by its operator is often in the register too, under another operator name and a few metres away. When the register lists the charger, its location anchors the pin, so the coordinates are the official ones. The station id is built from the anchor's coordinates.
+- **The brand is the operator,** and the name joins the operator and the site. When a merged location supplies the pin's price, its operator becomes the brand, so a pin never shows one operator's name next to another's price.
+
+Each run logs what it read:
+
+```
+[ocpdb] DE: <tariffs> tariffs → <n> priced EVSEs; <locations> locations → <stations> stations, <n> priced (merged <n>, skipped <n> without live EVSE, <n> outside DE, <n> unparseable)
+```
+
+### How a price is chosen
+
+A charger can have several tariffs. The pin shows one:
+
+1. **Only ad-hoc tariffs count.** Tariffs for contract customers, and links with no audience, are skipped.
+2. **Only tariffs from healthy feeds count.** A feed that OCPDB marks as failed, or that has not refreshed in [`PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ocpdb_max_feed_age_days>) days, has its tariffs ignored, and its chargers show unpriced. The price's `reported_at` is when its feed last refreshed.
+3. **Prices are gross.** Ad-hoc charging is a consumer price, and German law requires it shown with VAT. A price marked net gets the VAT rate it lists, or 19 % when it lists none. A price with no tax data is read as gross.
+4. **Prices outside EUR 0.10 to 2.00 per kWh are dropped** before the cheapest is picked, so a bogus 0.00 cannot hide a real price.
+5. **The cheapest at the pin's top power wins,** with the session fee spread over a 30 kWh session, so a low rate cannot hide a large fee. The price shown is the one paid at the kW shown next to it. When no charger at the top power has a price, the cheapest of the same class stands in (DC from 50 kW, AC below). A DC pin never shows an AC rate: it stays unpriced instead.
+
+The fees on top of the per-kWh price are stored in [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/#ev_fees>):
+
+- **Session fee:** fixed fees that always apply are added up. When the fee depends on the time of day, the weekday or other conditions, every option is kept and the popup lists them. The highest is the one used to rank tariffs and to cost a planned stop.
+- **Per-minute fee:** the earliest-starting time-based charge that costs anything, with the minute it starts. These are blocking fees, typically 30 minutes to 4 hours into the session. OCPI defines them per hour, but every feed seen uses them per minute, so Pumperly reads them per minute. As in OCPI, the first time charge that always applies wins, so later copies of it are ignored (Chargecloud lists a free one first, then the real fee after 4 hours, then copies). Two feed errors are dropped: a time charge equal to the tariff's kWh price, and anything above 0.30 per minute, which no operator charges.
+
+### Records that do not parse
+
+A record the scraper cannot read is skipped and counted in the run's log line, so one bad location from a feed does not stop Germany from updating. When more than 0.5 % of the tariffs, the tariff associations or the locations fail to parse, the feed's shape has most likely changed: the run fails and writes nothing, and the stations and prices from the last good run stay.
+
+### When the feed health is unavailable
+
+Without the feed-health endpoint, no tariff can be vouched for, and a run without prices would delete the current ones. So when that request fails twice, the whole run fails and writes nothing. The stations and prices from the last good run stay until the next run.
+
+### Cleanup after each run
+
+Cleanup works as for [BNetzA](<#bnetza-cleanup>). After a run with no errors, if the run refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ocpdb_min_stations>) stations, the scraper deletes:
+
+1. **OCPDB stations the run did not refresh.** These left the database, or their anchor's coordinates changed, which changes the id.
+2. **Every German Open Charge Map and BNetzA charger.** Once OCPDB has landed, those rows are duplicates.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
+| `PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS` | `3` | Days a feed may go without refreshing before its tariffs are ignored. A value of 0 or less, or not a number, falls back to the default. |
+
+## BNetzA Ladesäulenregister, Germany
+
+The Ladesäulenregister is the German charging point register kept by the Bundesnetzagentur, the federal network agency. Every operator of a publicly accessible charge point must file into it under §5 of the Ladesäulenverordnung, the charging station ordinance. It holds about 74,000 locations. The code is in [`src/scrapers/bnetza.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/bnetza.ts>).
+
+|  |  |
+| --- | --- |
+| Source key | `bnetza` |
+| Scraper key | `EV_DE_BNETZA` |
+| Station ids | `bnetza-<latitude>_<longitude>` |
+| Every | 24 h |
+| API key | None |
+| Licence | CC BY 4.0, attribution "Bundesnetzagentur.de" |
+
+The register only lists operators who completed the notification procedure and agreed to publication, so it is not complete. It is still several times larger than Open Charge Map's German coverage. It has no prices: [OCPDB](<#ocpdb>) contains the same register and adds them.
+
+### Choosing Germany's source
+
+| `PUMPERLY_DE_EV_SOURCE` (any case) | Germany's EV source |
+| --- | --- |
+| unset, `ocpdb`, or any value not listed here | OCPDB |
+| `bnetza` | BNetzA register |
+| `ocm` | Open Charge Map |
+
+### How the file is read
+
+The register is one tab-separated file of about 19 MB, regenerated daily. Each run downloads the whole file, with a 5-minute deadline.
+
+- **Columns are found by header name,** not position. If a column the scraper needs is missing or renamed, the run fails without writing anything.
+- **Only operational rows are kept.** These are rows whose `Status` is `1`.
+- **Coordinates must be plain decimal numbers,** and they must fall inside a padded bounding box around Germany. Anything else is skipped and counted.
+- **Rows are merged per location.** The register has one row per charging device, so one car park can be five identical rows. The scraper merges rows whose coordinates match to 5 decimal places, about 1.1 m. The station id is built from those same rounded coordinates.
+- **The brand is the operator.** The name joins the operator, the address supplement (`Adresszusatz`) and the street.
+
+Each run logs how many rows it read, merged and skipped:
+
+```
+[bnetza] DE: <rows> rows → <stations> stations (merged <n>, skipped <n> not operational, <n> out of bounds, <n> malformed)
+```
+
+### Cleanup after each run
+
+The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run refreshed. If the count reaches the safety floor, it makes two deletions:
+
+1. **BNetzA stations the run did not refresh.** These left the register, or their operator corrected the coordinates, which changes the id.
+2. **Every German Open Charge Map and OCPDB charger.** Once BNetzA has landed, those rows are duplicates.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
+
+The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires the other sources on its strength.
+
+## Switching a source back
+
+Open Charge Map deletes nothing when it takes over. Official sources delete Open Charge Map's rows, and OCPDB and BNetzA delete each other's, but nothing deletes the official rows once their scraper stops running and Open Charge Map runs instead. If you switch Spain or Germany back to Open Charge Map, the official pins stay, and Open Charge Map adds its own next to them.
+
+Rolling back to a Pumperly release from before OCPDB has the same effect in Germany. That release's BNetzA scraper does not know the `ocpdb-` rows, so it leaves them in place and adds its own pins next to them, and every German charger shows twice.
+
+To clear the old rows after switching back, delete them in `psql` against the Pumperly database:
+
+```
+DELETE FROM stations
+WHERE country = 'ES'
+  AND station_type = 'ev_charger'
+  AND external_id LIKE 'reve-%';
+```
+
+```
+DELETE FROM stations
+WHERE country = 'DE'
+  AND station_type = 'ev_charger'
+  AND (external_id LIKE 'ocpdb-%' OR external_id LIKE 'bnetza-%');
+```
+
+```
+DELETE FROM stations
+WHERE country = 'DE'
+  AND station_type = 'ev_charger'
+  AND external_id LIKE 'ocpdb-%';
+```
+
+A charger's prices are deleted with it, so nothing else needs deleting. [Backing up the database](<https://geiserx.github.io/Pumperly/operations/backup-and-restore/index.md>) explains how to take a backup first.

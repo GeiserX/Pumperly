@@ -1,0 +1,171 @@
+# Coverage and status
+
+This page lists every country Pumperly supports, where its data comes from and whether that source works today. Use it to decide which countries to enable and to tell a broken source from a broken install.
+
+Pumperly has two kinds of data. **Fuel prices** come from one scraper per country: a scraper is the piece of code that downloads a source and writes its stations and prices to the database. **EV charging locations** come from Open Charge Map for every country, plus official registries for Spain and Germany.
+
+## Status labels
+
+Every source on this page carries one of these labels. The label describes what the scraper does on each run today.
+
+| Status | What the scraper does |
+| --- | --- |
+| **Running** | Downloads the source and writes fresh prices on every run. |
+| **Needs a key** | Works once you set an API key. Without it, every run fails and writes nothing. |
+| **Paused** | Still scheduled, but the source refuses the request. Each run fails before it writes anything. |
+| **Blocked** | The source actively turns scrapers away. Each run fails and writes nothing. |
+| **Down** | The source no longer answers, or does not answer from where the server runs. Each run fails and writes nothing. |
+
+A run that fails never deletes data. The prices from the last good run stay on the map, and each station's popup shows how old its price is. [What a failing source looks like](<#what-a-failing-source-looks-like>) explains how to spot one.
+
+## Fuel prices
+
+The **key** column is the name the scheduler and the logs use for the scraper. The **every** column is the default interval between runs, from `DEFAULT_INTERVALS` in [`src/instrumentation-node.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts>). The **default fuel** column is the fuel the map selects when it opens on that country, from [`src/lib/config.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/lib/config.ts>).
+
+### Europe
+
+| Country | Key | Source | Currency | Every | Default fuel | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| Austria | `AT` | [E-Control Spritpreisrechner](<https://geiserx.github.io/Pumperly/data/fuel-sources/#austria>) | EUR | 2 h | B7 | Running |
+| Belgium | `BE` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/#anwb>) | EUR | 6 h | E10 | Running |
+| Bosnia and Herzegovina | `BA` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | BAM | 12 h | B7 | Paused |
+| Bulgaria | `BG` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | B7 | Paused |
+| Croatia | `HR` | [MZOE](<https://geiserx.github.io/Pumperly/data/fuel-sources/#croatia>) | EUR | 12 h | B7 | Running |
+| Cyprus | `CY` | [Consumer Protection Service observatory](<https://geiserx.github.io/Pumperly/data/fuel-sources/#cyprus>) | EUR | 6 h | E5 | Running |
+| Czech Republic | `CZ` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | CZK | 12 h | E5 | Paused |
+| Denmark | `DK` | [FuelPrices.dk](<https://geiserx.github.io/Pumperly/data/fuel-sources/#denmark>) | DKK | 6 h | E10 | Needs a key |
+| Estonia | `EE` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
+| Finland | `FI` | [polttoaine.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#finland>) | EUR | 12 h | E10 | Running |
+| France | `FR` | [data.economie.gouv.fr](<https://geiserx.github.io/Pumperly/data/fuel-sources/#france>) | EUR | 1 h | E10 | Running |
+| Germany | `DE` | [Tankerkoenig](<https://geiserx.github.io/Pumperly/data/fuel-sources/#germany>) | EUR | 1 h | E5 | Needs a key |
+| Greece | `GR` | [FuelGR](<https://geiserx.github.io/Pumperly/data/fuel-sources/#greece>) | EUR | 12 h | B7 | Running |
+| Hungary | `HU` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | HUF | 12 h | E5 | Paused |
+| Iceland | `IS` | [Gasvaktin](<https://geiserx.github.io/Pumperly/data/fuel-sources/#iceland>) | ISK | 6 h | B7 | Running |
+| Ireland | `IE` | [Pick A Pump](<https://geiserx.github.io/Pumperly/data/fuel-sources/#ireland>) | EUR | 12 h | B7 | Blocked |
+| Italy | `IT` | [MIMIT](<https://geiserx.github.io/Pumperly/data/fuel-sources/#italy>) | EUR | 12 h | B7 | Running |
+| Latvia | `LV` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
+| Lithuania | `LT` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
+| Luxembourg | `LU` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/#anwb>) | EUR | 12 h | E10 | Running |
+| Moldova | `MD` | [ANRE](<https://geiserx.github.io/Pumperly/data/fuel-sources/#moldova>) | MDL | 12 h | B7 | Running |
+| Netherlands | `NL` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/#anwb>) | EUR | 6 h | E10 | Running |
+| North Macedonia | `MK` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | MKD | 12 h | B7 | Paused |
+| Norway | `NO` | [DrivstoffAppen](<https://geiserx.github.io/Pumperly/data/fuel-sources/#norway>) | NOK | 6 h | E5 | Down |
+| Poland | `PL` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | PLN | 12 h | E5 | Paused |
+| Portugal | `PT` | [DGEG](<https://geiserx.github.io/Pumperly/data/fuel-sources/#portugal>) | EUR | 12 h | B7 | Running |
+| Romania | `RO` | [Peco Online](<https://geiserx.github.io/Pumperly/data/fuel-sources/#romania>) | RON | 12 h | B7 | Running |
+| Serbia | `RS` | [NIS and cenagoriva.rs](<https://geiserx.github.io/Pumperly/data/fuel-sources/#serbia>) | RSD | 12 h | E5 | Running |
+| Slovakia | `SK` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
+| Slovenia | `SI` | [goriva.si](<https://geiserx.github.io/Pumperly/data/fuel-sources/#slovenia>) | EUR | 6 h | B7 | Running |
+| Spain | `ES` | [MITECO](<https://geiserx.github.io/Pumperly/data/fuel-sources/#spain>) | EUR | 12 h | B7 | Running |
+| Sweden | `SE` | [bensinpriser.nu](<https://geiserx.github.io/Pumperly/data/fuel-sources/#sweden>) | SEK | 12 h | E5 | Running |
+| Switzerland | `CH` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | CHF | 12 h | E5 | Paused |
+| Turkey | `TR` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | TRY | 12 h | B7 | Paused |
+| United Kingdom | `GB` | [CMA open data](<https://geiserx.github.io/Pumperly/data/fuel-sources/#united-kingdom>) | GBP | 4 h | E5 | Running |
+
+For the Fuelo countries the currency column is the scraper's fallback. The Fuelo scraper reads the currency from each price label and only uses the fallback when the label shows none it recognises.
+
+### Outside Europe
+
+| Country | Key | Source | Currency | Every | Default fuel | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| Argentina | `AR` | [Secretaría de Energía](<https://geiserx.github.io/Pumperly/data/fuel-sources/#argentina>) | ARS | 12 h | E5 | Down from Europe |
+| Australia, Western Australia | `AU` | [FuelWatch](<https://geiserx.github.io/Pumperly/data/fuel-sources/#australia-western-australia>) | AUD | 12 h | E10 | Running |
+| Australia, New South Wales | `AU_NSW` | [FuelCheck](<https://geiserx.github.io/Pumperly/data/fuel-sources/#australia-new-south-wales>) | AUD | 12 h | E10 | Needs a key |
+| Mexico | `MX` | [CRE](<https://geiserx.github.io/Pumperly/data/fuel-sources/#mexico>) | MXN | 12 h | E5 | Running |
+| Taiwan | `TW` | [CPC Corporation](<https://geiserx.github.io/Pumperly/data/fuel-sources/#taiwan>) | TWD | 12 h | E5 | Running |
+
+The United States has no fuel prices. It has [EV charging locations only](<#ev-charging>).
+
+### Notes on the statuses
+
+**Paused: the twelve Fuelo countries.** Switzerland, Poland, the Czech Republic, Hungary, Bulgaria, Slovakia, Estonia, Latvia, Lithuania, Bosnia and Herzegovina, North Macedonia and Turkey all come from Fuelo.net. Fuelo answers the scraper's station-list request with HTTP 403, and its `robots.txt` disallows the endpoint. Pumperly respects that. The scraper stays scheduled, fails on its first request, and the prices it last wrote stay frozen on the map. No replacement source is in place for these countries.
+
+**Blocked: Ireland.** Pick A Pump rejects scrapers with HTTP 403, and its `robots.txt` disallows them. No open alternative source exists, so Irish prices stay frozen.
+
+**Down: Norway.** The DrivstoffAppen public API is retired. Its old endpoints answer HTTP 404, and its successor requires authorisation Pumperly cannot obtain. Norway has no official station-level price dataset. The scraper keeps sending one request per run, so Norway recovers on its own if the public API returns.
+
+**Down from Europe: Argentina.** The government server at `datos.energia.gob.ar` drops connections from European addresses. The scraper works from a server in the Americas.
+
+**Needs a key: Germany.** The Tankerkoenig API requires a free `TANKERKOENIG_API_KEY`. Without it, every German fuel run fails. German EV chargers need no key.
+
+**Needs a key: Denmark.** FuelPrices.dk requires a free `FUELPRICES_DK_API_KEY`. Without the key, the scraper falls back to the DrivstoffAppen API, which is the same retired API as Norway's, so the fallback fails too.
+
+**Needs a key: New South Wales.** FuelCheck requires both `NSW_FUEL_API_KEY` and `NSW_FUEL_API_SECRET`. Without them only Western Australian prices update. The two Australian states are separate scrapers, so one failing never touches the other's prices.
+
+[API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md>) explains how to get each key and where to set it.
+
+## EV charging
+
+EV chargers come from three sources. Every fuel country above also gets EV chargers, and so does the United States.
+
+| Region | Key | Source | Every | Needs |
+| --- | --- | --- | --- | --- |
+| Every supported country and the United States | `EV_<code>`, for example `EV_FR` | [Open Charge Map](<https://geiserx.github.io/Pumperly/data/ev-sources/#open-charge-map>) | 24 h | `PUMPERLY_OCM_API_KEY` |
+| Spain | `EV_ES_REVE` | [Mapa REVE](<https://geiserx.github.io/Pumperly/data/ev-sources/#mapa-reve>) | 1 h | `PUMPERLY_REVE_API_KEY` |
+| Germany | `EV_DE_OCPDB` | [Open ChargePoint Database](<https://geiserx.github.io/Pumperly/data/ev-sources/#ocpdb>), with prices | 6 h | nothing |
+| Germany, opt-in | `EV_DE_BNETZA` | [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/#bnetza>) | 24 h | nothing |
+
+Spain and Germany each use exactly one EV source at a time:
+
+- **Spain** uses Mapa REVE when `PUMPERLY_REVE_API_KEY` is set, and Open Charge Map otherwise.
+- **Germany** uses OCPDB by default. Set `PUMPERLY_DE_EV_SOURCE=bnetza` for the BNetzA register, or `ocm` for Open Charge Map.
+
+Without `PUMPERLY_OCM_API_KEY`, the Open Charge Map scrapers still run on schedule but write nothing. German chargers from OCPDB or BNetzA still load, because those sources need no key.
+
+Only German chargers from OCPDB have prices: the cheapest ad-hoc tariff per kWh, with any session and per-minute fees. Chargers from every other source have none. [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) covers each source in detail.
+
+## Community datasets
+
+Places with no source to scrape can be added as committed data files under [`src/scrapers/data/`](<https://github.com/GeiserX/Pumperly/tree/main/src/scrapers/data>). Each dataset registers its own scraper, keyed `STATIC_<SOURCE>`, and writes only its own rows. The repository ships with no datasets registered yet. [`src/scrapers/data/README.md`](<https://github.com/GeiserX/Pumperly/blob/main/src/scrapers/data/README.md>) explains the format, and [Adding a country](<https://geiserx.github.io/Pumperly/data/adding-a-country/index.md>) covers the wider process.
+
+## Choosing what runs
+
+By default every fuel scraper runs, including both Australian states. Each country also gets one EV source: Open Charge Map everywhere, including the United States, except that Germany uses OCPDB and Spain uses Mapa REVE when its key is set. These settings narrow that down:
+
+| Setting | Effect |
+| --- | --- |
+| `PUMPERLY_ENABLED_COUNTRIES` | Comma-separated country codes. Each code enables its fuel scraper and its EV scraper. `US` enables EV chargers for the United States. |
+| `PUMPERLY_EV_ENABLED=0` | Turns off every EV scraper, including Mapa REVE, OCPDB and BNetzA. |
+| `PUMPERLY_SCRAPE_INTERVAL_<KEY>` | Sets one scraper's interval in hours, using the key from the tables above. `0` stops that scraper. |
+| `PUMPERLY_SCRAPE_INTERVAL_HOURS` | Sets the interval for every scraper that has no per-key override. `0` stops all automatic scraping. |
+
+> [!WARNING]
+>
+> **Listing `AU` does not enable New South Wales**
+>
+> `PUMPERLY_ENABLED_COUNTRIES` matches scraper keys exactly. `AU` enables the Western Australia scraper only. To keep New South Wales, list `AU_NSW` as well, for example `PUMPERLY_ENABLED_COUNTRIES=AU,AU_NSW`.
+
+> [!TIP]
+>
+> **Stop requests to sources that refuse them**
+>
+> A Paused, Blocked or Down scraper still sends requests on every run. To stop them, set its interval to `0`. For example, `PUMPERLY_SCRAPE_INTERVAL_IE=0` stops the Irish scraper, and `PUMPERLY_SCRAPE_INTERVAL_AU_NSW=0` stops New South Wales if you have no key. The last prices those scrapers wrote stay in the database.
+
+[Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>) covers these settings in full, and [Environment variables](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md>) lists their defaults.
+
+## What a failing source looks like
+
+After every run the scheduler logs one summary line per scraper. A healthy run reports `OK`:
+
+```
+[scraper] FR: OK — 1234 stations, 5678 prices in 12.3s
+```
+
+A failing run reports its error count instead, and the scraper's own lines above it say why:
+
+```
+[scraper] IE: 1 error(s) — 0 stations, 0 prices in 12.3s
+```
+
+The flow below shows what each outcome does to the data.
+
+```
+flowchart TD
+    A[Scheduled run starts] --> B{Source answers<br>with usable data?}
+    B -- No --> C[Run fails, error logged]
+    C --> D[Nothing written.<br>Last prices stay on the map]
+    B -- Yes --> E[Prices checked against<br>plausible ranges]
+    E --> F[Stations upserted.<br>This source's prices replaced in one transaction]
+```
+
+A source that returns an answer with no stations in it is treated as a failure too, so an empty reply can never wipe a country. [How scrapers work](<https://geiserx.github.io/Pumperly/data/how-scrapers-work/index.md>) explains the full run, and [Monitoring and troubleshooting](<https://geiserx.github.io/Pumperly/operations/troubleshooting/index.md>) covers reading the logs.

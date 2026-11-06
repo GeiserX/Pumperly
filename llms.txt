@@ -1,0 +1,37 @@
+# Pumperly
+
+> Open-source map of fuel prices and EV chargers with a route planner that finds the cheapest stops. Live prices from 22 countries. Self-hostable.
+
+## Documentation
+
+- [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md>)
+- [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>)
+- [Geocoding with Photon](<https://geiserx.github.io/Pumperly/configuration/geocoding-photon/index.md>)
+- [Routing with Valhalla](<https://geiserx.github.io/Pumperly/configuration/routing-valhalla/index.md>)
+- [Adding a country](<https://geiserx.github.io/Pumperly/data/adding-a-country/index.md>)
+- [Coverage and status](<https://geiserx.github.io/Pumperly/data/coverage/index.md>)
+- [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>)
+- [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>)
+- [How scrapers work](<https://geiserx.github.io/Pumperly/data/how-scrapers-work/index.md>)
+- [Sources at a glance](<https://geiserx.github.io/Pumperly/data/sources-at-a-glance/index.md>)
+- [Development](<https://geiserx.github.io/Pumperly/development/index.md>)
+- [Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md>)
+- [What happens on first start](<https://geiserx.github.io/Pumperly/getting-started/first-start/index.md>)
+- [Full stack with routing and geocoding](<https://geiserx.github.io/Pumperly/getting-started/full-stack/index.md>)
+- [Run on Kubernetes with Helm](<https://geiserx.github.io/Pumperly/getting-started/kubernetes/index.md>)
+- [Home](<https://geiserx.github.io/Pumperly/index.md>)
+- [Backing up the database](<https://geiserx.github.io/Pumperly/operations/backup-and-restore/index.md>)
+- [Monitoring and troubleshooting](<https://geiserx.github.io/Pumperly/operations/troubleshooting/index.md>)
+- [Upgrading](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md>)
+- [HTTP API](<https://geiserx.github.io/Pumperly/reference/api/index.md>)
+- [Currencies and exchange rates](<https://geiserx.github.io/Pumperly/reference/currencies/index.md>)
+- [Data model](<https://geiserx.github.io/Pumperly/reference/data-model/index.md>)
+- [Environment variables](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md>)
+- [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>)
+- [Glossary](<https://geiserx.github.io/Pumperly/reference/glossary/index.md>)
+- [Related projects](<https://geiserx.github.io/Pumperly/related/index.md>)
+- [Roadmap](<https://geiserx.github.io/Pumperly/roadmap/index.md>)
+- [EV charging](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md>)
+- [Share links and deep links](<https://geiserx.github.io/Pumperly/using/links/index.md>)
+- [The map](<https://geiserx.github.io/Pumperly/using/map/index.md>)
+- [Planning a route](<https://geiserx.github.io/Pumperly/using/routes/index.md>)
