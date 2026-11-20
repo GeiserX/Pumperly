@@ -88,6 +88,14 @@ export interface StoredProfileState {
   reset: () => void;
 }
 
+function sameFields<T>(a: T, b: T): boolean {
+  const x = a as Record<string, unknown>;
+  const y = b as Record<string, unknown>;
+  const keys = new Set([...Object.keys(x), ...Object.keys(y)]);
+  for (const k of keys) if (x[k] !== y[k]) return false;
+  return true;
+}
+
 /**
  * Only what the person sets is stored. The defaults are an example car, so
  * they are shown but never written as if they were the person's own.
@@ -96,7 +104,14 @@ function useStoredProfile<T>(key: string, schema: z.ZodType<T>, fallback: T): [T
   const [stored, setStored] = useState<T | null>(() => {
     if (typeof window === "undefined") return null;
     try {
-      return parseProfile(localStorage.getItem(key), schema);
+      const parsed = parseProfile(localStorage.getItem(key), schema);
+      // Older versions wrote the example car to storage on first render, so a
+      // stored profile equal to it is the example, not the person's own car.
+      if (parsed !== null && sameFields(parsed, fallback)) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      return parsed;
     } catch {
       // Storage blocked (private mode): fall back to defaults.
       return null;

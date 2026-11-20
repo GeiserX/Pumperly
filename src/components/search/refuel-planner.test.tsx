@@ -437,12 +437,15 @@ describe("RefuelPlanner", () => {
     expect(screen.queryByText(/^planner\.total/)).not.toBeInTheDocument();
   });
 
-  it("keeps planner fields at 16 px on phones so iOS does not zoom the page", async () => {
+  it("keeps planner fields at 16 px at every width so iOS does not zoom the page, landscape included", async () => {
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));
     const fields = screen.getAllByRole("spinbutton");
     expect(fields.length).toBeGreaterThan(0);
-    for (const f of fields) expect(f).toHaveClass("text-base");
+    for (const f of fields) {
+      expect(f).toHaveClass("text-base");
+      expect(f.className).not.toMatch(/text-xs/);
+    }
   });
 
   describe("EV mode", () => {
@@ -661,7 +664,10 @@ describe("RefuelPlanner", () => {
     it("keeps the battery fields and the power select at 16 px on phones", async () => {
       renderPlanner({ mode: "ev", stations: CHARGERS, routeKm: 300 });
       await userEvent.click(screen.getByText("planner.titleEv"));
-      for (const f of [...screen.getAllByRole("spinbutton"), screen.getByLabelText("planner.minChargerKw")]) expect(f).toHaveClass("text-base");
+      for (const f of [...screen.getAllByRole("spinbutton"), screen.getByLabelText("planner.minChargerKw")]) {
+        expect(f).toHaveClass("text-base");
+        expect(f.className).not.toMatch(/text-xs/);
+      }
       expect(screen.getByText("planner.exampleValuesEv")).toBeInTheDocument();
     });
   });

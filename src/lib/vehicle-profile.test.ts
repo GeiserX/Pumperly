@@ -105,6 +105,14 @@ describe("useVehicleProfile", () => {
     expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
   });
 
+  it("treats the example car an older version stored on render as the example", () => {
+    localStorage.setItem("pumperly-vehicle", JSON.stringify({ tankL: 50, consumptionL100: 6.5 }));
+    const { result } = renderHook(() => useVehicleProfile());
+    expect(result.current[0]).toEqual(DEFAULT_VEHICLE);
+    expect(result.current[2].isDefault).toBe(true);
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+  });
+
   it("reads a stored profile as the person's own", () => {
     localStorage.setItem("pumperly-vehicle", JSON.stringify({ tankL: 60, consumptionL100: 5.2 }));
     const { result } = renderHook(() => useVehicleProfile());
@@ -121,5 +129,15 @@ describe("useEvProfile", () => {
     expect(result.current[0]).toEqual(DEFAULT_EV);
     expect(result.current[2].isDefault).toBe(true);
     expect(localStorage.getItem("pumperly-ev")).toBeNull();
+  });
+
+  it("treats the example EV an older version stored on render as the example", () => {
+    for (const old of [{ batteryKwh: 60, consumptionKwh100: 18 }, { batteryKwh: 60, consumptionKwh100: 18, maxChargeKw: 150 }]) {
+      localStorage.setItem("pumperly-ev", JSON.stringify(old));
+      const { result } = renderHook(() => useEvProfile());
+      expect(result.current[0]).toEqual(DEFAULT_EV);
+      expect(result.current[2].isDefault).toBe(true);
+      expect(localStorage.getItem("pumperly-ev")).toBeNull();
+    }
   });
 });

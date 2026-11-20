@@ -23,7 +23,7 @@ const RANGES = {
   ev: { capacity: [10, 200], consumption: [5, 50] },
 } as const;
 /** 16 px on phones: iOS zooms the page into any smaller field it focuses, and the app's web view keeps that zoom. */
-const FIELD_CLASS = "rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-base font-semibold text-gray-800 sm:text-xs dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100";
+const FIELD_CLASS = "rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-base font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100";
 
 /** Whether a charger passes the detour and power filters; a detour still loading passes. */
 function evEligible(p: StationGeoJSON["properties"], maxDetour: number | null | undefined, minChargerKw: number): boolean {
