@@ -118,7 +118,7 @@ export function PriceFilter({
               const v = parseFloat(e.target.value);
               onMaxPriceChange(v >= sliderMax ? null : v);
             }}
-            className="h-6 w-full cursor-pointer touch-none appearance-none rounded-full bg-transparent bg-[linear-gradient(#e5e7eb,#e5e7eb)] bg-[length:100%_6px] bg-center bg-no-repeat accent-emerald-500 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
+            className="h-6 w-full cursor-pointer touch-none appearance-none bg-transparent accent-emerald-500 [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-gray-200 [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-gray-200 [&::-webkit-slider-thumb]:-mt-[7px] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:-mt-1 sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
           />
 
           <div className="mt-0.5 flex items-center justify-between">
