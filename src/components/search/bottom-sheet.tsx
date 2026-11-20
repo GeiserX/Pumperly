@@ -157,7 +157,9 @@ export function BottomSheet({ children, summary, snap, onSnapChange }: BottomShe
   );
 
   return (
+    // Marked so a station card on the map opens clear of the sheet.
     <div
+      data-map-overlay
       className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-2xl border-t border-black/[0.06] bg-white/95 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.04] backdrop-blur-xl dark:border-white/[0.08] dark:bg-gray-900/95 dark:shadow-[0_-8px_30px_rgba(0,0,0,0.5)] dark:ring-white/[0.05]"
       style={{
         height: sheetHeight ? `${sheetHeight}px` : `${FULL_FRACTION * 100}dvh`,
