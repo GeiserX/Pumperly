@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SearchPanel } from "./search-panel";
 import type { PhotonResult } from "@/lib/photon";
 
-vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ t: (k: string) => k }) }));
+// Echo keys, except the summary template, so its filled-in name and price show.
+vi.mock("@/lib/i18n", () => ({
+  useI18n: () => ({ t: (k: string) => (k === "stations.cheapestSummary" ? "cheapest {name} {price}" : k) }),
+}));
 vi.mock("@/lib/currency", () => ({
   useCurrency: () => ({
     currency: "EUR", rates: null, symbol: "€", decimals: 3,
@@ -321,5 +324,103 @@ describe("SearchPanel — searched place and clear buttons", () => {
     );
     expect(screen.getByRole("button", { name: "search.removeWaypoint" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "search.clearDestination" })).toBeInTheDocument();
+  });
+});
+
+describe("SearchPanel — route sheet summary and retry", () => {
+  const ROUTE = {
+    geometry: { type: "LineString" as const, coordinates: [[-3.7, 40.4], [-0.37, 39.47]] },
+    distance: 6400,
+    duration: 480,
+    bbox: [-3.7, 39.47, -0.37, 40.4] as [number, number, number, number],
+  };
+  const INITIAL = { from: [-3.7, 40.4] as [number, number], to: [-0.37, 39.47] as [number, number], via: [] };
+  const EMPTY = { type: "FeatureCollection" as const, features: [] };
+  function station(id: string, brand: string, price: number) {
+    return {
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [-2.5, 40.0] as [number, number] },
+      properties: {
+        id, name: `Station ${id}`, brand, address: "", city: "", price, reportedAt: null,
+        fuelType: "B7", currency: "EUR", routeFraction: 0.5, detourMin: 2,
+      },
+    };
+  }
+
+  function stubViewport(isMobile: boolean) {
+    vi.stubGlobal("matchMedia", vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes("max-width: 639px") ? isMobile : false, media: q,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("says it is searching while stations load, never a count of 0", async () => {
+    stubViewport(true);
+    renderPanel({ routes: [ROUTE], initialRoute: INITIAL, primaryStations: EMPTY, stationsLoading: true });
+    const sheet = await screen.findByRole("region", { name: "sheet.routeAndStations" });
+    expect(sheet).not.toHaveTextContent("(0)");
+    // Once in the summary, once in the card under it.
+    expect(within(sheet).getAllByText("stations.loading")).toHaveLength(2);
+  });
+
+  it("shows the cheapest station's name and price in the summary", async () => {
+    stubViewport(true);
+    renderPanel({
+      routes: [ROUTE], initialRoute: INITIAL,
+      primaryStations: { type: "FeatureCollection", features: [station("a", "Brand A", 1.5), station("b", "Brand B", 1.4)] },
+    });
+    const sheet = await screen.findByRole("region", { name: "sheet.routeAndStations" });
+    expect(within(sheet).getByText("cheapest Brand B 1.400 €")).toBeInTheDocument();
+    expect(sheet).not.toHaveTextContent("(2)");
+  });
+
+  it("offers Retry after stations fail to load, and Retry routes again", async () => {
+    const user = userEvent.setup();
+    stubViewport(true);
+    const onRoute = vi.fn();
+    renderPanel({ onRoute, routes: [ROUTE], initialRoute: INITIAL, primaryStations: EMPTY, stationsError: true });
+    const sheet = await screen.findByRole("region", { name: "sheet.routeAndStations" });
+    expect(sheet).not.toHaveTextContent("(0)");
+    await waitFor(() => expect(onRoute).toHaveBeenCalledTimes(1));
+
+    await user.click(within(sheet).getByRole("button", { name: "common.retry" }));
+    expect(onRoute).toHaveBeenCalledTimes(2);
+    expect(onRoute).toHaveBeenLastCalledWith([-3.7, 40.4], [-0.37, 39.47], undefined, undefined);
+  });
+
+  it("says the connection is the problem when stations fail offline", async () => {
+    stubViewport(true);
+    vi.stubGlobal("navigator", { ...navigator, onLine: false });
+    renderPanel({ routes: [ROUTE], initialRoute: INITIAL, primaryStations: EMPTY, stationsError: true });
+    const sheet = await screen.findByRole("region", { name: "sheet.routeAndStations" });
+    expect(within(sheet).getAllByText("route.offline").length).toBeGreaterThan(0);
+  });
+
+  it("offers Retry on a failed route, and says when the cause is being offline", async () => {
+    const user = userEvent.setup();
+    stubViewport(false);
+    vi.stubGlobal("navigator", { ...navigator, onLine: false });
+    const onRoute = vi.fn();
+    renderPanel({ onRoute, routes: null, initialRoute: INITIAL, routeError: "route.error" });
+    await waitFor(() => expect(onRoute).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("route.offline")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "common.retry" }));
+    expect(onRoute).toHaveBeenCalledTimes(2);
+  });
+
+  it("offers no Retry when the server found no route", async () => {
+    stubViewport(false);
+    renderPanel({ routes: null, initialRoute: INITIAL, routeError: "route.noRoute" });
+    await waitFor(() => expect(screen.getByText("route.noRoute")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "common.retry" })).not.toBeInTheDocument();
   });
 });

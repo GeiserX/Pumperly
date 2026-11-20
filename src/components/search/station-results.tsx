@@ -70,7 +70,7 @@ export function StationResults({
             <button
               key={key}
               onClick={() => onSortByChange(key)}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
+              className={`min-h-8 rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
                 sortBy === key
                   ? "bg-gray-800 text-white dark:bg-gray-100 dark:text-gray-900"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/10"
@@ -87,7 +87,7 @@ export function StationResults({
               <button
                 key={key}
                 onClick={() => onDetourBasisChange?.(key)}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
+                className={`min-h-8 rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
                   detourBasis === key
                     ? "bg-gray-800 text-white dark:bg-gray-100 dark:text-gray-900"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/10"
@@ -109,12 +109,13 @@ export function StationResults({
           min={0}
           max={30}
           step={1}
+          aria-label={t("stations.detourMax")}
           value={maxDetour ?? 30}
           onChange={(e) => {
             const v = parseInt(e.target.value);
             onMaxDetourChange?.(v >= 30 ? null : v);
           }}
-          className="mt-1.5 h-1.5 w-full cursor-pointer touch-none rounded-full bg-gray-200 accent-emerald-500 dark:bg-white/10"
+          className="mt-0.5 h-6 cursor-pointer w-full touch-none appearance-none bg-transparent accent-emerald-500 [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-gray-200 dark:[&::-webkit-slider-runnable-track]:bg-white/10 [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-gray-200 dark:[&::-moz-range-track]:bg-white/10 [&::-webkit-slider-thumb]:-mt-[7px] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:-mt-1 sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
         />
         <div className="mt-2.5 flex items-center justify-between">
           <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t("stations.corridor")}</span>
@@ -125,10 +126,11 @@ export function StationResults({
           min={1}
           max={25}
           step={1}
+          aria-label={t("stations.corridor")}
           value={corridorKm}
           disabled={detoursLoading}
           onChange={(e) => onCorridorKmChange?.(parseInt(e.target.value))}
-          className={`mt-1.5 h-1.5 w-full touch-none rounded-full bg-gray-200 accent-emerald-500 dark:bg-white/10 ${detoursLoading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+          className={`mt-0.5 h-6 w-full touch-none appearance-none bg-transparent accent-emerald-500 [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-gray-200 dark:[&::-webkit-slider-runnable-track]:bg-white/10 [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-gray-200 dark:[&::-moz-range-track]:bg-white/10 [&::-webkit-slider-thumb]:-mt-[7px] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:-mt-1 sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5 ${detoursLoading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
         />
       </div>
       {stationLegMsg && (
@@ -212,9 +214,11 @@ export function StationResults({
                   {avgPrice != null && station.properties.price != null && (() => {
                     const diff = station.properties.price - avgPrice;
                     if (Math.abs(diff) < 0.001) return null;
+                    // "−0.243 €/L vs avg": the unit and what it compares to.
+                    const label = `${formatPrice(Math.abs(diff))} ${currencySymbol}${station.properties.fuelType === "EV" ? "/kWh" : "/L"} ${t("stations.vsAvg")}`;
                     return diff < 0
-                      ? <span className="text-[10px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{formatPrice(diff)}</span>
-                      : <span className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">+{formatPrice(diff)}</span>;
+                      ? <span className="text-[10px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{"\u2212"}{label}</span>
+                      : <span className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">+{label}</span>;
                   })()}
                 </div>
               </div>
