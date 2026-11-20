@@ -101,7 +101,7 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
   const currentFuel = FUEL_TYPE_MAP.get(selectedFuel);
   const { locale, setLocale, t } = useI18n();
   const currentLocale = LOCALES.find((l) => l.code === locale);
-  const { currency, setCurrency } = useCurrency();
+  const { chosen, setCurrency } = useCurrency();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [legalPage, setLegalPage] = useState<LegalPage>(null);
@@ -161,11 +161,13 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
             </select>
 
             <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as Currency)}
+              value={chosen ?? ""}
+              onChange={(e) => setCurrency((e.target.value || null) as Currency | null)}
+              aria-label={t("currency.label")}
               className="h-7 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 transition-all hover:border-white/15 hover:bg-white/10 focus:border-emerald-400/40 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/20 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
               style={selectStyle}
             >
+              <option value="">{t("currency.auto")}</option>
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
               ))}
@@ -266,11 +268,13 @@ export function Navbar({ selectedFuel, onFuelChange, geoState, onGeolocate }: Na
                     ))}
                   </select>
                   <select
-                    value={currency}
-                    onChange={(e) => { setCurrency(e.target.value as Currency); closeMenu(); }}
+                    value={chosen ?? ""}
+                    onChange={(e) => { setCurrency((e.target.value || null) as Currency | null); closeMenu(); }}
+                    aria-label={t("currency.label")}
                     className="h-8 cursor-pointer appearance-none rounded border border-white/[0.08] bg-[#0c111b] py-0 pr-5 pl-2 text-[13px] font-medium text-gray-200 focus:outline-none [&_option]:bg-[#0c111b] [&_option]:text-gray-200"
                     style={selectStyle}
                   >
+                    <option value="">{t("currency.auto")}</option>
                     {CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
                     ))}
