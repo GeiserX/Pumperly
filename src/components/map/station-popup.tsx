@@ -8,9 +8,12 @@ import { useI18n } from "@/lib/i18n";
 import { useCurrency, CURRENCIES } from "@/lib/currency";
 import { shareOrCopy, copyToClipboard } from "@/lib/share";
 import { buildStationQuery } from "@/lib/share-url";
+import { formatDistance } from "@/lib/format";
 
 interface StationPopupProps {
   station: StationGeoJSON;
+  /** How far the station is from the user, when their position is known. */
+  distanceKm?: number | null;
   onClose: () => void;
 }
 
@@ -45,7 +48,7 @@ function symbolFor(code: string): string {
   return CURRENCIES.find((c) => c.code === code)?.symbol ?? code;
 }
 
-export function StationPopup({ station, onClose }: StationPopupProps) {
+export function StationPopup({ station, distanceKm, onClose }: StationPopupProps) {
   const { t, locale } = useI18n();
   const { decimals: userDecimals, rateInfo } = useCurrency();
   const [copied, setCopied] = useState(false);
@@ -143,6 +146,12 @@ export function StationPopup({ station, onClose }: StationPopupProps) {
         </p>
         <p className="text-[11px] text-gray-500 dark:text-gray-400">
           {properties.city}
+          {distanceKm != null && (
+            <>
+              {" · "}
+              <span className="font-medium text-gray-700 dark:text-gray-200">{formatDistance(distanceKm)}</span>
+            </>
+          )}
         </p>
 
         {/* Price block */}
