@@ -63,6 +63,11 @@ export function PriceFilter({
   const sliderMax = hasFilter ? Math.ceil(max * factor) / factor : 1;
   const currentValue = maxPrice ?? sliderMax;
   const isActive = hasFilter && maxPrice != null && maxPrice < sliderMax;
+  // The colours spread over P5..P95, but the labels show the real cheapest and
+  // dearest prices (the slider's ends), so no station on the map is cheaper
+  // than the left label and the card shows one range, not two.
+  const legendLow = hasFilter ? sliderMin : (min ?? legendMin ?? 0);
+  const legendHigh = hasFilter ? sliderMax : (max ?? legendMax ?? 0);
 
   const filteredCount = isActive
     ? stations.features.filter(
@@ -80,8 +85,8 @@ export function PriceFilter({
             style={{ background: `linear-gradient(to right, ${gradient})` }}
           />
           <div className="mt-1 flex justify-between text-[10px] font-semibold tabular-nums text-gray-600 dark:text-gray-400">
-            <span>{formatPrice(legendMin)} {currencySymbol}</span>
-            <span>{formatPrice(legendMax)} {currencySymbol}</span>
+            <span>{formatPrice(legendLow)} {currencySymbol}</span>
+            <span>{formatPrice(legendHigh)} {currencySymbol}</span>
           </div>
         </div>
       )}
@@ -107,11 +112,13 @@ export function PriceFilter({
             max={sliderMax}
             step={step}
             value={currentValue}
+            aria-label={t("filter.maxPrice")}
+            aria-valuetext={`${formatPrice(currentValue)} ${currencySymbol}`}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
               onMaxPriceChange(v >= sliderMax ? null : v);
             }}
-            className="mt-1 h-1.5 w-full cursor-pointer touch-none appearance-none rounded-full bg-gray-200 accent-emerald-500 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
+            className="h-6 w-full cursor-pointer touch-none appearance-none rounded-full bg-transparent bg-[linear-gradient(#e5e7eb,#e5e7eb)] bg-[length:100%_6px] bg-center bg-no-repeat accent-emerald-500 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
           />
 
           <div className="mt-0.5 flex items-center justify-between">
