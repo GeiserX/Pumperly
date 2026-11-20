@@ -5,7 +5,7 @@ import type { FuelType, StationGeoJSON, StationsGeoJSONCollection } from "@/type
 import type { MapRef } from "react-map-gl/maplibre";
 import type { Route } from "@/components/map/route-layer";
 import type { RouteState, DetourBasis } from "@/types/route";
-import { I18nProvider, type Locale } from "@/lib/i18n";
+import { I18nProvider, useI18n, type Locale } from "@/lib/i18n";
 import { CurrencyProvider } from "@/lib/currency";
 import { ThemeProvider } from "@/lib/theme";
 import { Navbar } from "@/components/nav/navbar";
@@ -26,6 +26,47 @@ interface Props {
 }
 
 type GeoState = "idle" | "loading" | "active" | "denied";
+type GeoNotice = "denied" | "unavailable";
+
+/**
+ * Says why the map is not on the user: location is off, or no fix came in time.
+ * It stays until closed or until a position arrives. Inside the iOS app it also
+ * links to Pumperly's page in iOS Settings (the app opens non-https links
+ * outside the web view); a browser has no such link.
+ */
+function GeoNoticeBar({ notice, onClose }: { notice: GeoNotice; onClose: () => void }) {
+  const { t } = useI18n();
+  const inIosApp = typeof window !== "undefined"
+    && !!(window as unknown as { webkit?: { messageHandlers?: { pumperlyGeolocation?: unknown } } })
+      .webkit?.messageHandlers?.pumperlyGeolocation;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-3 border-b border-black/10 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 dark:border-white/10 dark:bg-amber-950 dark:text-amber-100"
+    >
+      <span className="min-w-0 flex-1">{notice === "denied" ? t("geo.deniedHelp") : t("geo.unavailable")}</span>
+      {notice === "denied" && inIosApp && (
+        <a
+          href="app-settings:"
+          className="shrink-0 rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-600"
+        >
+          {t("geo.openSettings")}
+        </a>
+      )}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={t("common.close")}
+        className="shrink-0 rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+      >
+        <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M4.3 4.3a1 1 0 011.4 0L10 8.6l4.3-4.3a1 1 0 111.4 1.4L11.4 10l4.3 4.3a1 1 0 01-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 01-1.4-1.4L8.6 10 4.3 5.7a1 1 0 010-1.4z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 interface InitialRoute { from: [number, number]; to: [number, number]; via: [number, number][] }
 interface DeepLinkStation { country: string | null; externalId: string | null; lat: number | null; lng: number | null }
@@ -139,6 +180,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
 
   // Geolocation state (lifted so navbar has the button, map has the marker)
   const [geoState, setGeoState] = useState<GeoState>("idle");
+  const [geoNotice, setGeoNotice] = useState<GeoNotice | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   // Set by the first successful locate: until then, frame the map on the user
   // plus the cheapest stations nearby once that list loads (a bare zoom-14
@@ -170,20 +212,32 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
   // The actual popup selection happens later, when matching features load.
 
   const handleGeolocate = useCallback(() => {
-    if (!navigator.geolocation) { setGeoState("denied"); return; }
+    if (!navigator.geolocation) { setGeoState("denied"); setGeoNotice("unavailable"); return; }
     setGeoState("loading");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setUserLocation(coords);
         setGeoState("active");
+        setGeoNotice(null);
         if (!locatedOnceRef.current) {
           locatedOnceRef.current = true;
           fitNearbyUntilRef.current = Date.now() + 15000;
         }
         mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1500 });
       },
-      () => { setGeoState("denied"); setTimeout(() => setGeoState("idle"), 3000); },
+      (err) => {
+        // Code 1 is PERMISSION_DENIED. Codes 2 (no position) and 3 (timeout)
+        // are not a denial: the user can simply try again.
+        if (err.code === 1) {
+          setGeoState("denied");
+          setGeoNotice("denied");
+          setTimeout(() => setGeoState("idle"), 3000);
+        } else {
+          setGeoState("idle");
+          setGeoNotice("unavailable");
+        }
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   }, []);
@@ -217,6 +271,8 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
       navigator.permissions.query({ name: "geolocation" }).then((perm) => {
         if (perm.state !== "denied") {
           handleGeolocate();
+        } else {
+          setGeoNotice("denied");
         }
       }).catch(() => {});
     } else {
@@ -603,6 +659,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
         geoState={geoState}
         onGeolocate={handleGeolocate}
       />
+      {geoNotice && <GeoNoticeBar notice={geoNotice} onClose={() => setGeoNotice(null)} />}
       <div ref={mapAreaRef} className="relative flex-1">
         <MapView
           ref={mapRef}
