@@ -55,4 +55,16 @@ describe("Navbar", () => {
       expect(screen.queryByText(literal)).not.toBeInTheDocument();
     }
   });
+
+  it("names the fuel picker and lists each fuel by its translation key", () => {
+    renderNavbar();
+    const picker = screen.getByRole("combobox", { name: "fuel.picker" });
+    const options = Array.from(picker.querySelectorAll("option")).map((o) => o.textContent);
+    expect(options).toContain("fuel.B7");
+    expect(options).toContain("fuel.E5");
+    // No hard-coded product name reaches the picker in any language.
+    expect(options).not.toContain("Diesel (A)");
+    expect(options).not.toContain("Gasolina 95");
+    expect(options.every((o) => o?.startsWith("fuel."))).toBe(true);
+  });
 });

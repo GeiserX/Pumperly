@@ -32,6 +32,7 @@ export const fuelTypeEnum = z.enum(FUEL_TYPE_CODES);
 
 export interface FuelTypeInfo {
   code: FuelType;
+  /** Developer-facing name only. The UI names a fuel with t(`fuel.${code}`). */
   label: string;
   category: "gasoline" | "diesel" | "gas" | "hydrogen" | "electric" | "other";
 }
@@ -63,6 +64,7 @@ export const FUEL_TYPES: FuelTypeInfo[] = [
 
 export const FUEL_TYPE_MAP = new Map(FUEL_TYPES.map((f) => [f.code, f]));
 
+/** Category `label` is developer-facing only; the UI uses t(`fuel.${key}`). */
 export const FUEL_CATEGORIES: { key: FuelTypeInfo["category"]; label: string }[] = [
   { key: "diesel", label: "Diésel" },
   { key: "gasoline", label: "Gasolina" },

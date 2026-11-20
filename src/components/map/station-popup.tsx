@@ -94,10 +94,11 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
       map.off("moveend", onMoveEnd);
     };
   }, [properties.id]);
-  // `properties.fuelType` is a raw string; the cast narrows it to the map key
-  // type for the lookup. `.get()` returns undefined for unknown codes, which is
-  // handled defensively below via `fuelInfo?.label ?? properties.fuelType`.
-  const fuelInfo = FUEL_TYPE_MAP.get(properties.fuelType as Parameters<typeof FUEL_TYPE_MAP.get>[0]);
+  // `properties.fuelType` is a raw string: a known code is named in the
+  // interface language, an unknown one is shown as it came.
+  const fuelName = FUEL_TYPE_MAP.has(properties.fuelType as Parameters<typeof FUEL_TYPE_MAP.has>[0])
+    ? t(`fuel.${properties.fuelType}`)
+    : properties.fuelType;
 
   const isConverted = properties.originalCurrency != null;
   const conversionNote = isConverted ? rateInfo(properties.originalCurrency!) : null;
@@ -210,7 +211,7 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
               </span>
             </div>
             <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-              {fuelInfo?.label ?? properties.fuelType}
+              {fuelName}
               {isEV && properties.powerKw != null && <span> · {properties.powerKw} kW</span>}
               {properties.reportedAt && (
                 <span className="ml-1.5 text-gray-500/80 dark:text-gray-400/70">
@@ -252,7 +253,7 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
         ) : (
           <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-center dark:bg-gray-800">
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {t("popup.noPrice")} {fuelInfo?.label ?? properties.fuelType}
+              {t("popup.noPrice")} {fuelName}
             </span>
           </div>
         )}
