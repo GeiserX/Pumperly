@@ -167,7 +167,7 @@ describe("CurrencyProvider", () => {
   });
 
   it("prefers euros on a tie", async () => {
-    const { result } = renderWith(collection(station("A", 1.8, "EUR"), station("B", 1.75, "CHF")));
+    const { result } = renderWith(collection(station("B", 1.75, "CHF"), station("A", 1.8, "EUR")));
     await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
     expect(result.current.ctx.currency).toBe("EUR");
   });
