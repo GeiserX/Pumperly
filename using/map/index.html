@@ -2299,7 +2299,7 @@
 </tbody>
 </table>
 <p>Each fuel has a code, such as <code>B7</code> for regular diesel or <code>EV</code> for charging. The full list with codes is in <a href="../../reference/fuel-types/">Fuel types</a>.</p>
-<p>The first fuel you see is the instance default. The operator sets it with <a href="../../reference/environment-variables/#pumperly_default_fuel"><code>PUMPERLY_DEFAULT_FUEL</code></a>. Without it, Pumperly uses the default fuel of the country in <a href="../../reference/environment-variables/#pumperly_default_country"><code>PUMPERLY_DEFAULT_COUNTRY</code></a>.</p>
+<p>The first time you open Pumperly, the fuel is the instance default. After that, the map opens on the fuel you last picked, which a cookie remembers. A shared route or station link opens on its own fuel and does not change the one you picked. The operator sets the default with <a href="../../reference/environment-variables/#pumperly_default_fuel"><code>PUMPERLY_DEFAULT_FUEL</code></a>. Without it, Pumperly uses the default fuel of the country in <a href="../../reference/environment-variables/#pumperly_default_country"><code>PUMPERLY_DEFAULT_COUNTRY</code></a>.</p>
 <p>On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, priced or not. Only German chargers have prices. See <a href="../ev-charging/">EV charging</a>.</p>
 <p>Changing the fuel clears the max-price filter and resets the max detour to 5 minutes.</p>
 <div class="admonition note">

@@ -117,7 +117,7 @@ flowchart LR
 
 ## Privacy
 
-- No accounts, no cookies for tracking, no analytics. The only cookie remembers your language. Your currency and theme are saved in the browser, not on the server.
+- No accounts, no cookies for tracking, no analytics. Two cookies remember your language and the fuel you picked, so the next visit opens on them. Your currency and theme are saved in the browser, not on the server.
 - Your position is used to centre the map and to fill in "My location" as the start of a route. It is sent to the server only as the start point of a route you ask for.
 - Address searches go to the Photon server the operator configured, and routes to the Valhalla server. On pumperly.com both are self-hosted.
 - The map tiles load from [OpenFreeMap](<https://openfreemap.org>), which sees your tile requests like any map site.

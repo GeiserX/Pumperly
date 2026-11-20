@@ -64,7 +64,7 @@ The fuel selector in the navbar decides which prices the map shows. Fuels are gr
 
 Each fuel has a code, such as `B7` for regular diesel or `EV` for charging. The full list with codes is in [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>).
 
-The first fuel you see is the instance default. The operator sets it with [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>). Without it, Pumperly uses the default fuel of the country in [`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_country>).
+The first time you open Pumperly, the fuel is the instance default. After that, the map opens on the fuel you last picked, which a cookie remembers. A shared route or station link opens on its own fuel and does not change the one you picked. The operator sets the default with [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>). Without it, Pumperly uses the default fuel of the country in [`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_country>).
 
 On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, priced or not. Only German chargers have prices. See [EV charging](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md>).
 
