@@ -86,10 +86,15 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     geocode: async (query: string) => {
       if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
       const reqId = ++requestIdRef.current;
-      // The bump above makes a pending typed search drop its answer, including
-      // its own setSearching(false), so clear the cue here.
-      setSearching(false);
+      // The bump above makes a pending typed search drop its answer (and its
+      // own cue reset), so this request owns the "Searching…" cue from here:
+      // show it when the answer is slow, and clear it when the answer arrives.
+      const slowTimer = setTimeout(() => {
+        if (reqId === requestIdRef.current) setSearching(true);
+      }, 300);
       const { results: data, failed: didFail } = await doGeocode(query);
+      clearTimeout(slowTimer);
+      if (reqId === requestIdRef.current) setSearching(false);
       if (data[0] && matchesQuery(data[0], query)) {
         if (reqId === requestIdRef.current) {
           setIsOpen(false);
@@ -228,9 +233,11 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     };
   }, []);
 
+  // Always 16 px: iOS zooms the page into any focused field under 16 px, and a
+  // phone in landscape is wider than the `sm` breakpoint.
   const inputClassName = bare
-    ? "w-full bg-transparent px-3 py-2.5 text-base sm:text-sm font-medium text-gray-900 placeholder-gray-500 outline-none dark:text-gray-100 dark:placeholder-gray-500"
-    : "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-base sm:text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500";
+    ? "w-full bg-transparent px-3 py-2.5 text-base font-medium text-gray-900 placeholder-gray-500 outline-none dark:text-gray-100 dark:placeholder-gray-500"
+    : "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-base text-gray-900 placeholder-gray-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500";
 
   return (
     <div ref={containerRef} className="relative flex-1">

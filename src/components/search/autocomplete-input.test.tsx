@@ -305,6 +305,19 @@ describe("AutocompleteInput — Return while a search is still running", () => {
     expect(document.activeElement).not.toBe(input);
   });
 
+  it("shows the searching cue while a Return search is slow", async () => {
+    const { fn } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    render(<EnterHarness />);
+    // Return lands before the 300 ms debounce, so only the Return search runs.
+    await user.type(screen.getByPlaceholderText("dest"), "Town A{Enter}");
+
+    await act(async () => { await new Promise((r) => setTimeout(r, 1000)); });
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("search.searching")).toBeInTheDocument();
+  });
+
   it("shows the failure with Retry when the Return search fails", async () => {
     const { fn, calls } = deferredFetch();
     vi.stubGlobal("fetch", fn);
@@ -323,5 +336,18 @@ describe("AutocompleteInput — Return while a search is still running", () => {
     expect(await screen.findByText("search.failed")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "search.retry" })).toBeInTheDocument();
     expect(screen.queryByText("search.searching")).not.toBeInTheDocument();
+  });
+});
+
+describe("AutocompleteInput — no iOS zoom on focus", () => {
+  // iOS zooms the page into a focused field under 16 px; a landscape phone is
+  // wider than the `sm` breakpoint, so the field must stay text-base everywhere.
+  it.each([false, true])("keeps the field at 16 px at every width (bare=%s)", (bare) => {
+    render(
+      <AutocompleteInput placeholder="dest" value="" onChange={() => {}} onSelect={() => {}} bare={bare} />,
+    );
+    const cls = screen.getByPlaceholderText("dest").className;
+    expect(cls).toMatch(/(^| )text-base( |$)/);
+    expect(cls).not.toMatch(/(^| )\w+:text-(xs|sm)( |$)/);
   });
 });
