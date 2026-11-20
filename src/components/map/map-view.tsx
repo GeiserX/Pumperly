@@ -378,13 +378,16 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         </Marker>
       ))}
       {!showCountryMarkers && (
-        <PriceFilter
-          stations={displayStations}
-          maxPrice={maxPrice}
-          onMaxPriceChange={onMaxPriceChange}
-          legendMin={legendRange.min}
-          legendMax={legendRange.max}
-        />
+        // Marked so the first-locate fit keeps stations clear of the legend card.
+        <div data-map-overlay className="contents">
+          <PriceFilter
+            stations={displayStations}
+            maxPrice={maxPrice}
+            onMaxPriceChange={onMaxPriceChange}
+            legendMin={legendRange.min}
+            legendMax={legendRange.max}
+          />
+        </div>
       )}
     </Map>
   );

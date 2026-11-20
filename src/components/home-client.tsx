@@ -13,6 +13,7 @@ import { MapView } from "@/components/map/map-view";
 import { SearchPanel } from "@/components/search/search-panel";
 import type { PlannedStopMarker } from "@/components/search/refuel-planner";
 import { useDetourStream } from "@/lib/use-detour-stream";
+import { paddingClearOf, type ScreenBox } from "@/lib/geo";
 import { parseStationParams, parseRouteParams, buildStationQuery, deepLinkFuel } from "@/lib/share-url";
 
 interface Props {
@@ -58,6 +59,25 @@ function readDeepLink(): { fuel: FuelType | null; route: InitialRoute | null; st
   const station = parseStationParams(sp);
   if (station && station.lat != null && station.lng != null) return { fuel, route: null, station };
   return empty;
+}
+
+// Room kept around each fitted point for the marker drawn on it, in px.
+const NEARBY_FIT_MARGIN_PX = 24;
+// Below this free map height between the cards, frame only the cheapest station.
+const NEARBY_FIT_MIN_FREE_PX = 200;
+
+/** Screen box of a card over the map; a `display: contents` wrapper has none, so use its children. */
+function overlayBox(el: HTMLElement): ScreenBox {
+  const r = el.getBoundingClientRect();
+  if (r.width > 0 && r.height > 0) return r;
+  const kids = Array.from(el.children, (c) => c.getBoundingClientRect()).filter((c) => c.width > 0 && c.height > 0);
+  if (kids.length === 0) return r;
+  return {
+    top: Math.min(...kids.map((c) => c.top)),
+    right: Math.max(...kids.map((c) => c.right)),
+    bottom: Math.max(...kids.map((c) => c.bottom)),
+    left: Math.min(...kids.map((c) => c.left)),
+  };
 }
 
 export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale }: Props) {
@@ -121,6 +141,12 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
   // view of the user often holds no station at all).
   const locatedOnceRef = useRef(false);
   const fitNearbyUntilRef = useRef(0);
+  // The map area (map plus the cards drawn over it) and the nearby list waiting
+  // to be framed. The fit runs in an effect after the list is on screen, so the
+  // search card is measured at its real height.
+  const mapAreaRef = useRef<HTMLDivElement>(null);
+  const pendingNearbyFitRef = useRef<StationGeoJSON[] | null>(null);
+  const [nearbyFitRequest, setNearbyFitRequest] = useState(0);
 
   // Watch position when active
   useEffect(() => {
@@ -387,26 +413,45 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
     }
   }, []);
 
-  // First nearby list after the first locate: fit the user and those stations,
-  // clear of the search card (top on a phone, left on a wider screen).
+  // First nearby list after the first locate: frame the user and those
+  // stations once the list is on screen (see the effect below).
   const handleNearbyLoaded = useCallback((stations: StationGeoJSON[]) => {
     if (Date.now() > fitNearbyUntilRef.current) return;
     fitNearbyUntilRef.current = 0;
+    if (stations.length === 0) return;
+    pendingNearbyFitRef.current = stations;
+    setNearbyFitRequest((n) => n + 1);
+  }, []);
+
+  // Runs after the commit that shows the nearby list (its state update lands in
+  // the same render), so the cards over the map are measured as drawn: the
+  // search card with the list, and the price legend. The fit keeps every point
+  // clear of them. When the free band between the cards is short (a small
+  // phone), only the cheapest station and the user are framed, so the fit does
+  // not zoom out until the stations merge into clusters.
+  useEffect(() => {
+    const stations = pendingNearbyFitRef.current;
     const map = mapRef.current;
-    if (!map || !userLocation || stations.length === 0) return;
-    const points = [userLocation, ...stations.map((s) => s.geometry.coordinates)];
+    const area = mapAreaRef.current;
+    if (!stations) return;
+    pendingNearbyFitRef.current = null;
+    if (!map || !area || !userLocation) return;
+    const box = area.getBoundingClientRect();
+    const overlays = Array.from(area.querySelectorAll<HTMLElement>("[data-map-overlay]"), overlayBox);
+    const padding = paddingClearOf(box, overlays, NEARBY_FIT_MARGIN_PX);
+    const freeHeight = box.height - padding.top - padding.bottom;
+    const freeWidth = box.width - padding.left - padding.right;
+    // No room to fit anything: keep the locate view.
+    if (freeHeight < 1 || freeWidth < 1) return;
+    const framed = freeHeight < NEARBY_FIT_MIN_FREE_PX ? stations.slice(0, 1) : stations;
+    const points = [userLocation, ...framed.map((s) => s.geometry.coordinates)];
     const lngs = points.map((p) => p[0]);
     const lats = points.map((p) => p[1]);
-    const narrow = window.matchMedia?.("(max-width: 639px)").matches ?? false;
     map.fitBounds(
       [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
-      {
-        padding: narrow ? { top: 250, bottom: 140, left: 40, right: 40 } : { top: 60, bottom: 60, left: 380, right: 60 },
-        maxZoom: 15,
-        duration: 1000,
-      },
+      { padding, maxZoom: 15, duration: 1000 },
     );
-  }, [userLocation]);
+  }, [nearbyFitRequest, userLocation]);
 
   const handlePrimaryStationsChange = useCallback((stations: StationsGeoJSONCollection) => {
     setPrimaryStations(stations);
@@ -541,7 +586,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
         geoState={geoState}
         onGeolocate={handleGeolocate}
       />
-      <div className="relative flex-1">
+      <div ref={mapAreaRef} className="relative flex-1">
         <MapView
           ref={mapRef}
           selectedFuel={selectedFuel}

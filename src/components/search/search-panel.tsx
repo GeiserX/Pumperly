@@ -860,7 +860,7 @@ export function SearchPanel({
   );
 
   const desktopPanel = (
-    <div className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
+    <div data-map-overlay className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
       <div className="shrink-0 rounded-2xl border border-black/[0.06] bg-white/90 p-1.5 shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]">
         {/* Origin + waypoints — destination-first: hidden on open, slides in
