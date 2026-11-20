@@ -58,13 +58,13 @@ export function PrivacyContent() {
       <h3>Data we collect</h3>
       <ul>
         <li><strong>Location data</strong> &mdash; If you grant permission, your browser shares your approximate GPS coordinates so we can show nearby stations and calculate routes. This data is processed in your browser and is not stored on our servers.</li>
-        <li><strong>Preferences</strong> &mdash; Your language, currency, theme, and fuel type selections are saved in your browser&apos;s local storage. They never leave your device.</li>
+        <li><strong>Preferences</strong> &mdash; Your language, currency, and theme selections are saved in your browser&apos;s local storage. The fuel you pick is kept in the <code>pumperly-fuel</code> cookie, which the server reads to open the map on it.</li>
         <li><strong>Route queries</strong> &mdash; When you plan a route, origin/destination coordinates are sent to our server to compute the route and find nearby stations. We do not log these queries or associate them with any identity.</li>
         <li><strong>Mobile apps</strong> &mdash; The Pumperly apps for iPhone and Android show this website. With your permission they read your device location and pass it to the page, as a browser would. The iPhone home screen widget sends your location, rounded to about 110 m, to our stations API to find the stations near you, and keeps your chosen fuel and that rounded position on your device only. The apps have no accounts, no ads and no tracking, and we never sell data.</li>
       </ul>
 
       <h3>Cookies</h3>
-      <p>We use a single, strictly functional cookie (<code>pumperly-locale</code>) to remember your language preference so the server can render the correct language on future visits. It contains only a two-letter language code (e.g. &quot;en&quot;), expires after one year, and is never shared with third parties.</p>
+      <p>We use two strictly functional cookies so the server can render the page the way you left it on future visits: <code>pumperly-locale</code> remembers your language and contains only a two-letter language code (e.g. &quot;en&quot;), and <code>pumperly-fuel</code> remembers the fuel you picked on the map and contains only a fuel code (e.g. &quot;E5&quot;). Each expires after one year and is never shared with third parties.</p>
 
       <h3>Data we do NOT collect</h3>
       <ul>
@@ -81,7 +81,7 @@ export function PrivacyContent() {
       </ul>
 
       <h3>Data retention</h3>
-      <p>We do not store any personal data on our servers. User preferences are stored locally on your device (local storage) and in a single functional cookie. Both can be cleared by clearing your browser data.</p>
+      <p>We do not store any personal data on our servers. User preferences are stored locally on your device (local storage) and in two functional cookies. All of them can be cleared by clearing your browser data.</p>
 
       <h3>Your rights</h3>
       <p>Under GDPR and applicable law, you have the right to access, rectify, and delete your personal data. Since we do not collect personal data, there is nothing to delete. If you have concerns, contact us at support@pumperly.com.</p>
