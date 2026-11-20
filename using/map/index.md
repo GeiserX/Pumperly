@@ -98,7 +98,7 @@ When the 5th and 95th percentile are less than 0.02 apart, Pumperly widens the s
 
 A station with no price is grey. On fuel layers this is rare. On the EV layer every dot is grey.
 
-The **price legend** in the bottom-left corner shows the colour bar with the two percentile prices under its ends. It is hidden when no station on screen has a price.
+The **price legend** in the bottom-left corner shows the colour bar. The prices under its ends are the cheapest and the most expensive station the map draws: stations hidden by the max-price filter, or on a route by the max detour filter, do not count. The colours still spread over the 5th to 95th percentile, so stations beyond either percentile show the end colour. The legend is hidden when no station on screen has a price.
 
 ## Max price filter
 

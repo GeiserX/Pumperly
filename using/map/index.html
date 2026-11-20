@@ -2350,7 +2350,7 @@
 <p>This keeps one very cheap or very expensive outlier from flattening the colours of every other station. It also means the same price can change colour when you pan to an area with different prices.</p>
 <p>When the 5th and 95th percentile are less than 0.02 apart, Pumperly widens the scale to 0.01 on each side of their midpoint. Otherwise a handful of nearly equal prices would span the whole scale.</p>
 <p>A station with no price is grey. On fuel layers this is rare. On the EV layer every dot is grey.</p>
-<p>The <strong>price legend</strong> in the bottom-left corner shows the colour bar with the two percentile prices under its ends. It is hidden when no station on screen has a price.</p>
+<p>The <strong>price legend</strong> in the bottom-left corner shows the colour bar. The prices under its ends are the cheapest and the most expensive station the map draws: stations hidden by the max-price filter, or on a route by the max detour filter, do not count. The colours still spread over the 5th to 95th percentile, so stations beyond either percentile show the end colour. The legend is hidden when no station on screen has a price.</p>
 <h2 id="max-price-filter">Max price filter<a class="headerlink" href="#max-price-filter" title="Permanent link">&para;</a></h2>
 <p>Under the legend, the <strong>Max price</strong> slider hides stations above a price you choose.</p>
 <ul>

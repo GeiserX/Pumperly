@@ -32,7 +32,7 @@ The repository ships one compose file, [`docker/docker-compose.yml`](<https://gi
 # One image for the app and for the migrate service, so the migrations a
 # release ships are the ones applied. The auto-tag workflow moves this pin.
 x-app-image: &app-image
-  image: drumsergio/pumperly:1.20.6
+  image: drumsergio/pumperly:1.20.14
 
 services:
   db:
