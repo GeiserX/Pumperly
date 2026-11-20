@@ -29,7 +29,7 @@ interface NearbyCheapestProps {
  */
 export function NearbyCheapest({ userLocation, selectedFuel, onFlyTo, onLoaded }: NearbyCheapestProps) {
   const { t } = useI18n();
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency, ratesSettled } = useCurrency();
   const [loaded, setLoaded] = useState<StationsGeoJSONCollection | null>(null);
   // Latest callback for the fetch callback and the report below, without
   // making it a dependency of either.
@@ -62,12 +62,18 @@ export function NearbyCheapest({ userLocation, selectedFuel, onFlyTo, onLoaded }
 
   // Report the rows as listed, ranked on the converted prices, once per fetch:
   // ranking the raw prices would frame other stations in a mixed-currency area.
+  // A station in another currency waits for the rate request to finish.
+  const needsRates = useMemo(
+    () => (loaded?.features ?? []).some((f) => f.properties.price != null && f.properties.currency !== currency),
+    [loaded, currency],
+  );
   const reportedRef = useRef<StationsGeoJSONCollection | null>(null);
   useEffect(() => {
     if (!loaded || reportedRef.current === loaded) return;
+    if (needsRates && !ratesSettled) return;
     reportedRef.current = loaded;
     onLoadedRef.current?.(rows.map((s) => s.station));
-  }, [loaded, rows]);
+  }, [loaded, rows, needsRates, ratesSettled]);
 
   if (!loaded) return null;
 

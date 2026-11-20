@@ -115,4 +115,53 @@ describe("NearbyCheapest", () => {
     expect(onLoaded).toHaveBeenCalledTimes(1);
     expect(onLoaded.mock.calls[0][0].map((s: StationGeoJSON) => s.properties.id)).toEqual(["a", "b"]);
   });
+
+  it("waits for exchange rates that answer after the stations before reporting", async () => {
+    localStorage.setItem("pumperly-currency", "EUR");
+    const mixed: StationsGeoJSONCollection = {
+      type: "FeatureCollection",
+      features: [station("a", "Station A", north(1), 1.8), station("b", "Station B", [ME[0], ME[1] - 1 / 111.195], 1.75, "CHF")],
+    };
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/exchange-rates")) {
+        await new Promise((r) => setTimeout(r, 50));
+        return new Response(JSON.stringify({ base: "EUR", rates: { CHF: 0.93 }, date: "2026-01-02" }), { status: 200 });
+      }
+      return new Response(JSON.stringify(mixed), { status: 200 });
+    });
+    const onLoaded = vi.fn();
+    render(
+      <CurrencyProvider>
+        <NearbyCheapest userLocation={ME} selectedFuel="B7" onFlyTo={() => {}} onLoaded={onLoaded} />
+      </CurrencyProvider>,
+    );
+    await screen.findByText(/Station B/);
+    expect(onLoaded).not.toHaveBeenCalled();
+    await waitFor(() => expect(onLoaded).toHaveBeenCalled());
+    expect(onLoaded).toHaveBeenCalledTimes(1);
+    expect(onLoaded.mock.calls[0][0].map((s: StationGeoJSON) => s.properties.id)).toEqual(["a", "b"]);
+  });
+
+  it("still reports when the exchange rates fail", async () => {
+    localStorage.setItem("pumperly-currency", "EUR");
+    const mixed: StationsGeoJSONCollection = {
+      type: "FeatureCollection",
+      features: [station("a", "Station A", north(1), 1.8), station("b", "Station B", [ME[0], ME[1] - 1 / 111.195], 1.75, "CHF")],
+    };
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/exchange-rates")) {
+        await new Promise((r) => setTimeout(r, 20));
+        return new Response("", { status: 503 });
+      }
+      return new Response(JSON.stringify(mixed), { status: 200 });
+    });
+    const onLoaded = vi.fn();
+    render(
+      <CurrencyProvider>
+        <NearbyCheapest userLocation={ME} selectedFuel="B7" onFlyTo={() => {}} onLoaded={onLoaded} />
+      </CurrencyProvider>,
+    );
+    await waitFor(() => expect(onLoaded).toHaveBeenCalledTimes(1));
+    expect(onLoaded.mock.calls[0][0].map((s: StationGeoJSON) => s.properties.id)).toEqual(["b", "a"]);
+  });
 });

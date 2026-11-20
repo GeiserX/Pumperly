@@ -114,6 +114,8 @@ interface CurrencyContextValue {
   /** useConvertedStations reports the most common currency of what it shows. */
   setViewCurrency: (c: Currency) => void;
   rates: ExchangeRates | null;
+  /** True once the exchange-rate request has finished, whether it worked or not. */
+  ratesSettled: boolean;
   convert: (price: number, from: string) => number;
   symbol: string;
   decimals: number;
@@ -130,6 +132,8 @@ const CurrencyContext = createContext<CurrencyContextValue>({
   setCurrency: () => {},
   setViewCurrency: () => {},
   rates: null,
+  // No provider means no rates will ever arrive: nothing to wait for.
+  ratesSettled: true,
   convert: (p) => p,
   symbol: "€",
   decimals: 3,
@@ -150,6 +154,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const currency: Currency = chosen ?? viewCurrency ?? "EUR";
 
   const [rates, setRates] = useState<ExchangeRates | null>(null);
+  const [ratesSettled, setRatesSettled] = useState(false);
 
   useEffect(() => {
     fetch("/api/exchange-rates")
@@ -157,7 +162,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (isValidExchangeRates(data)) setRates(data);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRatesSettled(true));
   }, []);
 
   const setCurrency = useCallback((c: Currency | null) => {
@@ -225,6 +231,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         setCurrency,
         setViewCurrency,
         rates,
+        ratesSettled,
         convert,
         symbol: info.symbol,
         decimals: info.decimals,

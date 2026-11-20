@@ -136,7 +136,9 @@ describe("CurrencyProvider", () => {
 
   it("shows euro stations in euros when nothing is chosen, whatever the language", async () => {
     const { result } = renderWith(EUR_VIEW);
+    expect(result.current.ctx.ratesSettled).toBe(false);
     await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
+    expect(result.current.ctx.ratesSettled).toBe(true);
     expect(result.current.ctx.currency).toBe("EUR");
     expect(result.current.ctx.isAuto).toBe(true);
     expect(result.current.out.features[0].properties.price).toBe(1.8);
@@ -173,7 +175,8 @@ describe("CurrencyProvider", () => {
   it("converts nothing without rates", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
     const { result } = renderWith(CHF_VIEW);
-    await waitFor(() => expect(result.current.ctx.currency).toBe("CHF"));
+    await waitFor(() => expect(result.current.ctx.ratesSettled).toBe(true));
+    expect(result.current.ctx.currency).toBe("CHF");
     expect(result.current.out).toBe(CHF_VIEW);
   });
 
