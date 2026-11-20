@@ -10,7 +10,9 @@ function createPrismaClient() {
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
-  const adapter = new PrismaPg({ connectionString });
+  // The pg adapter reads a timestamptz as text and swaps its offset for
+  // +00:00, so any session TimeZone other than UTC shifts every timestamp.
+  const adapter = new PrismaPg({ connectionString, options: "-c TimeZone=UTC" });
   return new PrismaClient({ adapter });
 }
 

@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock PrismaPg adapter — must be a real constructor (used with `new`)
+const pgAdapterOpts = vi.hoisted(() => [] as any[]);
 vi.mock("@prisma/adapter-pg", () => {
   return {
     PrismaPg: class PrismaPg {
-      constructor(_opts: any) {}
+      constructor(opts: any) {
+        pgAdapterOpts.push(opts);
+      }
     },
   };
 });
@@ -43,6 +46,14 @@ describe("db module", () => {
     const { prisma } = await import("./db");
     const { PrismaClient } = await import("@/generated/prisma/client");
     expect(prisma).toBeInstanceOf(PrismaClient);
+  });
+
+  it("pins the database session to UTC so timestamptz values are not shifted", async () => {
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    expect(pgAdapterOpts).toHaveLength(1);
+    expect(pgAdapterOpts[0].connectionString).toBe("postgresql://test:test@localhost:5432/test");
+    expect(pgAdapterOpts[0].options).toContain("TimeZone=UTC");
   });
 
   it("caches prisma on globalThis in non-production", async () => {
