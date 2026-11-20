@@ -71,6 +71,9 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
     const fit = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        // A move that started since (the station-leg re-centre right after a
+        // cut-short fly) would be cancelled by a pan; its own moveend refits.
+        if (map.isMoving()) return;
         const container = map.getContainer();
         const [dx, dy] = panToFit(
           popup.getElement().getBoundingClientRect(),
