@@ -1167,15 +1167,18 @@ export function SearchPanel({
           snap={sheetSnap}
           onSnapChange={setSheetSnap}
           summary={
-            <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
-              <div className="h-2 w-2 rounded-full bg-blue-500 ring-2 ring-blue-500/25" />
-              <span>{formatDistance(displayRoute!.distance)}</span>
-              <span className="text-gray-400 dark:text-gray-500">·</span>
-              <span>{formatDuration(displayRoute!.duration)}</span>
+            <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-blue-500 ring-2 ring-blue-500/25" />
+                <span>{formatDistance(displayRoute!.distance)}</span>
+                <span className="text-gray-400 dark:text-gray-500">·</span>
+                <span>{formatDuration(displayRoute!.duration)}</span>
+              </div>
+              {/* Own line under the distance, so the name and price both fit on a narrow phone. */}
               {sheetSummary && (
-                <span className="ml-auto min-w-0 truncate text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                <p className="mt-0.5 truncate pl-4 text-[11px] font-medium text-gray-500 dark:text-gray-400">
                   {sheetSummary}
-                </span>
+                </p>
               )}
             </div>
           }

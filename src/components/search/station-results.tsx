@@ -211,16 +211,17 @@ export function StationResults({
                   ) : (
                     detoursLoading && <span className="text-[10px] text-gray-300 animate-pulse dark:text-gray-600">...</span>
                   )}
-                  {avgPrice != null && station.properties.price != null && (() => {
-                    const diff = station.properties.price - avgPrice;
-                    if (Math.abs(diff) < 0.001) return null;
-                    // "−0.243 €/L vs avg": the unit and what it compares to.
-                    const label = `${formatPrice(Math.abs(diff))} ${currencySymbol}${station.properties.fuelType === "EV" ? "/kWh" : "/L"} ${t("stations.vsAvg")}`;
-                    return diff < 0
-                      ? <span className="text-[10px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{"\u2212"}{label}</span>
-                      : <span className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">+{label}</span>;
-                  })()}
                 </div>
+                {avgPrice != null && station.properties.price != null && (() => {
+                  const diff = station.properties.price - avgPrice;
+                  if (Math.abs(diff) < 0.001) return null;
+                  // "−0.243 €/L vs avg": the unit and what it compares to. On its
+                  // own line so the right column stays narrow and the name readable.
+                  const label = `${formatPrice(Math.abs(diff))} ${currencySymbol}${station.properties.fuelType === "EV" ? "/kWh" : "/L"} ${t("stations.vsAvg")}`;
+                  return diff < 0
+                    ? <div className="text-[10px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{"\u2212"}{label}</div>
+                    : <div className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">+{label}</div>;
+                })()}
               </div>
             </button>
           );

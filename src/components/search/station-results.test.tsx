@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { StationGeoJSON } from "@/types/station";
 
@@ -164,5 +164,16 @@ describe("StationResults", () => {
     for (const label of ["stations.sortPrice", "stations.sortDetour", "stations.sortKm", "stations.basisRoute", "stations.basisAny"]) {
       expect(screen.getByText(label)).toHaveClass("min-h-8");
     }
+  });
+
+  it("puts the savings figure on its own line, not beside km and detour", () => {
+    renderResults({ avgPrice: 1.555 });
+    const row = screen.getByText("Repsol").closest("button")!;
+    const savings = within(row).getByText(/stations\.vsAvg/, { selector: "div" });
+    // Its own block under the price, so the right column stays narrow and
+    // the station name keeps its room.
+    expect(savings).not.toHaveTextContent("km");
+    expect(savings.parentElement).toHaveClass("shrink-0");
+    expect(within(row).getByText(/^km \d+$/).parentElement).not.toHaveTextContent("stations.vsAvg");
   });
 });

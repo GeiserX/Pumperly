@@ -378,8 +378,11 @@ describe("SearchPanel — route sheet summary and retry", () => {
       primaryStations: { type: "FeatureCollection", features: [station("a", "Brand A", 1.5), station("b", "Brand B", 1.4)] },
     });
     const sheet = await screen.findByRole("region", { name: "sheet.routeAndStations" });
-    expect(within(sheet).getByText("cheapest Brand B 1.400 €")).toBeInTheDocument();
+    const summary = within(sheet).getByText("cheapest Brand B 1.400 €");
     expect(sheet).not.toHaveTextContent("(2)");
+    // Its own line under the distance and duration, so a narrow phone keeps both name and price.
+    expect(summary.tagName).toBe("P");
+    expect(summary.parentElement).not.toHaveClass("flex");
   });
 
   it("offers Retry after stations fail to load, and Retry routes again", async () => {
