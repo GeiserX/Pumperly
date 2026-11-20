@@ -13,6 +13,8 @@ import { StationLayer } from "./station-layer";
 import { PriceFilter } from "./price-filter";
 import { RouteLayer } from "./route-layer";
 import { CountryMarkers } from "./country-markers";
+import { MapStatus, type MapStationsStatus } from "./map-status";
+import { useI18n } from "@/lib/i18n";
 import { useConvertedStations } from "@/lib/currency";
 import { useTheme } from "@/lib/theme";
 import type { PlannedStopMarker } from "@/components/search/refuel-planner";
@@ -29,6 +31,8 @@ if (typeof window !== "undefined") {
 }
 
 const DEBOUNCE_MS = 100;
+// A quick reply draws the dots before the loading cue would flash.
+const LOADING_CUE_MS = 400;
 
 const EMPTY_COLLECTION: StationsGeoJSONCollection = {
   type: "FeatureCollection",
@@ -69,10 +73,12 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   ref,
 ) {
   const { mapStyle } = useTheme();
+  const { t } = useI18n();
   const mapRef = useRef<MapRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const corridorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bboxAbortRef = useRef<AbortController | null>(null);
+  const loadingCueRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const corridorAbortRef = useRef<AbortController | null>(null);
   const corridorKmRef = useRef(corridorKm);
   corridorKmRef.current = corridorKm;
@@ -85,6 +91,8 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   const [corridorPerRoute, setCorridorPerRoute] = useState<StationsGeoJSONCollection[]>([]);
   // Bbox stations (no route active)
   const [bboxStations, setBboxStations] = useState<StationsGeoJSONCollection>(EMPTY_COLLECTION);
+  // What the no-route fetch shows on the map: loading, failed, or nothing here.
+  const [bboxStatus, setBboxStatus] = useState<MapStationsStatus>("idle");
 
   // Track current zoom to toggle between country markers and station dots
   const [currentZoom, setCurrentZoom] = useState(zoom);
@@ -196,9 +204,14 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       const bounds = map.getBounds();
       if (!bounds) return;
 
+      if (loadingCueRef.current) { clearTimeout(loadingCueRef.current); loadingCueRef.current = null; }
+
       // Skip fetch at very low zoom — minZoom on the map should prevent this,
       // but guard anyway to avoid massive queries
-      if (map.getZoom() < 5) return;
+      if (map.getZoom() < 5) {
+        setBboxStatus("idle");
+        return;
+      }
 
       const bbox = [
         bounds.getWest(),
@@ -210,6 +223,13 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       if (bboxAbortRef.current) bboxAbortRef.current.abort();
       const controller = new AbortController();
       bboxAbortRef.current = controller;
+      loadingCueRef.current = setTimeout(() => {
+        if (bboxAbortRef.current === controller) setBboxStatus("loading");
+      }, LOADING_CUE_MS);
+      const settle = (status: MapStationsStatus) => {
+        if (loadingCueRef.current) { clearTimeout(loadingCueRef.current); loadingCueRef.current = null; }
+        setBboxStatus(status);
+      };
 
       try {
         const url = `/api/stations?bbox=${bbox}&fuel=${fuel}`;
@@ -218,6 +238,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         if (!res.ok) {
           console.warn(`[map] Bbox fetch failed: ${res.status}`);
           setBboxStations(EMPTY_COLLECTION);
+          settle("error");
           onStationsErrorChange?.(true);
           return;
         }
@@ -225,12 +246,14 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         if (bboxAbortRef.current !== controller) return;
         console.log(`[map] Bbox fetch: ${data.features.length} stations for ${fuel}`);
         setBboxStations(data);
+        settle(data.features.length === 0 ? "empty" : "idle");
         onStationsErrorChange?.(false);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         if (bboxAbortRef.current === controller) {
           console.error("[map] Failed to fetch stations:", err);
           setBboxStations(EMPTY_COLLECTION);
+          settle("error");
           onStationsErrorChange?.(true);
         }
       }
@@ -277,6 +300,10 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
       // Abort any in-flight bbox fetch so its late completion can't mutate stationsError
       if (bboxAbortRef.current) { bboxAbortRef.current.abort(); bboxAbortRef.current = null; }
+      if (loadingCueRef.current) { clearTimeout(loadingCueRef.current); loadingCueRef.current = null; }
+      // Drop a no-route error or "none here" note, so clearing the route later
+      // does not flash it again before the new fetch answers.
+      setBboxStatus("idle");
       // Clear stale corridor data immediately so the previous route's stations
       // don't linger on the map while the new fetch is in-flight
       setCorridorPerRoute([]);
@@ -315,6 +342,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (corridorDebounceRef.current) clearTimeout(corridorDebounceRef.current);
+      if (loadingCueRef.current) clearTimeout(loadingCueRef.current);
       if (bboxAbortRef.current) bboxAbortRef.current.abort();
       if (corridorAbortRef.current) corridorAbortRef.current.abort();
     };
@@ -323,6 +351,11 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
   // Disable clustering when routes are active — individual stations matter for corridor view
   const effectiveCluster = clusterStations && !routes;
   const stationBeforeId = effectiveCluster ? "clusters" : "unclustered-point";
+
+  const handleRetry = useCallback(() => {
+    setBboxStatus("loading");
+    fetchStations(selectedFuel);
+  }, [fetchStations, selectedFuel]);
 
   return (
     <Map
@@ -338,6 +371,8 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       onMoveEnd={handleMoveEnd}
       interactiveLayerIds={effectiveCluster ? ["clusters", "unclustered-point"] : ["unclustered-point"]}
       attributionControl={{ compact: true }}
+      // MapLibre's own controls (the popup close button) speak the page language.
+      locale={{ "Popup.Close": t("common.close") }}
       style={{ width: "100%", height: "100%" }}
     >
       {showCountryMarkers && <CountryMarkers />}
@@ -379,7 +414,15 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       ))}
       {!showCountryMarkers && (
         // Marked so the first-locate fit keeps stations clear of the legend card.
-        <div data-map-overlay className="contents">
+        // The status card stacks above the legend at the bottom of the map: at
+        // the top the search card, its nearby list and its toasts would cover
+        // it. The legend positions itself absolutely; inside this column it
+        // must flow, hence the important `static` on the children.
+        <div
+          data-map-overlay
+          className="pointer-events-none absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-3 z-10 flex max-w-[calc(100%-4rem)] flex-col items-start gap-2 [&>*]:pointer-events-auto [&>*]:static!"
+        >
+          {!routes && <MapStatus status={bboxStatus} onRetry={handleRetry} />}
           <PriceFilter
             stations={displayStations}
             drawnStations={filteredStations}
