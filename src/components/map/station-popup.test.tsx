@@ -75,10 +75,17 @@ describe("StationPopup", () => {
     expect(screen.getByText("€/L")).toBeInTheDocument();
   });
 
-  it("renders the human fuel label from FUEL_TYPE_MAP", () => {
-    render(<StationPopup station={makeStation({ fuelType: "E5" })} onClose={() => {}} />);
-    // E5 → "Gasolina 95" per src/types/fuel.ts
-    expect(screen.getByText("Gasolina 95")).toBeInTheDocument();
+  it("names the fuel in the interface language, not a fixed Spanish label", () => {
+    render(<StationPopup station={makeStation({ fuelType: "B7" })} onClose={() => {}} />);
+    // t() echoes the key, so the fuel line shows the fuel.<code> key.
+    expect(screen.getByText("fuel.B7")).toBeInTheDocument();
+    expect(screen.queryByText("Diesel (A)")).not.toBeInTheDocument();
+  });
+
+  it("names the fuel through its key in the no-price message too", () => {
+    render(<StationPopup station={makeStation({ fuelType: "E5", price: null })} onClose={() => {}} />);
+    expect(screen.getByText("popup.noPrice fuel.E5")).toBeInTheDocument();
+    expect(screen.queryByText(/Gasolina 95/)).not.toBeInTheDocument();
   });
 
   it("shows the no-price message when price is null", () => {

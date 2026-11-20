@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface LegalModalProps {
   page: "privacy" | "terms" | "sources";
@@ -8,6 +9,7 @@ interface LegalModalProps {
 }
 
 export function LegalModal({ page, onClose }: LegalModalProps) {
+  const { t } = useI18n();
   const backdropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export function LegalModal({ page, onClose }: LegalModalProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const title = page === "privacy" ? "Privacy Policy" : page === "terms" ? "Terms of Service" : "Data Sources";
+  const title = t(`menu.${page}`);
 
   return (
     <div
@@ -27,6 +29,7 @@ export function LegalModal({ page, onClose }: LegalModalProps) {
       <div className="relative max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
         <button
           onClick={onClose}
+          aria-label={t("common.close")}
           className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

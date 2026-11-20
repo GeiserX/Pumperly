@@ -73,6 +73,7 @@ function FuelSelect({ selectedFuel, onFuelChange, className }: { selectedFuel: F
     <select
       value={selectedFuel}
       onChange={(e) => onFuelChange(e.target.value as FuelType)}
+      aria-label={t("fuel.picker")}
       className={className}
       style={{ ...selectStyle, backgroundPosition: "right 0.35rem center" }}
     >
@@ -83,7 +84,7 @@ function FuelSelect({ selectedFuel, onFuelChange, className }: { selectedFuel: F
           <optgroup key={cat.key} label={t(`fuel.${cat.key}`)}>
             {fuels.map((fuel) => (
               <option key={fuel.code} value={fuel.code}>
-                {fuel.label}
+                {t(`fuel.${fuel.code}`)}
               </option>
             ))}
           </optgroup>
