@@ -7,17 +7,18 @@ vi.mock("@/lib/i18n", () => ({
   useI18n: () => ({ t: (k: string) => k, locale: "en" }),
 }));
 
+import { CurrencyProvider } from "@/lib/currency";
 import { NearbyCheapest } from "./nearby-cheapest";
 
 const ME: [number, number] = [-3.7, 40.4];
 // A point `km` due north of ME (1° of latitude ≈ 111.195 km on the haversine sphere).
 const north = (km: number): [number, number] => [ME[0], ME[1] + km / 111.195];
 
-function station(id: string, brand: string, coordinates: [number, number], price: number): StationGeoJSON {
+function station(id: string, brand: string, coordinates: [number, number], price: number, currency = "EUR"): StationGeoJSON {
   return {
     type: "Feature",
     geometry: { type: "Point", coordinates },
-    properties: { id, name: brand, brand, address: "Street 1", city: "Town", price, reportedAt: null, fuelType: "B7", currency: "EUR" },
+    properties: { id, name: brand, brand, address: "Street 1", city: "Town", price, reportedAt: null, fuelType: "B7", currency },
   };
 }
 
@@ -39,6 +40,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  localStorage.clear();
 });
 
 describe("NearbyCheapest", () => {
@@ -85,5 +87,32 @@ describe("NearbyCheapest", () => {
     fetchMock.mockImplementation(async () => new Response(JSON.stringify({ type: "FeatureCollection", features: [] }), { status: 200 }));
     render(<NearbyCheapest userLocation={ME} selectedFuel="B7" onFlyTo={() => {}} />);
     expect(await screen.findByText("nearby.empty")).toBeInTheDocument();
+  });
+
+  it("ranks what it shows: the converted prices, for the list and for the map", async () => {
+    localStorage.setItem("pumperly-currency", "EUR");
+    const mixed: StationsGeoJSONCollection = {
+      type: "FeatureCollection",
+      features: [station("a", "Station A", north(1), 1.8), station("b", "Station B", [ME[0], ME[1] - 1 / 111.195], 1.75, "CHF")],
+    };
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/exchange-rates")) {
+        return new Response(JSON.stringify({ base: "EUR", rates: { CHF: 0.93 }, date: "2026-01-02" }), { status: 200 });
+      }
+      // Answer after the rates, as on a page that has been open a moment.
+      await new Promise((r) => setTimeout(r, 20));
+      return new Response(JSON.stringify(mixed), { status: 200 });
+    });
+    const onLoaded = vi.fn();
+    render(
+      <CurrencyProvider>
+        <NearbyCheapest userLocation={ME} selectedFuel="B7" onFlyTo={() => {}} onLoaded={onLoaded} />
+      </CurrencyProvider>,
+    );
+    await waitFor(() => expect(onLoaded).toHaveBeenCalled());
+    const rows = screen.getAllByRole("button");
+    expect(rows.map((r) => r.textContent)).toEqual([expect.stringContaining("Station A"), expect.stringContaining("Station B")]);
+    expect(onLoaded).toHaveBeenCalledTimes(1);
+    expect(onLoaded.mock.calls[0][0].map((s: StationGeoJSON) => s.properties.id)).toEqual(["a", "b"]);
   });
 });

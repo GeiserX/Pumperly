@@ -31,13 +31,11 @@ export function NearbyCheapest({ userLocation, selectedFuel, onFlyTo, onLoaded }
   const { t } = useI18n();
   const { formatPrice } = useCurrency();
   const [loaded, setLoaded] = useState<StationsGeoJSONCollection | null>(null);
-  // Latest callback and exact position for the fetch callback below, without
-  // making either a fetch dependency.
+  // Latest callback for the fetch callback and the report below, without
+  // making it a dependency of either.
   const onLoadedRef = useRef(onLoaded);
-  const locationRef = useRef(userLocation);
   useEffect(() => {
     onLoadedRef.current = onLoaded;
-    locationRef.current = userLocation;
   });
 
   // Query around the position rounded to ~1 km, so a moving GPS fix does not
@@ -50,10 +48,7 @@ export function NearbyCheapest({ userLocation, selectedFuel, onFlyTo, onLoaded }
     const params = new URLSearchParams({ lat, lon, radius_km: String(RADIUS_KM), fuel: selectedFuel, limit: String(FETCH_LIMIT) });
     fetch(`/api/stations/nearest?${params}`, { signal: controller.signal })
       .then((res) => (res.ok ? (res.json() as Promise<StationsGeoJSONCollection>) : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
-        setLoaded(data);
-        onLoadedRef.current?.(cheapestNearby(data.features, locationRef.current, SHOWN).map((s) => s.station));
-      })
+      .then((data) => setLoaded(data))
       .catch((err) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setLoaded(null);
@@ -64,6 +59,15 @@ export function NearbyCheapest({ userLocation, selectedFuel, onFlyTo, onLoaded }
 
   const converted = useConvertedStations(loaded ?? EMPTY);
   const rows = useMemo(() => cheapestNearby(converted.features, userLocation, SHOWN), [converted, userLocation]);
+
+  // Report the rows as listed, ranked on the converted prices, once per fetch:
+  // ranking the raw prices would frame other stations in a mixed-currency area.
+  const reportedRef = useRef<StationsGeoJSONCollection | null>(null);
+  useEffect(() => {
+    if (!loaded || reportedRef.current === loaded) return;
+    reportedRef.current = loaded;
+    onLoadedRef.current?.(rows.map((s) => s.station));
+  }, [loaded, rows]);
 
   if (!loaded) return null;
 

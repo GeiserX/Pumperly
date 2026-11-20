@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { CURRENCIES, currencyForLanguages, isValidExchangeRates, type Currency, type CurrencyInfo } from "./currency";
+// @vitest-environment jsdom
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { createElement, type ReactNode } from "react";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import type { StationGeoJSON, StationsGeoJSONCollection } from "@/types/station";
+import { CURRENCIES, CurrencyProvider, isValidExchangeRates, useConvertedStations, useCurrency, type Currency, type CurrencyInfo } from "./currency";
 
 describe("CURRENCIES", () => {
   it("is a non-empty array", () => {
@@ -95,29 +99,92 @@ describe("isValidExchangeRates", () => {
   });
 });
 
-describe("currencyForLanguages", () => {
-  it("keeps EUR for a Spanish list that ends in en-US (Android WebView)", () => {
-    expect(currencyForLanguages(["es-ES", "en-US"])).toBe("EUR");
-    expect(currencyForLanguages(["es-ES", "es", "en-US", "en"])).toBe("EUR");
+function station(id: string, price: number, currency: string): StationGeoJSON {
+  return {
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [0, 0] },
+    properties: { id, name: `Station ${id}`, brand: null, address: "Street 1", city: "Town", price, reportedAt: null, fuelType: "B7", currency },
+  };
+}
+
+const collection = (...features: StationGeoJSON[]): StationsGeoJSONCollection => ({ type: "FeatureCollection", features });
+
+const EUR_VIEW = collection(station("A", 1.8, "EUR"), station("B", 1.75, "EUR"));
+const CHF_VIEW = collection(station("A", 1.8, "EUR"), station("B", 1.75, "CHF"), station("C", 1.7, "CHF"));
+const RATES = { base: "EUR", rates: { USD: 1.1, CHF: 0.93 }, date: "2026-01-02" };
+
+const wrapper = ({ children }: { children: ReactNode }) => createElement(CurrencyProvider, null, children);
+
+function renderWith(stations: StationsGeoJSONCollection) {
+  return renderHook(() => ({ ctx: useCurrency(), out: useConvertedStations(stations) }), { wrapper });
+}
+
+describe("CurrencyProvider", () => {
+  const originalLanguages = navigator.languages;
+
+  beforeEach(() => {
+    localStorage.clear();
+    // An English phone in a euro country: the language must not pick the currency.
+    Object.defineProperty(navigator, "languages", { value: ["en-US"], configurable: true });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(RATES), { status: 200 })));
   });
 
-  it("uses the first region's currency", () => {
-    expect(currencyForLanguages(["en-US"])).toBe("USD");
-    expect(currencyForLanguages(["en-GB", "en-US"])).toBe("GBP");
-    expect(currencyForLanguages(["de-CH", "de-DE"])).toBe("CHF");
+  afterEach(() => {
+    Object.defineProperty(navigator, "languages", { value: originalLanguages, configurable: true });
+    vi.unstubAllGlobals();
   });
 
-  it("skips languages without a region", () => {
-    expect(currencyForLanguages(["pl", "pl-PL"])).toBe("PLN");
+  it("shows euro stations in euros when nothing is chosen, whatever the language", async () => {
+    const { result } = renderWith(EUR_VIEW);
+    await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
+    expect(result.current.ctx.currency).toBe("EUR");
+    expect(result.current.ctx.isAuto).toBe(true);
+    expect(result.current.out.features[0].properties.price).toBe(1.8);
+    expect(result.current.out.features[0].properties.originalCurrency).toBeUndefined();
   });
 
-  it("reads the region after a script subtag", () => {
-    expect(currencyForLanguages(["zh-Hant-TW"])).toBe("TWD");
+  it("converts to a currency the user chose", async () => {
+    localStorage.setItem("pumperly-currency", "USD");
+    const { result } = renderWith(EUR_VIEW);
+    await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
+    expect(result.current.ctx.currency).toBe("USD");
+    expect(result.current.ctx.isAuto).toBe(false);
+    expect(result.current.out.features[0].properties.price).toBeCloseTo(1.98, 6);
+    expect(result.current.out.features[0].properties.originalCurrency).toBe("EUR");
   });
 
-  it("falls back to EUR", () => {
-    expect(currencyForLanguages([])).toBe("EUR");
-    expect(currencyForLanguages(["es"])).toBe("EUR");
-    expect(currencyForLanguages(["not a locale"])).toBe("EUR");
+  it("follows the most common station currency and converts only the others", async () => {
+    const { result } = renderWith(CHF_VIEW);
+    await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
+    await waitFor(() => expect(result.current.ctx.currency).toBe("CHF"));
+    const [a, b] = result.current.out.features;
+    expect(a.properties.currency).toBe("CHF");
+    expect(a.properties.price).toBeCloseTo(1.8 * 0.93, 6);
+    expect(b.properties.price).toBe(1.75);
+    expect(b.properties.originalCurrency).toBeUndefined();
+  });
+
+  it("prefers euros on a tie", async () => {
+    const { result } = renderWith(collection(station("A", 1.8, "EUR"), station("B", 1.75, "CHF")));
+    await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
+    expect(result.current.ctx.currency).toBe("EUR");
+  });
+
+  it("converts nothing without rates", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
+    const { result } = renderWith(CHF_VIEW);
+    await waitFor(() => expect(result.current.ctx.currency).toBe("CHF"));
+    expect(result.current.out).toBe(CHF_VIEW);
+  });
+
+  it("goes back to the pump currency when the choice is cleared", async () => {
+    localStorage.setItem("pumperly-currency", "USD");
+    const { result } = renderWith(EUR_VIEW);
+    await waitFor(() => expect(result.current.ctx.rates).not.toBeNull());
+    act(() => result.current.ctx.setCurrency(null));
+    expect(localStorage.getItem("pumperly-currency")).toBeNull();
+    expect(result.current.ctx.currency).toBe("EUR");
+    expect(result.current.ctx.isAuto).toBe(true);
+    expect(result.current.out.features[0].properties.price).toBe(1.8);
   });
 });

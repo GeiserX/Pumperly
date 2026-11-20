@@ -72,53 +72,6 @@ export const CURRENCIES: CurrencyInfo[] = [
 const CURRENCY_MAP = new Map(CURRENCIES.map((c) => [c.code, c]));
 
 // ---------------------------------------------------------------------------
-// Locale → Currency mapping (browser region code → default currency)
-// ---------------------------------------------------------------------------
-
-const REGION_TO_CURRENCY: Record<string, Currency> = {
-  GB: "GBP", UK: "GBP",
-  CH: "CHF", LI: "CHF",
-  SE: "SEK", NO: "NOK", DK: "DKK", IS: "ISK",
-  CZ: "CZK", PL: "PLN", HU: "HUF", RO: "RON", BG: "BGN",
-  TR: "TRY",
-  US: "USD", CA: "CAD", MX: "MXN", BR: "BRL",
-  JP: "JPY", CN: "CNY", HK: "HKD", KR: "KRW", TW: "TWD",
-  SG: "SGD", MY: "MYR", TH: "THB", ID: "IDR", PH: "PHP",
-  IN: "INR", IL: "ILS",
-  ZA: "ZAR",
-  AR: "ARS",
-  MD: "MDL",
-  AU: "AUD", NZ: "NZD",
-};
-
-function regionOf(lang: string): string | undefined {
-  try {
-    return new Intl.Locale(lang).region?.toUpperCase();
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * The first language that names a region decides: that region's currency, or
- * EUR when the region is not in the map (Spain, France, ...). Later languages
- * never override it. Android's WebView appends en-US to every list, so
- * ["es-ES", "en-US"] must stay EUR.
- */
-export function currencyForLanguages(langs: readonly string[]): Currency {
-  for (const lang of langs) {
-    const region = regionOf(lang);
-    if (region) return REGION_TO_CURRENCY[region] ?? "EUR";
-  }
-  return "EUR";
-}
-
-function detectBrowserCurrency(): Currency {
-  if (typeof navigator === "undefined") return "EUR";
-  return currencyForLanguages(navigator.languages ?? [navigator.language]);
-}
-
-// ---------------------------------------------------------------------------
 // Exchange rates (ECB publishes ~30 currencies; others won't convert)
 // ---------------------------------------------------------------------------
 
@@ -150,8 +103,16 @@ export function isValidExchangeRates(data: unknown): data is ExchangeRates {
 // ---------------------------------------------------------------------------
 
 interface CurrencyContextValue {
+  /** The display currency: the user's choice, else the view's pump currency, else EUR. */
   currency: Currency;
-  setCurrency: (c: Currency) => void;
+  /** The currency the user picked, or null to show each pump's own currency. */
+  chosen: Currency | null;
+  /** True when nothing is chosen and prices follow the stations' currency. */
+  isAuto: boolean;
+  /** Store a choice; null clears it. */
+  setCurrency: (c: Currency | null) => void;
+  /** useConvertedStations reports the most common currency of what it shows. */
+  setViewCurrency: (c: Currency) => void;
   rates: ExchangeRates | null;
   convert: (price: number, from: string) => number;
   symbol: string;
@@ -164,7 +125,10 @@ interface CurrencyContextValue {
 
 const CurrencyContext = createContext<CurrencyContextValue>({
   currency: "EUR",
+  chosen: null,
+  isAuto: true,
   setCurrency: () => {},
+  setViewCurrency: () => {},
   rates: null,
   convert: (p) => p,
   symbol: "€",
@@ -175,12 +139,15 @@ const CurrencyContext = createContext<CurrencyContextValue>({
 });
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>(() => {
-    if (typeof window === "undefined") return "EUR";
+  // Only a stored pick is a choice. Without one, prices stay in the pump's
+  // currency (the figure on the pump), whatever the device language.
+  const [chosen, setChosen] = useState<Currency | null>(() => {
+    if (typeof window === "undefined") return null;
     const stored = localStorage.getItem("pumperly-currency") as Currency | null;
-    if (stored && CURRENCY_MAP.has(stored)) return stored;
-    return detectBrowserCurrency();
+    return stored && CURRENCY_MAP.has(stored) ? stored : null;
   });
+  const [viewCurrency, setViewCurrencyState] = useState<Currency | null>(null);
+  const currency: Currency = chosen ?? viewCurrency ?? "EUR";
 
   const [rates, setRates] = useState<ExchangeRates | null>(null);
 
@@ -193,10 +160,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
-  const setCurrency = useCallback((c: Currency) => {
-    setCurrencyState(c);
-    localStorage.setItem("pumperly-currency", c);
+  const setCurrency = useCallback((c: Currency | null) => {
+    setChosen(c);
+    if (c) localStorage.setItem("pumperly-currency", c);
+    else localStorage.removeItem("pumperly-currency");
   }, []);
+
+  const setViewCurrency = useCallback((c: Currency) => setViewCurrencyState(c), []);
 
   const info = CURRENCY_MAP.get(currency) ?? CURRENCIES[0];
 
@@ -250,7 +220,10 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     <CurrencyContext.Provider
       value={{
         currency,
+        chosen,
+        isAuto: chosen == null,
         setCurrency,
+        setViewCurrency,
         rates,
         convert,
         symbol: info.symbol,
@@ -273,8 +246,37 @@ export function useCurrency() {
 // Hook: convert all station prices in a GeoJSON collection
 // ---------------------------------------------------------------------------
 
+/**
+ * The most common currency among priced stations (ties go to EUR), or null for
+ * a collection with no price. Only currencies we can display count.
+ */
+function mostCommonCurrency(stations: StationsGeoJSONCollection): Currency | null {
+  const counts = new Map<Currency, number>();
+  for (const f of stations.features) {
+    const c = f.properties.currency as Currency;
+    if (f.properties.price == null || !CURRENCY_MAP.has(c)) continue;
+    counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+  let best: Currency | null = null;
+  let bestCount = 0;
+  for (const [c, n] of counts) {
+    if (n > bestCount) {
+      best = c;
+      bestCount = n;
+    }
+  }
+  if (best != null && (counts.get("EUR") ?? 0) === bestCount) return "EUR";
+  return best;
+}
+
 export function useConvertedStations(stations: StationsGeoJSONCollection): StationsGeoJSONCollection {
-  const { convert, currency, rates, isConverted: canConvert } = useCurrency();
+  const { convert, currency, isAuto, setViewCurrency, rates, isConverted: canConvert } = useCurrency();
+
+  // With no choice, the display currency is the one most stations here use.
+  const viewCurrency = useMemo(() => (isAuto ? mostCommonCurrency(stations) : null), [isAuto, stations]);
+  useEffect(() => {
+    if (viewCurrency) setViewCurrency(viewCurrency);
+  }, [viewCurrency, setViewCurrency]);
 
   return useMemo(() => {
     if (!rates) return stations;
