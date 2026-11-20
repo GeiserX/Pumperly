@@ -294,11 +294,14 @@ export function SearchPanel({
         setPhase("route");
         calculateRoute(origin, loc, waypoints);
       } else {
+        // No origin to route from (location off): still show the place, so
+        // the map moves there and its stations load.
+        onFlyTo(result.coordinates);
         setPhase("planning");
         setTimeout(() => originRef.current?.focus(), 100);
       }
     },
-    [origin, waypoints, calculateRoute],
+    [onFlyTo, origin, waypoints, calculateRoute],
   );
 
   // Track whether waypoints changed in a way that requires route recalculation.
@@ -903,6 +906,7 @@ export function SearchPanel({
                   }
                   setTimeout(() => originRef.current?.focus(), 50);
                 }}
+                aria-label={t("search.clearOrigin")}
                 className="mr-1 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200/70 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-200"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -950,6 +954,7 @@ export function SearchPanel({
                 />
                 <button
                   onClick={() => removeWaypoint(wp.id)}
+                  aria-label={t("search.removeWaypoint")}
                   className="mr-1 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200/70 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-200"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -1009,7 +1014,8 @@ export function SearchPanel({
               onClick={() => {
                 setDestText("");
                 setDestination(null);
-                setWaypoints([]);
+                // Keep the stops the user added; only drop the station leg.
+                setWaypoints((prev) => prev.filter((wp) => !wp.isStationLeg));
                 if (phase === "route") {
                   onClearRoute();
                   setPhase(origin ? "planning" : "dest");
@@ -1018,6 +1024,7 @@ export function SearchPanel({
                 }
                 setTimeout(() => destRef.current?.focus(), 50);
               }}
+              aria-label={t("search.clearDestination")}
               className="mr-1 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200/70 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-200"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">

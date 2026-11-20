@@ -278,3 +278,48 @@ describe("SearchPanel — geolocation & auto-seed", () => {
     expect(origin.value).not.toBe("geo.myLocation");
   });
 });
+
+describe("SearchPanel — searched place and clear buttons", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [MADRID] }));
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("moves the map to a picked place when there is no origin yet", async () => {
+    const user = userEvent.setup();
+    const onFlyTo = vi.fn();
+    // Location off: no userLocation, so the pick cannot route.
+    renderPanel({ onFlyTo });
+
+    await user.type(screen.getByPlaceholderText("search.whereTo"), "Mad");
+    await user.click(await screen.findByText("Madrid", {}, { timeout: 2000 }));
+
+    await waitFor(() => expect(onFlyTo).toHaveBeenCalledWith([-3.7, 40.4]));
+  });
+
+  it("keeps a manual stop when the destination is cleared", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      routes: [ROUTE_FOR_SEED],
+      initialRoute: { from: [-1.0, 38.0], to: [-0.37, 39.47], via: [[-0.7, 38.7]] },
+    });
+    expect(screen.getByPlaceholderText("search.waypoint...")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "search.clearDestination" }));
+
+    expect(screen.getByPlaceholderText("search.waypoint...")).toBeInTheDocument();
+    expect((screen.getByPlaceholderText("search.destination...") as HTMLInputElement).value).toBe("");
+  });
+
+  it("names the clear and remove buttons for screen readers", async () => {
+    renderPanel({
+      routes: [ROUTE_FOR_SEED],
+      initialRoute: { from: [-1.0, 38.0], to: [-0.37, 39.47], via: [[-0.7, 38.7]] },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "search.clearOrigin" })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "search.removeWaypoint" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "search.clearDestination" })).toBeInTheDocument();
+  });
+});
