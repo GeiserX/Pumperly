@@ -64,7 +64,7 @@ export function PrivacyContent() {
       </ul>
 
       <h3>Cookies</h3>
-      <p>We use a single, strictly functional cookie (<code>pumperly-locale</code>) to remember your language preference so the server can render the correct language on future visits. It contains only a two-letter language code (e.g. &quot;en&quot;), expires after one year, and is never shared with third parties.</p>
+      <p>We use two strictly functional cookies so the server can render the page the way you left it on future visits: <code>pumperly-locale</code> remembers your language and contains only a two-letter language code (e.g. &quot;en&quot;), and <code>pumperly-fuel</code> remembers the fuel you picked on the map and contains only a fuel code (e.g. &quot;E5&quot;). Each expires after one year and is never shared with third parties.</p>
 
       <h3>Data we do NOT collect</h3>
       <ul>
@@ -81,7 +81,7 @@ export function PrivacyContent() {
       </ul>
 
       <h3>Data retention</h3>
-      <p>We do not store any personal data on our servers. User preferences are stored locally on your device (local storage) and in a single functional cookie. Both can be cleared by clearing your browser data.</p>
+      <p>We do not store any personal data on our servers. User preferences are stored locally on your device (local storage) and in two functional cookies. All of them can be cleared by clearing your browser data.</p>
 
       <h3>Your rights</h3>
       <p>Under GDPR and applicable law, you have the right to access, rectify, and delete your personal data. Since we do not collect personal data, there is nothing to delete. If you have concerns, contact us at support@pumperly.com.</p>

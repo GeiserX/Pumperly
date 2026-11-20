@@ -15,7 +15,7 @@ import type { PlannedStopMarker } from "@/components/search/refuel-planner";
 import { useDetourStream } from "@/lib/use-detour-stream";
 import { paddingClearOf, type ScreenBox } from "@/lib/geo";
 import { parseStationParams, parseRouteParams, buildStationQuery, deepLinkFuel } from "@/lib/share-url";
-import { bareFuel as readBareFuel, notifyNativeFuel, writeFuelCookie } from "@/lib/fuel-preference";
+import { bareFuel as readBareFuel, notifyNativeFuel, readFuelCookie, writeFuelCookie } from "@/lib/fuel-preference";
 
 interface Props {
   defaultFuel: string;
@@ -225,10 +225,15 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
   }, [handleGeolocate, hasDeepLink]);
 
   // A bare ?fuel= is an explicit choice: remember it. It came from the app (or a
-  // link the visitor typed), so it is not echoed back to the app.
+  // link the visitor typed), so it is not echoed back to the app. Without a
+  // shared link, the stored fuel is re-written on every visit too: Safari caps a
+  // cookie set from script at 7 days, so this keeps it alive while the visitor
+  // keeps coming back.
   useEffect(() => {
-    if (deepLink.bareFuel) writeFuelCookie(deepLink.bareFuel);
-  }, [deepLink.bareFuel]);
+    if (deepLink.fuel) return;
+    const fuel = deepLink.bareFuel ?? readFuelCookie();
+    if (fuel) writeFuelCookie(fuel);
+  }, [deepLink.fuel, deepLink.bareFuel]);
 
   const handleFuelChange = useCallback((fuel: FuelType) => {
     setSelectedFuel(fuel);

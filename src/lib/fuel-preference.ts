@@ -41,11 +41,29 @@ export function resolveInitialFuel(o: {
   return o.linkFuel ?? o.bareFuel ?? o.cookieFuel ?? o.defaultFuel;
 }
 
-/** Remember the fuel for a year, on the whole site. */
+/** The fuel stored in the cookie, or null. */
+export function readFuelCookie(): FuelType | null {
+  if (typeof document === "undefined") return null;
+  try {
+    const pair = document.cookie.split("; ").find((c) => c.startsWith(`${FUEL_COOKIE}=`));
+    return parseFuel(pair?.slice(FUEL_COOKIE.length + 1));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Remember the fuel for a year, on the whole site. Safari caps a cookie written
+ * from script at 7 days, so callers re-write it on every visit to renew it.
+ */
 export function writeFuelCookie(code: FuelType): void {
   if (typeof document === "undefined") return;
-  const secure = window.location.protocol === "https:" ? "; secure" : "";
-  document.cookie = `${FUEL_COOKIE}=${code}; path=/; max-age=${ONE_YEAR_S}; samesite=lax${secure}`;
+  try {
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `${FUEL_COOKIE}=${code}; path=/; max-age=${ONE_YEAR_S}; samesite=lax${secure}`;
+  } catch {
+    // A page where cookies are blocked must still let the visitor pick a fuel.
+  }
 }
 
 interface WebkitWindow {

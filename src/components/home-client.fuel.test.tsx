@@ -48,6 +48,7 @@ describe("HomeClient — the fuel setting", () => {
     vi.stubGlobal("webkit", { messageHandlers: { pumperlyFuel: { postMessage } } });
   });
   afterEach(() => {
+    vi.restoreAllMocks();
     clearFuelCookie();
     window.history.replaceState(null, "", "/");
     vi.unstubAllGlobals();
@@ -79,6 +80,42 @@ describe("HomeClient — the fuel setting", () => {
     expect(navbarProps.selectedFuel).toBe("B7");
     expect(document.cookie).not.toContain("pumperly-fuel");
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it("renews the stored fuel on a plain visit, so Safari's 7-day cap never expires it", () => {
+    document.cookie = "pumperly-fuel=E10; path=/";
+    const writes: string[] = [];
+    const desc = Object.getOwnPropertyDescriptor(Document.prototype, "cookie")!;
+    vi.spyOn(document, "cookie", "set").mockImplementation((v: string) => {
+      writes.push(v);
+      desc.set!.call(document, v);
+    });
+    window.history.replaceState(null, "", "/es");
+    renderHome();
+
+    expect(writes.some((w) => w.startsWith("pumperly-fuel=E10;") && w.includes("max-age=31536000"))).toBe(true);
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it("does not renew the stored fuel on a shared station link", () => {
+    document.cookie = "pumperly-fuel=E10; path=/";
+    const writes: string[] = [];
+    vi.spyOn(document, "cookie", "set").mockImplementation((v: string) => { writes.push(v); });
+    window.history.replaceState(null, "", "/es?station=ES:1&lat=40.41672&lng=-3.70379&fuel=B7");
+    renderHome();
+
+    expect(navbarProps.selectedFuel).toBe("B7");
+    expect(writes.filter((w) => w.startsWith("pumperly-fuel="))).toEqual([]);
+  });
+
+  it("still switches fuel when the page cannot write cookies", () => {
+    vi.spyOn(document, "cookie", "set").mockImplementation(() => { throw new Error("blocked"); });
+    window.history.replaceState(null, "", "/es");
+    renderHome();
+    act(() => (navbarProps.onFuelChange as (f: FuelType) => void)("E10"));
+
+    expect(navbarProps.selectedFuel).toBe("E10");
+    expect(postMessage).toHaveBeenCalledWith({ fuel: "E10" });
   });
 
   it("picks a fuel in a plain browser without the app's message handler", () => {
