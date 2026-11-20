@@ -58,7 +58,7 @@ export function PrivacyContent() {
       <h3>Data we collect</h3>
       <ul>
         <li><strong>Location data</strong> &mdash; If you grant permission, your browser shares your approximate GPS coordinates so we can show nearby stations and calculate routes. This data is processed in your browser and is not stored on our servers.</li>
-        <li><strong>Preferences</strong> &mdash; Your language, currency, theme, and fuel type selections are saved in your browser&apos;s local storage. They never leave your device.</li>
+        <li><strong>Preferences</strong> &mdash; Your language, currency, and theme selections are saved in your browser&apos;s local storage. The fuel you pick is kept in the <code>pumperly-fuel</code> cookie, which the server reads to open the map on it.</li>
         <li><strong>Route queries</strong> &mdash; When you plan a route, origin/destination coordinates are sent to our server to compute the route and find nearby stations. We do not log these queries or associate them with any identity.</li>
         <li><strong>Mobile apps</strong> &mdash; The Pumperly apps for iPhone and Android show this website. With your permission they read your device location and pass it to the page, as a browser would. The iPhone home screen widget sends your location, rounded to about 110 m, to our stations API to find the stations near you, and keeps your chosen fuel and that rounded position on your device only. The apps have no accounts, no ads and no tracking, and we never sell data.</li>
       </ul>
