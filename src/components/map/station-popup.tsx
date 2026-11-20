@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Popup } from "react-map-gl/maplibre";
+import type { MapLibreEvent, Popup as MapLibrePopup } from "maplibre-gl";
 import type { SessionFeeRule, StationGeoJSON } from "@/types/station";
 import { FUEL_TYPE_MAP } from "@/types/fuel";
 import { useI18n } from "@/lib/i18n";
@@ -9,6 +10,7 @@ import { useCurrency, CURRENCIES } from "@/lib/currency";
 import { shareOrCopy, copyToClipboard } from "@/lib/share";
 import { buildStationQuery } from "@/lib/share-url";
 import { formatDistance } from "@/lib/format";
+import { overlayRects, panToFit } from "@/lib/popup-fit";
 
 interface StationPopupProps {
   station: StationGeoJSON;
@@ -53,7 +55,45 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
   const { decimals: userDecimals, rateInfo } = useCurrency();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const popupRef = useRef<MapLibrePopup>(null);
   const { properties, geometry } = station;
+
+  // Keep the card clear of the cards over the map (search box, price legend,
+  // route sheet) and of the map's edges. Fit once it opens, or once the map
+  // stops when it opens mid-flight (a list pick flies to the station), and
+  // again after any later move the app makes (the station-leg re-centre). A
+  // move the person made (originalEvent) or our own pan is left alone.
+  useEffect(() => {
+    const popup = popupRef.current;
+    const map = popup?._map;
+    if (!popup || !map) return;
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        // A move that started since (the station-leg re-centre right after a
+        // cut-short fly) would be cancelled by a pan; its own moveend refits.
+        if (map.isMoving()) return;
+        const container = map.getContainer();
+        const box = popup.getElement().getBoundingClientRect();
+        const view = container.getBoundingClientRect();
+        // The map went elsewhere with the card still open (a cluster or
+        // country tap, a place search): don't drag it back to the station.
+        if (box.right <= view.left || box.left >= view.right || box.bottom <= view.top || box.top >= view.bottom) return;
+        const [dx, dy] = panToFit(box, view, overlayRects(container.parentElement ?? container));
+        if (dx !== 0 || dy !== 0) map.panBy([-dx, -dy], { duration: 300 }, { popupFit: true });
+      });
+    };
+    const onMoveEnd = (e: MapLibreEvent<unknown> & { popupFit?: boolean }) => {
+      if (!e.originalEvent && !e.popupFit) fit();
+    };
+    if (!map.isMoving()) fit();
+    map.on("moveend", onMoveEnd);
+    return () => {
+      cancelAnimationFrame(frame);
+      map.off("moveend", onMoveEnd);
+    };
+  }, [properties.id]);
   // `properties.fuelType` is a raw string; the cast narrows it to the map key
   // type for the lookup. `.get()` returns undefined for unknown codes, which is
   // handled defensively below via `fuelInfo?.label ?? properties.fuelType`.
@@ -124,6 +164,7 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
 
   return (
     <Popup
+      ref={popupRef}
       longitude={geometry.coordinates[0]}
       latitude={geometry.coordinates[1]}
       anchor="bottom"
