@@ -15,6 +15,7 @@ import type { PlannedStopMarker } from "@/components/search/refuel-planner";
 import { useDetourStream } from "@/lib/use-detour-stream";
 import { paddingClearOf, type ScreenBox } from "@/lib/geo";
 import { parseStationParams, parseRouteParams, buildStationQuery, deepLinkFuel } from "@/lib/share-url";
+import { bareFuel as readBareFuel, notifyNativeFuel, writeFuelCookie } from "@/lib/fuel-preference";
 
 interface Props {
   defaultFuel: string;
@@ -37,16 +38,19 @@ interface DeepLinkStation { country: string | null; externalId: string | null; l
  * server. Consumed by lazy `useState` initializers so no setState-in-effect is
  * needed — keeping this purely additive to the normal (no-params) flow.
  */
-function readDeepLink(): { fuel: FuelType | null; route: InitialRoute | null; station: DeepLinkStation | null } {
-  const empty = { fuel: null, route: null, station: null };
-  if (typeof window === "undefined") return empty;
+function readDeepLink(): { fuel: FuelType | null; bareFuel: FuelType | null; route: InitialRoute | null; station: DeepLinkStation | null } {
+  if (typeof window === "undefined") return { fuel: null, bareFuel: null, route: null, station: null };
   const sp = new URLSearchParams(window.location.search);
   const fuel = deepLinkFuel(sp);
+  // A bare ?fuel= (no route, no station) is the visitor's own choice, usually
+  // handed over by the iOS app: open on it and remember it.
+  const empty = { fuel: null, bareFuel: readBareFuel(sp), route: null, station: null };
 
   const route = parseRouteParams(sp);
   if (route) {
     return {
       fuel,
+      bareFuel: null,
       route: {
         from: [route.from.lng, route.from.lat],
         to: [route.to.lng, route.to.lat],
@@ -57,7 +61,7 @@ function readDeepLink(): { fuel: FuelType | null; route: InitialRoute | null; st
   }
 
   const station = parseStationParams(sp);
-  if (station && station.lat != null && station.lng != null) return { fuel, route: null, station };
+  if (station && station.lat != null && station.lng != null) return { fuel, bareFuel: null, route: null, station };
   return empty;
 }
 
@@ -83,7 +87,7 @@ function overlayBox(el: HTMLElement): ScreenBox {
 export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale }: Props) {
   // One-shot deep-link parse (mount only). Lazy initializer keeps it off re-renders.
   const [deepLink] = useState(readDeepLink);
-  const [selectedFuel, setSelectedFuel] = useState<FuelType>(deepLink.fuel ?? (defaultFuel as FuelType));
+  const [selectedFuel, setSelectedFuel] = useState<FuelType>(deepLink.fuel ?? deepLink.bareFuel ?? (defaultFuel as FuelType));
   const [corridorKm, setCorridorKm] = useState(5);
   const [routeState, setRouteState] = useState<RouteState | null>(null);
   // Station-leg routes: when a user clicks a station, we recalculate the route
@@ -220,8 +224,16 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
     }
   }, [handleGeolocate, hasDeepLink]);
 
+  // A bare ?fuel= is an explicit choice: remember it. It came from the app (or a
+  // link the visitor typed), so it is not echoed back to the app.
+  useEffect(() => {
+    if (deepLink.bareFuel) writeFuelCookie(deepLink.bareFuel);
+  }, [deepLink.bareFuel]);
+
   const handleFuelChange = useCallback((fuel: FuelType) => {
     setSelectedFuel(fuel);
+    writeFuelCookie(fuel);
+    notifyNativeFuel(fuel);
     setMaxPrice(null);
     setMaxDetour(5);
   }, []);
