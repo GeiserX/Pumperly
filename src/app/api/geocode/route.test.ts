@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("next/server", () => ({
   NextResponse: {
@@ -23,6 +23,10 @@ function makeRequest(params: Record<string, string>) {
 describe("geocode API", () => {
   beforeEach(() => {
     vi.resetModules();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PHOTON_URL;
   });
 
   it("returns geocode results for valid query", async () => {
@@ -81,5 +85,26 @@ describe("geocode API", () => {
 
     expect(response.status).toBe(502);
     expect(response.data.error).toBe("Geocoding failed");
+    expect(response.headers["Cache-Control"]).toBeUndefined();
+  });
+
+  // End to end through the real Photon client: a search server that is down
+  // or serves an HTML error page must give an uncached 502, never a cached
+  // empty list that reads as "No results found" for minutes.
+  it.each([
+    ["a 503", { ok: false, status: 503, json: async () => ({}) }],
+    ["an HTML page", { ok: true, status: 200, json: async () => { throw new SyntaxError("Unexpected token <"); } }],
+  ])("returns an uncached 502 when Photon answers %s", async (_label, upstream) => {
+    process.env.PHOTON_URL = "http://photon.test";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstream));
+    const actual = await vi.importActual<typeof import("@/lib/photon")>("@/lib/photon");
+    const { geocode } = await import("@/lib/photon");
+    vi.mocked(geocode).mockImplementation(actual.geocode);
+
+    const { GET } = await import("./route");
+    const response = (await GET(makeRequest({ q: "Town A" }) as any)) as any;
+
+    expect(response.status).toBe(502);
+    expect(response.headers["Cache-Control"]).toBeUndefined();
   });
 });

@@ -179,15 +179,12 @@ export async function geocode(
   const res = await fetch(`${PHOTON_URL}/api?${params}`, {
     signal: AbortSignal.timeout(5000),
   });
-  if (!res.ok) return [];
+  // A broken server is an error, not an empty answer: the route turns it into
+  // an uncached 502, so the app says the search failed instead of "No results".
+  if (!res.ok) throw new Error(`Photon answered ${res.status}`);
 
-  let data: unknown;
-  try {
-    data = await res.json();
-  } catch {
-    // Non-JSON body (e.g. HTML error page) — treat as no results
-    return [];
-  }
+  // A non-JSON body (e.g. an HTML error page) rejects here for the same reason.
+  const data: unknown = await res.json();
 
   const features = (data as { features?: unknown } | null)?.features;
   if (!Array.isArray(features)) return [];
