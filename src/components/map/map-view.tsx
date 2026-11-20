@@ -380,6 +380,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       {!showCountryMarkers && (
         <PriceFilter
           stations={displayStations}
+          drawnStations={filteredStations}
           maxPrice={maxPrice}
           onMaxPriceChange={onMaxPriceChange}
           legendMin={legendRange.min}
