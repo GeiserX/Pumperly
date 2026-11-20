@@ -8,6 +8,8 @@ import { useCurrency } from "@/lib/currency";
 
 interface PriceFilterProps {
   stations: StationsGeoJSONCollection;
+  /** The stations the map actually draws (after the max-price and detour filters). The legend labels name only these. */
+  drawnStations?: StationsGeoJSONCollection;
   maxPrice: number | null;
   onMaxPriceChange: (price: number | null) => void;
   /** P5/P95 percentile range from station-layer (for the color legend) */
@@ -15,8 +17,23 @@ interface PriceFilterProps {
   legendMax: number | null;
 }
 
+function priceRange(collection: StationsGeoJSONCollection, cap: number | null) {
+  let min: number | null = null;
+  let max: number | null = null;
+  let pricedCount = 0;
+  for (const f of collection.features) {
+    const p = f.properties.price;
+    if (p == null || (cap != null && p > cap)) continue;
+    pricedCount++;
+    if (min == null || p < min) min = p;
+    if (max == null || p > max) max = p;
+  }
+  return { min, max, pricedCount };
+}
+
 export function PriceFilter({
   stations,
+  drawnStations,
   maxPrice,
   onMaxPriceChange,
   legendMin,
@@ -34,15 +51,15 @@ export function PriceFilter({
     }
   }, [currency, onMaxPriceChange]);
 
-  const { min, max, pricedCount } = useMemo(() => {
-    const prices: number[] = [];
-    for (const f of stations.features) {
-      if (f.properties.price != null) prices.push(f.properties.price);
-    }
-    if (prices.length === 0) return { min: null, max: null, pricedCount: 0 };
-    prices.sort((a, b) => a - b);
-    return { min: prices[0], max: prices[prices.length - 1], pricedCount: prices.length };
-  }, [stations]);
+  const { min, max, pricedCount } = useMemo(() => priceRange(stations, null), [stations]);
+
+  // The ends of the legend name only stations that are drawn: without the
+  // stations hidden by the max-price filter (and, on a route, by the detour
+  // filter, which only drawnStations reflects).
+  const drawn = useMemo(
+    () => priceRange(drawnStations ?? stations, maxPrice),
+    [drawnStations, stations, maxPrice],
+  );
 
   // Build gradient string for the color legend
   const gradient = useMemo(() => {
@@ -59,10 +76,19 @@ export function PriceFilter({
 
   const factor = Math.pow(10, decimals);
   const step = 1 / factor;
-  const sliderMin = hasFilter ? Math.floor(min * factor) / factor : 0;
-  const sliderMax = hasFilter ? Math.ceil(max * factor) / factor : 1;
+  // The 1e-9 nudge stops float error from moving an exact price a step out
+  // (1.005 * 1000 is 1004.9999999999999, so a bare floor would give 1.004).
+  const roundDown = (n: number) => Math.floor(n * factor + 1e-9) / factor;
+  const roundUp = (n: number) => Math.ceil(n * factor - 1e-9) / factor;
+  const sliderMin = hasFilter ? roundDown(min) : 0;
+  const sliderMax = hasFilter ? roundUp(max) : 1;
   const currentValue = maxPrice ?? sliderMax;
   const isActive = hasFilter && maxPrice != null && maxPrice < sliderMax;
+  // The colours spread over P5..P95, but the labels show the real cheapest and
+  // dearest drawn prices, so no dot on the map lies outside the labels. With no
+  // filter on, they are the slider's ends: the card shows one range, not two.
+  const legendLow = drawn.min != null ? roundDown(drawn.min) : (legendMin ?? 0);
+  const legendHigh = drawn.max != null ? roundUp(drawn.max) : (legendMax ?? 0);
 
   const filteredCount = isActive
     ? stations.features.filter(
@@ -80,8 +106,8 @@ export function PriceFilter({
             style={{ background: `linear-gradient(to right, ${gradient})` }}
           />
           <div className="mt-1 flex justify-between text-[10px] font-semibold tabular-nums text-gray-600 dark:text-gray-400">
-            <span>{formatPrice(legendMin)} {currencySymbol}</span>
-            <span>{formatPrice(legendMax)} {currencySymbol}</span>
+            <span>{formatPrice(legendLow)} {currencySymbol}</span>
+            <span>{formatPrice(legendHigh)} {currencySymbol}</span>
           </div>
         </div>
       )}
@@ -107,11 +133,13 @@ export function PriceFilter({
             max={sliderMax}
             step={step}
             value={currentValue}
+            aria-label={t("filter.maxPrice")}
+            aria-valuetext={`${formatPrice(currentValue)} ${currencySymbol}`}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
               onMaxPriceChange(v >= sliderMax ? null : v);
             }}
-            className="mt-1 h-1.5 w-full cursor-pointer touch-none appearance-none rounded-full bg-gray-200 accent-emerald-500 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
+            className="h-6 w-full cursor-pointer touch-none appearance-none bg-transparent accent-emerald-500 [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-gray-200 [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-gray-200 [&::-webkit-slider-thumb]:-mt-[7px] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-sm sm:[&::-webkit-slider-thumb]:-mt-1 sm:[&::-webkit-slider-thumb]:h-3.5 sm:[&::-webkit-slider-thumb]:w-3.5"
           />
 
           <div className="mt-0.5 flex items-center justify-between">

@@ -382,6 +382,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         <div data-map-overlay className="contents">
           <PriceFilter
             stations={displayStations}
+            drawnStations={filteredStations}
             maxPrice={maxPrice}
             onMaxPriceChange={onMaxPriceChange}
             legendMin={legendRange.min}
