@@ -301,6 +301,9 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
       // Abort any in-flight bbox fetch so its late completion can't mutate stationsError
       if (bboxAbortRef.current) { bboxAbortRef.current.abort(); bboxAbortRef.current = null; }
       if (loadingCueRef.current) { clearTimeout(loadingCueRef.current); loadingCueRef.current = null; }
+      // Drop a no-route error or "none here" note, so clearing the route later
+      // does not flash it again before the new fetch answers.
+      setBboxStatus("idle");
       // Clear stale corridor data immediately so the previous route's stations
       // don't linger on the map while the new fetch is in-flight
       setCorridorPerRoute([]);
@@ -409,10 +412,17 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
           </div>
         </Marker>
       ))}
-      {!routes && !showCountryMarkers && <MapStatus status={bboxStatus} onRetry={handleRetry} />}
       {!showCountryMarkers && (
         // Marked so the first-locate fit keeps stations clear of the legend card.
-        <div data-map-overlay className="contents">
+        // The status card stacks above the legend at the bottom of the map: at
+        // the top the search card, its nearby list and its toasts would cover
+        // it. The legend positions itself absolutely; inside this column it
+        // must flow, hence the important `static` on the children.
+        <div
+          data-map-overlay
+          className="pointer-events-none absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-3 z-10 flex max-w-[calc(100%-4rem)] flex-col items-start gap-2 [&>*]:pointer-events-auto [&>*]:static!"
+        >
+          {!routes && <MapStatus status={bboxStatus} onRetry={handleRetry} />}
           <PriceFilter
             stations={displayStations}
             drawnStations={filteredStations}
