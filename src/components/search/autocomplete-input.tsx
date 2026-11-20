@@ -105,7 +105,8 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
           // Close the on-screen keyboard, the same as picking from the list.
           internalInputRef.current?.blur();
         }
-        return data[0];
+        // A late answer for text the person has since changed must not win.
+        return reqId === requestIdRef.current ? data[0] : null;
       }
       if (reqId === requestIdRef.current) {
         setResults(data);
@@ -122,13 +123,23 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     },
   }), [doGeocode]);
 
+  // Under 2 characters there is nothing to search: drop any pending or
+  // in-flight search so its late answer cannot reopen the list.
+  const resetShort = useCallback(() => {
+    if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+    requestIdRef.current++;
+    setResults([]);
+    setIsOpen(false);
+    setNoResults(false);
+    setFailed(false);
+    setSearching(false);
+  }, []);
+
   const fetchResults = useCallback(
     async (query: string) => {
       setPickHint(false);
       if (query.length < 2) {
-        setResults([]);
-        setNoResults(false);
-        setFailed(false);
+        resetShort();
         return;
       }
 
@@ -148,8 +159,13 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
       setIsOpen(data.length > 0);
       setActiveIndex(-1);
     },
-    [doGeocode],
+    [doGeocode, resetShort],
   );
+
+  // The parent can shorten the text without a keystroke (the × button clears it).
+  useEffect(() => {
+    if (value.length < 2) resetShort();
+  }, [value, resetShort]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +174,8 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
       onClearCoordinates?.();
       setPickHint(false);
 
+      // New text makes every older search stale, a Return search included.
+      requestIdRef.current++;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => fetchResults(val), 300);
     },

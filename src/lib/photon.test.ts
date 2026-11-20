@@ -132,16 +132,17 @@ describe("photon geocode", () => {
     expect(url).toContain("limit=5");
   });
 
-  it("returns empty array on non-ok response", async () => {
+  // A broken search server must not read as "no such place": the route turns
+  // a rejection into an uncached 502, so the app can say the search failed.
+  it.each([500, 503])("rejects on a %s answer from Photon", async (status) => {
     const { geocode } = await import("./photon");
 
     vi.mocked(fetch).mockResolvedValue({
       ok: false,
-      status: 500,
+      status,
     } as Response);
 
-    const results = await geocode("test");
-    expect(results).toEqual([]);
+    await expect(geocode("test")).rejects.toThrow(String(status));
   });
 
   it("uses query as fallback name when property name is missing", async () => {
@@ -165,7 +166,7 @@ describe("photon geocode", () => {
     expect(results[0].name).toBe("Unknown Place");
   });
 
-  it("returns empty array when response body is not valid JSON", async () => {
+  it("rejects when a 200 answer is not JSON (an HTML error page)", async () => {
     const { geocode } = await import("./photon");
 
     vi.mocked(fetch).mockResolvedValue({
@@ -175,8 +176,18 @@ describe("photon geocode", () => {
       },
     } as unknown as Response);
 
-    const results = await geocode("Madrid");
-    expect(results).toEqual([]);
+    await expect(geocode("Madrid")).rejects.toThrow();
+  });
+
+  it("returns empty array for a valid answer with no features", async () => {
+    const { geocode } = await import("./photon");
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ type: "FeatureCollection", features: [] }),
+    } as Response);
+
+    await expect(geocode("Qqqq")).resolves.toEqual([]);
   });
 
   it("returns empty array when features is not an array", async () => {

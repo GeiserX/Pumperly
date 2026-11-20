@@ -339,6 +339,77 @@ describe("AutocompleteInput — Return while a search is still running", () => {
   });
 });
 
+// Like SearchPanel: the parent owns the text, its × button clears it, and its
+// Return handler calls the imperative geocode() of the same input.
+function ClearHarness({ onGeocoded }: { onGeocoded?: (r: PhotonResult | null) => void }) {
+  const [value, setValue] = useState("");
+  const ref = createRef<AutocompleteRef>();
+  return (
+    <>
+      <AutocompleteInput ref={ref} placeholder="dest" value={value} onChange={setValue} onSelect={() => {}} />
+      <button type="button" onClick={() => setValue("")}>clear</button>
+      <button type="button" onClick={async () => onGeocoded?.((await ref.current?.geocode("Town A")) ?? null)}>
+        go
+      </button>
+    </>
+  );
+}
+
+describe("AutocompleteInput — late answers cannot jump ahead", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("a Return search answers null when the person typed something else before it came back", async () => {
+    const { fn, calls } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    const onGeocoded = vi.fn();
+    render(<ClearHarness onGeocoded={onGeocoded} />);
+
+    await user.click(screen.getByRole("button", { name: "go" }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    // The person retypes before the slow answer for the old text arrives.
+    await user.type(screen.getByPlaceholderText("dest"), "Town B");
+    await act(async () => { calls[0].resolve(okResponse([place("Town A", null, "Region A")])); });
+
+    await waitFor(() => expect(onGeocoded).toHaveBeenCalledTimes(1));
+    expect(onGeocoded).toHaveBeenCalledWith(null);
+  });
+
+  it("keeps the list closed when the field is cleared while a search is in flight", async () => {
+    const { fn, calls } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    render(<ClearHarness />);
+    const input = screen.getByPlaceholderText("dest");
+
+    await user.type(input, "Tow");
+    await waitFor(() => expect(calls).toHaveLength(1));
+    await user.click(screen.getByRole("button", { name: "clear" }));
+    expect(input).toHaveValue("");
+    await act(async () => { calls[0].resolve(okResponse([place("Town A", null, "Region A")])); });
+
+    expect(screen.queryByText("Town A")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+    expect(screen.queryByText("search.searching")).not.toBeInTheDocument();
+  });
+
+  it("does not start the pending search when the field is cleared before it runs", async () => {
+    const { fn } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    render(<ClearHarness />);
+
+    await user.type(screen.getByPlaceholderText("dest"), "Tow");
+    await user.click(screen.getByRole("button", { name: "clear" }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
+
+    expect(fn).not.toHaveBeenCalled();
+  });
+});
+
 describe("AutocompleteInput — no iOS zoom on focus", () => {
   // iOS zooms the page into a focused field under 16 px; a landscape phone is
   // wider than the `sm` breakpoint, so the field must stay text-base everywhere.
