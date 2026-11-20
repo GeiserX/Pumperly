@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createRequire } from "node:module";
+
+// pg's own parser, used to check what the driver will actually send
+const ConnectionParameters = createRequire(import.meta.url)("pg/lib/connection-parameters");
 
 // Mock PrismaPg adapter — must be a real constructor (used with `new`)
+const pgAdapterOpts = vi.hoisted(() => [] as any[]);
 vi.mock("@prisma/adapter-pg", () => {
   return {
     PrismaPg: class PrismaPg {
-      constructor(_opts: any) {}
+      constructor(opts: any) {
+        pgAdapterOpts.push(opts);
+      }
     },
   };
 });
@@ -43,6 +50,48 @@ describe("db module", () => {
     const { prisma } = await import("./db");
     const { PrismaClient } = await import("@/generated/prisma/client");
     expect(prisma).toBeInstanceOf(PrismaClient);
+  });
+
+  it("pins the database session to UTC so timestamptz values are not shifted", async () => {
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    expect(pgAdapterOpts).toHaveLength(1);
+    expect(pgAdapterOpts[0].connectionString).toBe("postgresql://test:test@localhost:5432/test");
+    expect(pgAdapterOpts[0].options).toContain("TimeZone=UTC");
+  });
+
+  it("keeps startup options from DATABASE_URL and still pins the session to UTC", async () => {
+    process.env.DATABASE_URL =
+      "postgresql://test:test@localhost:5432/test?options=-c%20statement_timeout%3D5000&sslmode=disable";
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    expect(pgAdapterOpts).toHaveLength(1);
+    // pg lets options in the URL replace the options passed beside it,
+    // so check the config pg derives, not only the constructor arguments
+    const effective = new ConnectionParameters(pgAdapterOpts[0]);
+    expect(effective.options).toContain("-c statement_timeout=5000");
+    expect(effective.options).toContain("-c TimeZone=UTC");
+    expect(effective.database).toBe("test");
+    expect(effective.host).toBe("localhost");
+  });
+
+  it("still pins the session to UTC when DATABASE_URL has an empty options parameter", async () => {
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test?options=&sslmode=disable";
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    const effective = new ConnectionParameters(pgAdapterOpts[0]);
+    expect(effective.options).toBe("-c TimeZone=UTC");
+    expect(effective.database).toBe("test");
+  });
+
+  it("keeps the options pg would use from repeated URL parameters and pins UTC", async () => {
+    process.env.DATABASE_URL =
+      "postgresql://test:test@localhost:5432/test?options=-c%20work_mem%3D4MB&options=-c%20statement_timeout%3D5000";
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    const effective = new ConnectionParameters(pgAdapterOpts[0]);
+    // pg keeps the last options parameter of the URL
+    expect(effective.options).toBe("-c statement_timeout=5000 -c TimeZone=UTC");
   });
 
   it("caches prisma on globalThis in non-production", async () => {

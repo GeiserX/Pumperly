@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PhotonResult } from "@/lib/photon";
 import type { Route } from "@/components/map/route-layer";
-import type { StationsGeoJSONCollection } from "@/types/station";
+import type { StationGeoJSON, StationsGeoJSONCollection } from "@/types/station";
 import { AutocompleteInput, type AutocompleteRef } from "./autocomplete-input";
 import { RouteAlternatives } from "./route-alternatives";
 import { StationResults } from "./station-results";
+import { NearbyCheapest } from "./nearby-cheapest";
 import { RefuelPlanner, DEFAULT_PLANNER_SETTINGS, type PlannedStopMarker } from "./refuel-planner";
 import { isPlannableFuel } from "@/lib/vehicle-profile";
 import type { FuelType } from "@/types/fuel";
@@ -68,6 +69,8 @@ interface SearchPanelProps {
   userLocation?: [number, number] | null;
   /** Refuel planner's recommended stops, for the numbered map markers. */
   onPlannedStopsChange?: (stops: PlannedStopMarker[]) => void;
+  /** The cheapest stations near the user, once the no-route list loads. */
+  onNearbyLoaded?: (stations: StationGeoJSON[]) => void;
 }
 
 interface Location {
@@ -112,6 +115,7 @@ export function SearchPanel({
   selectedFuel,
   userLocation,
   onPlannedStopsChange,
+  onNearbyLoaded,
 }: SearchPanelProps) {
   const { t } = useI18n();
   const isMobile = useMediaQuery("(max-width: 639px)");
@@ -856,7 +860,7 @@ export function SearchPanel({
   );
 
   const desktopPanel = (
-    <div className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
+    <div data-map-overlay className="absolute left-2 right-2 top-2 z-10 flex max-h-[calc(100dvh-4rem)] flex-col sm:left-3 sm:right-auto sm:top-3 sm:w-[340px]">
       {/* Search card */}
       <div className="shrink-0 rounded-2xl border border-black/[0.06] bg-white/90 p-1.5 shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]">
         {/* Origin + waypoints — destination-first: hidden on open, slides in
@@ -1079,6 +1083,19 @@ export function SearchPanel({
         <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/95 px-4 py-2.5 text-center text-xs font-medium text-amber-700 shadow-lg backdrop-blur-md dark:border-amber-500/30 dark:bg-amber-950/70 dark:text-amber-300">
           {geoErrorMsg}
         </div>
+      )}
+
+      {/* No route yet: the cheapest stations around the user. Shown while the
+          destination box is empty or barely typed (its suggestions take over
+          from 2 characters), and hidden while a station card is open so the
+          card is not covered on a phone. */}
+      {!routes && phase !== "route" && userLocation && selectedFuel && destText.trim().length < 2 && selectedStationId == null && (
+        <NearbyCheapest
+          userLocation={userLocation}
+          selectedFuel={selectedFuel as FuelType}
+          onFlyTo={onFlyTo}
+          onLoaded={onNearbyLoaded}
+        />
       )}
 
       {/* Route content — desktop stacks it in the side card; mobile renders it
