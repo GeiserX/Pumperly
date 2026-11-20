@@ -86,8 +86,22 @@ export const AutocompleteInput = forwardRef<AutocompleteRef, AutocompleteInputPr
     geocode: async (query: string) => {
       if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
       const reqId = ++requestIdRef.current;
+      // The bump above makes a pending typed search drop its answer, including
+      // its own setSearching(false), so clear the cue here.
+      setSearching(false);
       const { results: data, failed: didFail } = await doGeocode(query);
-      if (data[0] && matchesQuery(data[0], query)) return data[0];
+      if (data[0] && matchesQuery(data[0], query)) {
+        if (reqId === requestIdRef.current) {
+          setIsOpen(false);
+          setNoResults(false);
+          setFailed(false);
+          setPickHint(false);
+          setResults([]);
+          // Close the on-screen keyboard, the same as picking from the list.
+          internalInputRef.current?.blur();
+        }
+        return data[0];
+      }
       if (reqId === requestIdRef.current) {
         setResults(data);
         setFailed(didFail);

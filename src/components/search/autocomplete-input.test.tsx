@@ -250,3 +250,78 @@ describe("AutocompleteInput — keyboard closes after a pick", () => {
     expect(document.activeElement).not.toBe(input);
   });
 });
+
+// Mirrors SearchPanel: Return with the list closed runs the parent's handler,
+// which calls the imperative geocode() of the same input.
+function EnterHarness({ onMatch }: { onMatch?: (r: PhotonResult) => void }) {
+  const [value, setValue] = useState("");
+  const ref = createRef<AutocompleteRef>();
+  return (
+    <AutocompleteInput
+      ref={ref}
+      placeholder="dest"
+      value={value}
+      onChange={setValue}
+      onSelect={() => {}}
+      onEnter={async () => {
+        const r = await ref.current?.geocode(value);
+        if (r) onMatch?.(r);
+      }}
+    />
+  );
+}
+
+function deferredFetch() {
+  const calls: { resolve: (v: unknown) => void; reject: (e: unknown) => void }[] = [];
+  const fn = vi.fn(() => new Promise((resolve, reject) => { calls.push({ resolve, reject }); }));
+  return { fn, calls };
+}
+
+describe("AutocompleteInput — Return while a search is still running", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("clears the searching cue and closes the keyboard when Return finds the place", async () => {
+    const { fn, calls } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    const onMatch = vi.fn();
+    render(<EnterHarness onMatch={onMatch} />);
+    const input = screen.getByPlaceholderText("dest");
+    await user.type(input, "Town A");
+    expect(await screen.findByText("search.searching", {}, { timeout: 2000 })).toBeInTheDocument();
+
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(calls).toHaveLength(2));
+    await act(async () => {
+      calls[1].resolve(okResponse([place("Town A", null, "Region A")]));
+      calls[0].resolve(okResponse([place("Town A", null, "Region A")]));
+    });
+
+    await waitFor(() => expect(onMatch).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("search.searching")).not.toBeInTheDocument();
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  it("shows the failure with Retry when the Return search fails", async () => {
+    const { fn, calls } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    render(<EnterHarness />);
+    await user.type(screen.getByPlaceholderText("dest"), "Town A");
+    expect(await screen.findByText("search.searching", {}, { timeout: 2000 })).toBeInTheDocument();
+
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(calls).toHaveLength(2));
+    await act(async () => {
+      calls[1].reject(new TypeError("Failed to fetch"));
+      calls[0].reject(new TypeError("Failed to fetch"));
+    });
+
+    expect(await screen.findByText("search.failed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "search.retry" })).toBeInTheDocument();
+    expect(screen.queryByText("search.searching")).not.toBeInTheDocument();
+  });
+});
