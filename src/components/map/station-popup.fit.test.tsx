@@ -18,7 +18,9 @@ const map = {
 };
 let container: HTMLDivElement;
 const popupElement = document.createElement("div");
-popupElement.getBoundingClientRect = () => ({ top: 300, bottom: 500, left: 140, right: 420, width: 280, height: 200 }) as DOMRect;
+const onScreen = { top: 300, bottom: 500, left: 140, right: 420, width: 280, height: 200 };
+let popupBox = onScreen;
+popupElement.getBoundingClientRect = () => popupBox as DOMRect;
 const fakePopup = { _map: map, getElement: () => popupElement };
 
 function moveEnd(data: Record<string, unknown> = {}) {
@@ -74,6 +76,7 @@ function runFrames() {
 beforeEach(() => {
   handlers.clear();
   map.moving = false;
+  popupBox = onScreen;
   vi.clearAllMocks();
   frames = new Map();
   nextFrame = 0;
@@ -135,6 +138,18 @@ describe("StationPopup map fit", () => {
     map.moving = false;
     moveEnd({ originalEvent: new Event("touchend") });
     moveEnd({ popupFit: true });
+    runFrames();
+    expect(map.panBy).not.toHaveBeenCalled();
+  });
+
+  it("does not drag the map back once the station has left the map", () => {
+    // A cluster tap, a country marker or a place search moved the map away
+    // while the card stayed open: the card is now far off screen.
+    render(<StationPopup station={station} onClose={() => {}} />);
+    runFrames();
+    map.panBy.mockClear();
+    popupBox = { top: 300, bottom: 500, left: 2140, right: 2420, width: 280, height: 200 };
+    moveEnd();
     runFrames();
     expect(map.panBy).not.toHaveBeenCalled();
   });

@@ -75,11 +75,12 @@ export function StationPopup({ station, distanceKm, onClose }: StationPopupProps
         // cut-short fly) would be cancelled by a pan; its own moveend refits.
         if (map.isMoving()) return;
         const container = map.getContainer();
-        const [dx, dy] = panToFit(
-          popup.getElement().getBoundingClientRect(),
-          container.getBoundingClientRect(),
-          overlayRects(container.parentElement ?? container),
-        );
+        const box = popup.getElement().getBoundingClientRect();
+        const view = container.getBoundingClientRect();
+        // The map went elsewhere with the card still open (a cluster or
+        // country tap, a place search): don't drag it back to the station.
+        if (box.right <= view.left || box.left >= view.right || box.bottom <= view.top || box.top >= view.bottom) return;
+        const [dx, dy] = panToFit(box, view, overlayRects(container.parentElement ?? container));
         if (dx !== 0 || dy !== 0) map.panBy([-dx, -dy], { duration: 300 }, { popupFit: true });
       });
     };
