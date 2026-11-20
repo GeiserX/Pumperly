@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { StationGeoJSON } from "@/types/station";
 
@@ -140,5 +140,40 @@ describe("StationResults", () => {
 
     await user.click(screen.getByText("stations.basisAny"));
     expect(onDetourBasisChange).toHaveBeenCalledWith("any");
+  });
+
+  it("labels each row's difference from the average with its unit", () => {
+    renderResults({ avgPrice: 1.555 });
+    // Repsol 1.499 is 0.056 under the 1.555 average; Cepsa 1.612 is 0.057 over.
+    const cheaper = screen.getByText("Repsol").closest("button")!;
+    expect(cheaper).toHaveTextContent("\u22120.056 €/L stations.vsAvg");
+    const dearer = screen.getByText("Cepsa").closest("button")!;
+    expect(dearer).toHaveTextContent("+0.057 €/L stations.vsAvg");
+  });
+
+  it("names the detour and radius sliders and gives them a 24 px hit area", () => {
+    renderResults();
+    const detour = screen.getByRole("slider", { name: "stations.detourMax" });
+    const radius = screen.getByRole("slider", { name: "stations.corridor" });
+    expect(detour).toHaveClass("h-6");
+    expect(radius).toHaveClass("h-6");
+  });
+
+  it("makes the sort and basis chips at least 32 px tall", () => {
+    renderResults();
+    for (const label of ["stations.sortPrice", "stations.sortDetour", "stations.sortKm", "stations.basisRoute", "stations.basisAny"]) {
+      expect(screen.getByText(label)).toHaveClass("min-h-8");
+    }
+  });
+
+  it("puts the savings figure on its own line, not beside km and detour", () => {
+    renderResults({ avgPrice: 1.555 });
+    const row = screen.getByText("Repsol").closest("button")!;
+    const savings = within(row).getByText(/stations\.vsAvg/, { selector: "div" });
+    // Its own block under the price, so the right column stays narrow and
+    // the station name keeps its room.
+    expect(savings).not.toHaveTextContent("km");
+    expect(savings.parentElement).toHaveClass("shrink-0");
+    expect(within(row).getByText(/^km \d+$/).parentElement).not.toHaveTextContent("stations.vsAvg");
   });
 });

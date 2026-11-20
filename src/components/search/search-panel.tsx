@@ -14,6 +14,7 @@ import type { FuelType } from "@/types/fuel";
 import { BottomSheet, type SheetSnap } from "./bottom-sheet";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useI18n } from "@/lib/i18n";
+import { useCurrency, CURRENCIES } from "@/lib/currency";
 import { projectOntoRoute } from "@/lib/route-geometry";
 import { formatDistance, formatDuration } from "@/lib/format";
 import { shareOrCopy, copyToClipboard } from "@/lib/share";
@@ -118,6 +119,7 @@ export function SearchPanel({
   onNearbyLoaded,
 }: SearchPanelProps) {
   const { t } = useI18n();
+  const { formatPrice } = useCurrency();
   const isMobile = useMediaQuery("(max-width: 639px)");
   const [phase, setPhase] = useState<Phase>("dest");
   const [collapsed, setCollapsed] = useState(false);
@@ -176,6 +178,14 @@ export function SearchPanel({
     },
     [onRoute],
   );
+
+  // Retry after a failed route or station load. A new route also refetches
+  // the corridor stations. The station-leg preview is not part of the route.
+  const retryRoute = useCallback(() => {
+    if (!origin || !destination) return;
+    setPhase("route");
+    calculateRoute(origin, destination, waypoints.filter((wp) => !wp.isStationLeg));
+  }, [origin, destination, waypoints, calculateRoute]);
 
   // "My location" handler — triggers geolocation and sets it as the origin.
   // In the destination-first flow, if a destination is already set we route
@@ -718,6 +728,22 @@ export function SearchPanel({
     return { avgPrice: avg, cheapestId: cheapest, shortestDetourId: shortestDetour, balancedId: balanced };
   }, [stationList]);
 
+  // Offline is the likely cause of a failed fetch; say so instead of a generic error.
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+
+  // Sheet summary: the cheapest listed station, so it shows at the sheet's
+  // opening height. The station count lives only in the list header.
+  const sheetSummary = (() => {
+    if (stationsLoading) return t("stations.loading");
+    if (stationsError && allCorridorStations.length === 0) return t("stations.loadError");
+    const p = stationList.find((s) => s.properties.id === cheapestId)?.properties;
+    if (!p || p.price == null) return null;
+    const sc = CURRENCIES.find((c) => c.code === p.currency);
+    const dec = p.originalCurrency ? undefined : sc?.decimals;
+    const price = `${p.originalCurrency ? "≈ " : ""}${dec != null ? p.price.toFixed(dec) : formatPrice(p.price)} ${sc?.symbol ?? p.currency}`;
+    return t("stations.cheapestSummary").replace("{name}", p.brand || p.name).replace("{price}", price);
+  })();
+
   // Route content (alternatives + share + station list). Shared verbatim by the
   // desktop side-card layout and the mobile bottom sheet. `collapsed` is a
   // desktop-only control (its toggle is gated `!isMobile`), so on mobile we
@@ -791,7 +817,15 @@ export function SearchPanel({
       {/* Empty state when corridor loading finishes with zero stations */}
       {phase === "route" && !stationsLoading && allCorridorStations.length === 0 && routes && !routeCollapsed && (
         <div className="mt-2 rounded-2xl border border-black/[0.06] bg-white/90 px-4 py-4 text-center shadow-xl shadow-black/[0.08] ring-1 ring-black/[0.03] backdrop-blur-xl dark:border-white/[0.07] dark:bg-gray-900/90 dark:shadow-black/40 dark:ring-white/[0.04]">
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t(stationsError ? "stations.loadError" : "stations.noStations")}</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t(stationsError ? (offline ? "route.offline" : "stations.loadError") : "stations.noStations")}</span>
+          {stationsError && origin && destination && (
+            <button
+              onClick={retryRoute}
+              className="mx-auto mt-2 block min-h-8 rounded-full bg-gray-800 px-4 text-xs font-semibold text-white transition-colors hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
+            >
+              {t("common.retry")}
+            </button>
+          )}
         </div>
       )}
 
@@ -1076,7 +1110,15 @@ export function SearchPanel({
       {/* Route error — persistent when no routes */}
       {routeError && !routes && (
         <div className="mt-2 rounded-xl border border-red-200 bg-red-50/95 px-4 py-2.5 text-center text-xs font-medium text-red-600 shadow-lg backdrop-blur-md dark:border-red-500/30 dark:bg-red-950/70 dark:text-red-300">
-          {t(routeError)}
+          {t(offline && routeError === "route.error" ? "route.offline" : routeError)}
+          {routeError !== "route.noRoute" && origin && destination && (
+            <button
+              onClick={retryRoute}
+              className="mx-auto mt-2 block min-h-8 rounded-full bg-red-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
+            >
+              {t("common.retry")}
+            </button>
+          )}
         </div>
       )}
       {/* Station-leg error — transient amber toast, auto-clears */}
@@ -1125,14 +1167,19 @@ export function SearchPanel({
           snap={sheetSnap}
           onSnapChange={setSheetSnap}
           summary={
-            <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
-              <div className="h-2 w-2 rounded-full bg-blue-500 ring-2 ring-blue-500/25" />
-              <span>{formatDistance(displayRoute!.distance)}</span>
-              <span className="text-gray-400 dark:text-gray-500">·</span>
-              <span>{formatDuration(displayRoute!.duration)}</span>
-              <span className="ml-auto text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                {t("stations.title")} ({allCorridorStations.length})
-              </span>
+            <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-blue-500 ring-2 ring-blue-500/25" />
+                <span>{formatDistance(displayRoute!.distance)}</span>
+                <span className="text-gray-400 dark:text-gray-500">·</span>
+                <span>{formatDuration(displayRoute!.duration)}</span>
+              </div>
+              {/* Own line under the distance, so the name and price both fit on a narrow phone. */}
+              {sheetSummary && (
+                <p className="mt-0.5 truncate pl-4 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                  {sheetSummary}
+                </p>
+              )}
             </div>
           }
         >
