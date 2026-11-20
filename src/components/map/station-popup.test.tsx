@@ -59,6 +59,16 @@ describe("StationPopup", () => {
     expect(screen.getByText("Madrid")).toBeInTheDocument();
   });
 
+  it("shows how far the station is when the distance is known", () => {
+    render(<StationPopup station={makeStation()} distanceKm={1.3} onClose={() => {}} />);
+    expect(screen.getByText("1.3 km")).toBeInTheDocument();
+  });
+
+  it("shows no distance when the user's position is unknown", () => {
+    render(<StationPopup station={makeStation()} onClose={() => {}} />);
+    expect(screen.queryByText(/\d km|\d m$/)).not.toBeInTheDocument();
+  });
+
   it("renders the price with native EUR decimals and unit", () => {
     render(<StationPopup station={makeStation()} onClose={() => {}} />);
     expect(screen.getByText("1.589")).toBeInTheDocument();

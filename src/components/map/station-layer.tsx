@@ -8,6 +8,7 @@ import type { ExpressionSpecification, GeoJSONSource, MapGeoJSONFeature, MapMous
 import type { StationsGeoJSONCollection } from "@/types/station";
 import { StationPopup } from "./station-popup";
 import { PRICE_COLORS } from "./price-legend";
+import { distanceKm } from "@/lib/geo";
 
 const CLUSTER_LAYERS = ["clusters", "unclustered-point"] as const;
 const NO_CLUSTER_LAYERS = ["unclustered-point"] as const;
@@ -18,9 +19,11 @@ interface StationLayerProps {
   cluster?: boolean;
   selectedStationId?: string | null;
   onSelectStation?: (id: string | null) => void;
+  /** The user's position, [lng, lat], so the station card can say how far it is. */
+  userLocation?: [number, number] | null;
 }
 
-export function StationLayer({ stations, onPriceRange, cluster = true, selectedStationId: externalId, onSelectStation }: StationLayerProps) {
+export function StationLayer({ stations, onPriceRange, cluster = true, selectedStationId: externalId, onSelectStation, userLocation }: StationLayerProps) {
   const interactiveLayers = cluster ? CLUSTER_LAYERS : NO_CLUSTER_LAYERS;
   const { current: mapRef } = useMap();
   const [internalId, setInternalId] = useState<string | null>(null);
@@ -256,7 +259,11 @@ export function StationLayer({ stations, onPriceRange, cluster = true, selectedS
       )}
 
       {popup && (
-        <StationPopup station={popup} onClose={handleClosePopup} />
+        <StationPopup
+          station={popup}
+          distanceKm={userLocation ? distanceKm(userLocation, popup.geometry.coordinates) : null}
+          onClose={handleClosePopup}
+        />
       )}
     </>
   );

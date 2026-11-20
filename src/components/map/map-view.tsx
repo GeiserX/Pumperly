@@ -350,7 +350,7 @@ export const MapView = forwardRef<MapRef, MapViewProps>(function MapView(
         />
       )}
       {!showCountryMarkers && (
-        <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={effectiveCluster} selectedStationId={selectedStationId} onSelectStation={onSelectStation} />
+        <StationLayer stations={filteredStations} onPriceRange={handlePriceRange} cluster={effectiveCluster} selectedStationId={selectedStationId} onSelectStation={onSelectStation} userLocation={userLocation} />
       )}
       {userLocation && (
         <Marker longitude={userLocation[0]} latitude={userLocation[1]} anchor="center">

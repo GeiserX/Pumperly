@@ -116,6 +116,11 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
   // Geolocation state (lifted so navbar has the button, map has the marker)
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  // Set by the first successful locate: until then, frame the map on the user
+  // plus the cheapest stations nearby once that list loads (a bare zoom-14
+  // view of the user often holds no station at all).
+  const locatedOnceRef = useRef(false);
+  const fitNearbyUntilRef = useRef(0);
 
   // Watch position when active
   useEffect(() => {
@@ -142,6 +147,10 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setUserLocation(coords);
         setGeoState("active");
+        if (!locatedOnceRef.current) {
+          locatedOnceRef.current = true;
+          fitNearbyUntilRef.current = Date.now() + 15000;
+        }
         mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1500 });
       },
       () => { setGeoState("denied"); setTimeout(() => setGeoState("idle"), 3000); },
@@ -378,6 +387,27 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
     }
   }, []);
 
+  // First nearby list after the first locate: fit the user and those stations,
+  // clear of the search card (top on a phone, left on a wider screen).
+  const handleNearbyLoaded = useCallback((stations: StationGeoJSON[]) => {
+    if (Date.now() > fitNearbyUntilRef.current) return;
+    fitNearbyUntilRef.current = 0;
+    const map = mapRef.current;
+    if (!map || !userLocation || stations.length === 0) return;
+    const points = [userLocation, ...stations.map((s) => s.geometry.coordinates)];
+    const lngs = points.map((p) => p[0]);
+    const lats = points.map((p) => p[1]);
+    const narrow = window.matchMedia?.("(max-width: 639px)").matches ?? false;
+    map.fitBounds(
+      [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+      {
+        padding: narrow ? { top: 250, bottom: 140, left: 40, right: 40 } : { top: 60, bottom: 60, left: 380, right: 60 },
+        maxZoom: 15,
+        duration: 1000,
+      },
+    );
+  }, [userLocation]);
+
   const handlePrimaryStationsChange = useCallback((stations: StationsGeoJSONCollection) => {
     setPrimaryStations(stations);
   }, []);
@@ -571,6 +601,7 @@ export function HomeClient({ defaultFuel, center, zoom, clusterStations, locale 
           selectedFuel={selectedFuel}
           userLocation={userLocation}
           onPlannedStopsChange={setPlannedStops}
+          onNearbyLoaded={handleNearbyLoaded}
         />
       </div>
     </main>
