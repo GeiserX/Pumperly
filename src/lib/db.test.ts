@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createRequire } from "node:module";
+
+// pg's own parser, used to check what the driver will actually send
+const ConnectionParameters = createRequire(import.meta.url)("pg/lib/connection-parameters");
 
 // Mock PrismaPg adapter — must be a real constructor (used with `new`)
 const pgAdapterOpts = vi.hoisted(() => [] as any[]);
@@ -54,6 +58,21 @@ describe("db module", () => {
     expect(pgAdapterOpts).toHaveLength(1);
     expect(pgAdapterOpts[0].connectionString).toBe("postgresql://test:test@localhost:5432/test");
     expect(pgAdapterOpts[0].options).toContain("TimeZone=UTC");
+  });
+
+  it("keeps startup options from DATABASE_URL and still pins the session to UTC", async () => {
+    process.env.DATABASE_URL =
+      "postgresql://test:test@localhost:5432/test?options=-c%20statement_timeout%3D5000&sslmode=disable";
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    expect(pgAdapterOpts).toHaveLength(1);
+    // pg lets options in the URL replace the options passed beside it,
+    // so check the config pg derives, not only the constructor arguments
+    const effective = new ConnectionParameters(pgAdapterOpts[0]);
+    expect(effective.options).toContain("-c statement_timeout=5000");
+    expect(effective.options).toContain("-c TimeZone=UTC");
+    expect(effective.database).toBe("test");
+    expect(effective.host).toBe("localhost");
   });
 
   it("caches prisma on globalThis in non-production", async () => {
