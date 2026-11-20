@@ -18,10 +18,13 @@ function pinSessionToUtc(connectionString: string) {
   } catch {
     return { connectionString, options: UTC_SESSION };
   }
-  const fromUrl = url.searchParams.get("options");
-  if (!fromUrl) return { connectionString, options: UTC_SESSION };
+  if (!url.searchParams.has("options")) return { connectionString, options: UTC_SESSION };
+  // pg keeps the last options parameter, and an empty one still replaces ours
+  const values = url.searchParams.getAll("options");
+  const fromUrl = values[values.length - 1];
   url.searchParams.delete("options");
-  return { connectionString: url.toString(), options: `${fromUrl} ${UTC_SESSION}` };
+  const options = fromUrl ? `${fromUrl} ${UTC_SESSION}` : UTC_SESSION;
+  return { connectionString: url.toString(), options };
 }
 
 function createPrismaClient() {

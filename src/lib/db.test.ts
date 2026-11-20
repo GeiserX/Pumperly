@@ -75,6 +75,25 @@ describe("db module", () => {
     expect(effective.host).toBe("localhost");
   });
 
+  it("still pins the session to UTC when DATABASE_URL has an empty options parameter", async () => {
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test?options=&sslmode=disable";
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    const effective = new ConnectionParameters(pgAdapterOpts[0]);
+    expect(effective.options).toBe("-c TimeZone=UTC");
+    expect(effective.database).toBe("test");
+  });
+
+  it("keeps the options pg would use from repeated URL parameters and pins UTC", async () => {
+    process.env.DATABASE_URL =
+      "postgresql://test:test@localhost:5432/test?options=-c%20work_mem%3D4MB&options=-c%20statement_timeout%3D5000";
+    pgAdapterOpts.length = 0;
+    await import("./db");
+    const effective = new ConnectionParameters(pgAdapterOpts[0]);
+    // pg keeps the last options parameter of the URL
+    expect(effective.options).toBe("-c statement_timeout=5000 -c TimeZone=UTC");
+  });
+
   it("caches prisma on globalThis in non-production", async () => {
     (process.env as Record<string, string>).NODE_ENV = "development";
     const { prisma } = await import("./db");
