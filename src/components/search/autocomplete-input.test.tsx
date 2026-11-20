@@ -341,8 +341,14 @@ describe("AutocompleteInput — Return while a search is still running", () => {
 
 // Like SearchPanel: the parent owns the text, its × button clears it, and its
 // Return handler calls the imperative geocode() of the same input.
-function ClearHarness({ onGeocoded }: { onGeocoded?: (r: PhotonResult | null) => void }) {
-  const [value, setValue] = useState("");
+function ClearHarness({
+  initial = "",
+  onGeocoded,
+}: {
+  initial?: string;
+  onGeocoded?: (r: PhotonResult | null) => void;
+}) {
+  const [value, setValue] = useState(initial);
   const ref = createRef<AutocompleteRef>();
   return (
     <>
@@ -376,6 +382,27 @@ describe("AutocompleteInput — late answers cannot jump ahead", () => {
 
     await waitFor(() => expect(onGeocoded).toHaveBeenCalledTimes(1));
     expect(onGeocoded).toHaveBeenCalledWith(null);
+  });
+
+  it("a Return search answers null when the person adds a character to the text it was searching", async () => {
+    const { fn, calls } = deferredFetch();
+    vi.stubGlobal("fetch", fn);
+    const user = userEvent.setup();
+    const onGeocoded = vi.fn();
+    render(<ClearHarness initial="Town A" onGeocoded={onGeocoded} />);
+    const input = screen.getByPlaceholderText("dest");
+
+    await user.click(screen.getByRole("button", { name: "go" }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    // The text stays 2+ characters, so only the keystroke itself makes the
+    // Return search stale; the answer lands before the typed search starts.
+    await user.type(input, "B");
+    expect(input).toHaveValue("Town AB");
+    await act(async () => { calls[0].resolve(okResponse([place("Town A", null, "Region A")])); });
+
+    await waitFor(() => expect(onGeocoded).toHaveBeenCalledTimes(1));
+    expect(onGeocoded).toHaveBeenCalledWith(null);
+    expect(calls).toHaveLength(1);
   });
 
   it("keeps the list closed when the field is cleared while a search is in flight", async () => {
