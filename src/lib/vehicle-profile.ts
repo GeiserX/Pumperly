@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { z } from "zod";
 import { FUEL_TYPE_MAP, type FuelType } from "@/types/fuel";
 
@@ -58,14 +58,19 @@ export function isPlannableFuel(fuel: FuelType): boolean {
   return fuel === "LPG";
 }
 
-function readProfile<T>(raw: string | null, schema: z.ZodType<T>, fallback: T): T {
-  if (!raw) return fallback;
+/** The stored profile, or null when none is stored or it is invalid. */
+function parseProfile<T>(raw: string | null, schema: z.ZodType<T>): T | null {
+  if (!raw) return null;
   try {
     const parsed = schema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : fallback;
+    return parsed.success ? parsed.data : null;
   } catch {
-    return fallback;
+    return null;
   }
+}
+
+function readProfile<T>(raw: string | null, schema: z.ZodType<T>, fallback: T): T {
+  return parseProfile(raw, schema) ?? fallback;
 }
 
 export function readVehicleProfile(raw: string | null): VehicleProfile {
@@ -76,34 +81,54 @@ export function readEvProfile(raw: string | null): EvProfile {
   return readProfile(raw, evProfileSchema, DEFAULT_EV);
 }
 
-function useStoredProfile<T>(key: string, schema: z.ZodType<T>, fallback: T): [T, (p: T) => void] {
-  const [profile, setProfile] = useState<T>(() => {
-    if (typeof window === "undefined") return fallback;
+export interface StoredProfileState {
+  /** No profile of the person's own is stored: the defaults are an example car. */
+  isDefault: boolean;
+  /** Forgets the stored profile and goes back to the example car. */
+  reset: () => void;
+}
+
+/**
+ * Only what the person sets is stored. The defaults are an example car, so
+ * they are shown but never written as if they were the person's own.
+ */
+function useStoredProfile<T>(key: string, schema: z.ZodType<T>, fallback: T): [T, (p: T) => void, StoredProfileState] {
+  const [stored, setStored] = useState<T | null>(() => {
+    if (typeof window === "undefined") return null;
     try {
-      return readProfile(localStorage.getItem(key), schema, fallback);
+      return parseProfile(localStorage.getItem(key), schema);
     } catch {
       // Storage blocked (private mode): fall back to defaults.
-      return fallback;
+      return null;
     }
   });
 
-  useEffect(() => {
-    if (schema.safeParse(profile).success) {
-      try {
-        localStorage.setItem(key, JSON.stringify(profile));
-      } catch {
-        // Storage blocked or full: profile still applies for this session.
-      }
+  const save = useCallback((p: T) => {
+    if (!schema.safeParse(p).success) return;
+    setStored(p);
+    try {
+      localStorage.setItem(key, JSON.stringify(p));
+    } catch {
+      // Storage blocked or full: profile still applies for this session.
     }
-  }, [key, schema, profile]);
+  }, [key, schema]);
 
-  return [profile, setProfile];
+  const reset = useCallback(() => {
+    setStored(null);
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Storage blocked: nothing was stored.
+    }
+  }, [key]);
+
+  return [stored ?? fallback, save, { isDefault: stored === null, reset }];
 }
 
-export function useVehicleProfile(): [VehicleProfile, (p: VehicleProfile) => void] {
+export function useVehicleProfile(): [VehicleProfile, (p: VehicleProfile) => void, StoredProfileState] {
   return useStoredProfile("pumperly-vehicle", vehicleProfileSchema, DEFAULT_VEHICLE);
 }
 
-export function useEvProfile(): [EvProfile, (p: EvProfile) => void] {
+export function useEvProfile(): [EvProfile, (p: EvProfile) => void, StoredProfileState] {
   return useStoredProfile("pumperly-ev", evProfileSchema, DEFAULT_EV);
 }

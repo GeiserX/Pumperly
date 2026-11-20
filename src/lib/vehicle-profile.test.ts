@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
-import { DEFAULT_EV, DEFAULT_VEHICLE, chargeKw, isPlannableFuel, minutesPerPct, readEvProfile, readVehicleProfile } from "./vehicle-profile";
+// @vitest-environment jsdom
+import { describe, it, expect, beforeEach } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { DEFAULT_EV, DEFAULT_VEHICLE, chargeKw, isPlannableFuel, minutesPerPct, readEvProfile, readVehicleProfile, useEvProfile, useVehicleProfile } from "./vehicle-profile";
 
 describe("readVehicleProfile", () => {
   it("returns defaults for missing or corrupt storage", () => {
@@ -78,5 +80,46 @@ describe("isPlannableFuel", () => {
     expect(isPlannableFuel("CNG")).toBe(false);
     expect(isPlannableFuel("H2")).toBe(false);
     expect(isPlannableFuel("ADBLUE")).toBe(false);
+  });
+});
+
+describe("useVehicleProfile", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("shows the example car without storing it as the person's own", () => {
+    const { result } = renderHook(() => useVehicleProfile());
+    expect(result.current[0]).toEqual(DEFAULT_VEHICLE);
+    expect(result.current[2].isDefault).toBe(true);
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+  });
+
+  it("stores only what the person sets, and reset brings back the example car", () => {
+    const { result } = renderHook(() => useVehicleProfile());
+    act(() => result.current[1]({ tankL: 70, consumptionL100: 7.2 }));
+    expect(result.current[2].isDefault).toBe(false);
+    expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 70, consumptionL100: 7.2 });
+
+    act(() => result.current[2].reset());
+    expect(result.current[0]).toEqual(DEFAULT_VEHICLE);
+    expect(result.current[2].isDefault).toBe(true);
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+  });
+
+  it("reads a stored profile as the person's own", () => {
+    localStorage.setItem("pumperly-vehicle", JSON.stringify({ tankL: 60, consumptionL100: 5.2 }));
+    const { result } = renderHook(() => useVehicleProfile());
+    expect(result.current[0]).toEqual({ tankL: 60, consumptionL100: 5.2 });
+    expect(result.current[2].isDefault).toBe(false);
+  });
+});
+
+describe("useEvProfile", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("does not write the example car to storage on render", () => {
+    const { result } = renderHook(() => useEvProfile());
+    expect(result.current[0]).toEqual(DEFAULT_EV);
+    expect(result.current[2].isDefault).toBe(true);
+    expect(localStorage.getItem("pumperly-ev")).toBeNull();
   });
 });

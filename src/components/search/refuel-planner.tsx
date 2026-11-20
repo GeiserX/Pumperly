@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
 import type { StationGeoJSON } from "@/types/station";
 import { useI18n } from "@/lib/i18n";
 import { useCurrency } from "@/lib/currency";
 import { maxStopsFor, planRefuel, type PlanResult } from "@/lib/refuel-planner";
-import { evProfileSchema, minutesPerPct, useEvProfile, useVehicleProfile, vehicleProfileSchema } from "@/lib/vehicle-profile";
+import { DEFAULT_EV, DEFAULT_VEHICLE, evProfileSchema, minutesPerPct, useEvProfile, useVehicleProfile, vehicleProfileSchema } from "@/lib/vehicle-profile";
 import { formatDuration } from "@/lib/format";
 
 export interface PlannedStopMarker {
@@ -17,6 +17,13 @@ export interface PlannedStopMarker {
 const EV_MAX_CHARGE_PCT = 80;
 /** "Min charger power" choices, kW; 0 = any (including chargers with unknown power). */
 const MIN_CHARGER_KW_OPTIONS = [0, 50, 150] as const;
+/** Allowed [min, max] of the vehicle fields, as in the profile schemas. */
+const RANGES = {
+  fuel: { capacity: [5, 500], consumption: [1, 50] },
+  ev: { capacity: [10, 200], consumption: [5, 50] },
+} as const;
+/** 16 px on phones: iOS zooms the page into any smaller field it focuses, and the app's web view keeps that zoom. */
+const FIELD_CLASS = "rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-base font-semibold text-gray-800 sm:text-xs dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100";
 
 /** Whether a charger passes the detour and power filters; a detour still loading passes. */
 function evEligible(p: StationGeoJSON["properties"], maxDetour: number | null | undefined, minChargerKw: number): boolean {
@@ -88,8 +95,11 @@ export function RefuelPlanner({
   const { t } = useI18n();
   const { currency, symbol, decimals, formatPrice, convert, rates } = useCurrency();
   const ev = mode === "ev";
-  const [fuelProfile, setFuelProfile] = useVehicleProfile();
-  const [evProfile, setEvProfile] = useEvProfile();
+  const [fuelProfile, setFuelProfile, fuelStored] = useVehicleProfile();
+  const [evProfile, setEvProfile, evStored] = useEvProfile();
+  // No figures of the person's own yet: the defaults are an example car, and say so.
+  const profileDefault = ev ? evStored.isDefault : fuelStored.isDefault;
+  const range = RANGES[ev ? "ev" : "fuel"];
   // Capacity is litres or kWh; the planner works in % of it either way.
   const capacity = ev ? evProfile.batteryKwh : fuelProfile.tankL;
   const consumption = ev ? evProfile.consumptionKwh100 : fuelProfile.consumptionL100;
@@ -105,6 +115,10 @@ export function RefuelPlanner({
   const [maxKwDraft, setMaxKwDraft] = useState(String(evProfile.maxChargeKw));
   // Same for the value of time; null shows the saved (and planned) value.
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
+  // Fields whose last typed value was refused; the plan keeps the saved value meanwhile.
+  const [invalid, setInvalid] = useState<{ capacity?: boolean; consumption?: boolean }>({});
+  const capacityErrorId = useId();
+  const consumptionErrorId = useId();
 
   // EV plans use money only when some charger the filters leave has a price in
   // the display currency. Chargers without a price still compete: most
@@ -125,6 +139,17 @@ export function RefuelPlanner({
     return prices.length % 2 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
   }, [ev, stations, maxDetour, minChargerKw, currency, maxPrice]);
   const evPriced = evMedianPrice != null;
+
+  // Fuel for the whole trip is priced at the corridor's average, so the
+  // estimate covers what the starting tank burns too, not only what is bought.
+  const avgFuelPrice = useMemo(() => {
+    if (ev) return null;
+    const prices = stations
+      .map(({ properties: p }) => p)
+      .filter((p) => p.price != null && p.price > 0 && p.currency === currency)
+      .map((p) => p.price as number);
+    return prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : null;
+  }, [ev, stations, currency]);
   const usesMoney = !ev || evPriced;
 
   // The time value is stored in EUR: without a rate for the display currency it
@@ -195,14 +220,14 @@ export function RefuelPlanner({
   useEffect(() => () => onPlanChange?.([]), [onPlanChange]);
 
   // Commit on blur/Enter: saving on every keystroke would store "8" and "80"
-  // on the way to an invalid "800". Invalid input reverts to the saved value.
+  // on the way to an invalid "800". Invalid input stays on screen with a
+  // message naming the allowed range; the plan keeps the saved value.
   const commitField = (field: "capacity" | "consumption", raw: string) => {
     const v = parseFloat(raw.replace(",", "."));
     const ok = ev
       ? commitProfile(evProfileSchema, { ...evProfile, [field === "capacity" ? "batteryKwh" : "consumptionKwh100"]: v }, setEvProfile)
       : commitProfile(vehicleProfileSchema, { ...fuelProfile, [field === "capacity" ? "tankL" : "consumptionL100"]: v }, setFuelProfile);
-    if (!ok && field === "capacity") setTankDraft(String(capacity));
-    else if (!ok) setConsDraft(String(consumption));
+    setInvalid((prev) => ({ ...prev, [field]: !ok }));
   };
   const commitMaxKw = (raw: string) => {
     const next = { ...evProfile, maxChargeKw: parseFloat(raw.replace(",", ".")) };
@@ -216,6 +241,22 @@ export function RefuelPlanner({
   const blurOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") e.currentTarget.blur();
   };
+
+  const settingsChanged = (Object.keys(DEFAULT_PLANNER_SETTINGS) as (keyof PlannerSettings)[])
+    .some((k) => k !== "open" && settings[k] !== DEFAULT_PLANNER_SETTINGS[k]);
+  const showReset = !profileDefault || settingsChanged;
+  // Back to the example car and the default trip settings; the panel stays open.
+  const resetAll = () => {
+    (ev ? evStored : fuelStored).reset();
+    setTankDraft(String(ev ? DEFAULT_EV.batteryKwh : DEFAULT_VEHICLE.tankL));
+    setConsDraft(String(ev ? DEFAULT_EV.consumptionKwh100 : DEFAULT_VEHICLE.consumptionL100));
+    if (ev) setMaxKwDraft(String(DEFAULT_EV.maxChargeKw));
+    setTimeDraft(null);
+    setInvalid({});
+    onSettingsChange({ ...DEFAULT_PLANNER_SETTINGS, open: true });
+  };
+  const rangeText = (key: string, [min, max]: readonly [number, number]) =>
+    t(key).replace("{min}", String(min)).replace("{max}", String(max));
 
   const kwh = (v: number) => `${v.toFixed(1)} kWh`;
   const minutes = (m: number) => formatDuration(m * 60);
@@ -254,35 +295,56 @@ export function RefuelPlanner({
         <div className="border-t border-black/[0.05] dark:border-white/[0.06]">
           {/* Vehicle + trip controls */}
           <div className="px-4 py-2.5">
+            {profileDefault && (
+              <p className="mb-2 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                {ev
+                  ? t("planner.exampleValuesEv").replace("{battery}", String(DEFAULT_EV.batteryKwh)).replace("{cons}", String(DEFAULT_EV.consumptionKwh100))
+                  : t("planner.exampleValues").replace("{tank}", String(DEFAULT_VEHICLE.tankL)).replace("{cons}", String(DEFAULT_VEHICLE.consumptionL100))}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
                 {t(ev ? "planner.battery" : "planner.tank")}
                 <input
                   type="number"
                   inputMode="decimal"
-                  min={ev ? 10 : 5}
-                  max={ev ? 200 : 500}
+                  min={range.capacity[0]}
+                  max={range.capacity[1]}
                   value={tankDraft}
+                  aria-invalid={invalid.capacity || undefined}
+                  aria-describedby={invalid.capacity ? capacityErrorId : undefined}
                   onChange={(e) => setTankDraft(e.target.value)}
                   onBlur={(e) => commitField("capacity", e.target.value)}
                   onKeyDown={blurOnEnter}
-                  className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                  className={`mt-1 w-full ${FIELD_CLASS}`}
                 />
+                {invalid.capacity && (
+                  <span id={capacityErrorId} className="mt-1 block text-[11px] font-medium text-red-600 dark:text-red-400">
+                    {rangeText(ev ? "planner.invalidBattery" : "planner.invalidTank", range.capacity)}
+                  </span>
+                )}
               </label>
               <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
                 {t(ev ? "planner.consumptionEv" : "planner.consumption")}
                 <input
                   type="number"
                   inputMode="decimal"
-                  min={ev ? 5 : 1}
-                  max={50}
+                  min={range.consumption[0]}
+                  max={range.consumption[1]}
                   step={0.1}
                   value={consDraft}
+                  aria-invalid={invalid.consumption || undefined}
+                  aria-describedby={invalid.consumption ? consumptionErrorId : undefined}
                   onChange={(e) => setConsDraft(e.target.value)}
                   onBlur={(e) => commitField("consumption", e.target.value)}
                   onKeyDown={blurOnEnter}
-                  className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                  className={`mt-1 w-full ${FIELD_CLASS}`}
                 />
+                {invalid.consumption && (
+                  <span id={consumptionErrorId} className="mt-1 block text-[11px] font-medium text-red-600 dark:text-red-400">
+                    {rangeText("planner.invalidConsumption", range.consumption)}
+                  </span>
+                )}
               </label>
             </div>
             {ev && (
@@ -298,7 +360,7 @@ export function RefuelPlanner({
                     onChange={(e) => setMaxKwDraft(e.target.value)}
                     onBlur={(e) => commitMaxKw(e.target.value)}
                     onKeyDown={blurOnEnter}
-                    className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                    className={`mt-1 w-full ${FIELD_CLASS}`}
                   />
                 </label>
                 <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
@@ -306,7 +368,7 @@ export function RefuelPlanner({
                   <select
                     value={minChargerKw}
                     onChange={(e) => update({ minChargerKw: Number(e.target.value) })}
-                    className="mt-1 w-full rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs font-semibold text-gray-800 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                    className={`mt-1 w-full ${FIELD_CLASS}`}
                   >
                     {MIN_CHARGER_KW_OPTIONS.map((kw) => (
                       <option key={kw} value={kw}>{kw === 0 ? t("planner.anyPower") : `≥ ${kw} kW`}</option>
@@ -329,13 +391,34 @@ export function RefuelPlanner({
                 onChange={(e) => setTimeDraft(e.target.value)}
                 onBlur={(e) => commitTimeValue(e.target.value)}
                 onKeyDown={blurOnEnter}
-                className="w-16 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-right text-xs font-semibold text-gray-800 disabled:opacity-50 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-100"
+                className={`w-16 text-right disabled:opacity-50 ${FIELD_CLASS}`}
               />
             </label>}
+            {showReset && (
+              <div className="mt-2.5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  className="rounded-md px-2 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-white/[0.06]"
+                >
+                  {t("planner.reset")}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Result */}
           <div role="status" aria-live="polite" className="border-t border-black/[0.05] dark:border-white/[0.06]">
+            {profileDefault && plan && (
+              <p className="px-4 pt-2 text-[11px] font-semibold text-amber-700 dark:text-amber-300">{t("planner.exampleVerdict")}</p>
+            )}
+            {!ev && routeKm > 0 && avgFuelPrice != null && (
+              <p className="px-4 pt-2 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                {t("planner.tripFuel")
+                  .replace("{l}", ((routeKm * consumption) / 100).toFixed(1))
+                  .replace("{cost}", money(((routeKm * consumption) / 100) * avgFuelPrice))}
+              </p>
+            )}
             {ev && routeKm > 0 && (
               <p className="px-4 pt-2 text-[11px] font-medium text-gray-500 dark:text-gray-400">
                 {t("planner.tripEnergy").replace("{kwh}", kwh((routeKm * consumption) / 100))}
@@ -397,7 +480,7 @@ export function RefuelPlanner({
                 })}
                 <div className="flex items-center justify-between px-4 py-2 text-[11px]">
                   <span className="font-medium text-gray-500 dark:text-gray-400">
-                    {t(ev ? "planner.energyTotal" : "planner.total")} · {t("planner.atDestination")} {Math.round(plan.endPct)}%
+                    {t(ev ? "planner.energyTotal" : "planner.paidAtStops")} · {t("planner.atDestination")} {Math.round(plan.endPct)}%
                   </span>
                   <span className="font-bold tabular-nums text-gray-900 dark:text-gray-50">
                     {ev

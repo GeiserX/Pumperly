@@ -332,7 +332,7 @@ describe("RefuelPlanner", () => {
     await userEvent.clear(tank);
     await userEvent.type(tank, "70");
     // Nothing is saved mid-edit ("7" would be rejected, but "70" isn't committed yet either).
-    expect(localStorage.getItem("pumperly-vehicle")).toBe(JSON.stringify({ tankL: 50, consumptionL100: 6.5 }));
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
     await userEvent.tab();
     expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 70, consumptionL100: 6.5 });
   });
@@ -346,15 +346,103 @@ describe("RefuelPlanner", () => {
     expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 7.5 });
   });
 
-  it("reverts an out-of-range value instead of saving a prefix of it", async () => {
+  it("refuses an out-of-range value with a message naming the range, and saves nothing", async () => {
     renderPlanner();
     await userEvent.click(screen.getByText("planner.title"));
     const tank = screen.getByLabelText("planner.tank");
     await userEvent.clear(tank);
-    await userEvent.type(tank, "800");
+    await userEvent.type(tank, "600");
     await userEvent.tab();
-    expect(tank).toHaveValue(50);
-    expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 6.5 });
+    // The typed value stays so the person sees what was refused.
+    expect(tank).toHaveValue(600);
+    expect(tank).toHaveAttribute("aria-invalid", "true");
+    const message = screen.getByText("planner.invalidTank");
+    expect(tank).toHaveAttribute("aria-describedby", message.id);
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+    expect(planSpy.mock.lastCall![0].tankL).toBe(50);
+
+    // A valid value clears the message.
+    await userEvent.clear(tank);
+    await userEvent.type(tank, "60{Enter}");
+    expect(tank).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText("planner.invalidTank")).not.toBeInTheDocument();
+
+    const cons = screen.getByLabelText("planner.consumption");
+    await userEvent.clear(cons);
+    await userEvent.type(cons, "abc{Enter}");
+    expect(cons).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("planner.invalidConsumption")).toBeInTheDocument();
+  });
+
+  it("marks the figures and the plan as the example car until the person enters their own", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    expect(screen.getByText("planner.exampleValues")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("planner.exampleVerdict");
+    // Showing the example car must not save it as the person's own.
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+    expect(screen.queryByRole("button", { name: "planner.reset" })).not.toBeInTheDocument();
+
+    const tank = screen.getByLabelText("planner.tank");
+    await userEvent.clear(tank);
+    await userEvent.type(tank, "70");
+    await userEvent.tab();
+    expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 70, consumptionL100: 6.5 });
+    expect(screen.queryByText("planner.exampleValues")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).not.toHaveTextContent("planner.exampleVerdict");
+  });
+
+  it("resets the saved car and the trip settings, and stays open", async () => {
+    const { setMounted } = renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    const tank = screen.getByLabelText("planner.tank");
+    await userEvent.clear(tank);
+    await userEvent.type(tank, "70");
+    await userEvent.tab();
+    const cons = screen.getByLabelText("planner.consumption");
+    await userEvent.clear(cons);
+    await userEvent.type(cons, "7.2{Enter}");
+    fireEvent.change(screen.getByLabelText("planner.start"), { target: { value: "80" } });
+
+    await userEvent.click(screen.getByRole("button", { name: "planner.reset" }));
+    expect(screen.getByLabelText("planner.tank")).toHaveValue(50);
+    expect(screen.getByLabelText("planner.consumption")).toHaveValue(6.5);
+    expect(screen.getByLabelText("planner.start")).toHaveValue("50");
+    expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+    expect(screen.getByText("planner.exampleValues")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "planner.reset" })).not.toBeInTheDocument();
+    expect(planSpy.mock.lastCall![0]).toMatchObject({ tankL: 50, consumptionL100: 6.5, startPct: 50 });
+
+    // A new route (the planner mounts again) still shows the example car.
+    setMounted(false);
+    setMounted(true);
+    expect(screen.getByText("planner.exampleValues")).toBeInTheDocument();
+  });
+
+  it("offers reset when only a trip setting differs from the defaults", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    fireEvent.change(screen.getByLabelText("planner.reserve"), { target: { value: "15" } });
+    await userEvent.click(screen.getByRole("button", { name: "planner.reset" }));
+    expect(screen.getByLabelText("planner.reserve")).toHaveValue("10");
+    expect(screen.getByText("planner.tank")).toBeInTheDocument();
+  });
+
+  it("prices the whole trip's fuel apart from what is paid at the stops", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    // 400 km at 6.5 L/100 km = 26 L, at the 1.5 €/L average of the corridor = 39 €.
+    expect(screen.getByText("planner.tripFuel")).toBeInTheDocument();
+    expect(screen.getByText(/^planner\.paidAtStops/)).toBeInTheDocument();
+    expect(screen.queryByText(/^planner\.total/)).not.toBeInTheDocument();
+  });
+
+  it("keeps planner fields at 16 px on phones so iOS does not zoom the page", async () => {
+    renderPlanner();
+    await userEvent.click(screen.getByText("planner.title"));
+    const fields = screen.getAllByRole("spinbutton");
+    expect(fields.length).toBeGreaterThan(0);
+    for (const f of fields) expect(f).toHaveClass("text-base");
   });
 
   describe("EV mode", () => {
@@ -567,7 +655,14 @@ describe("RefuelPlanner", () => {
       await userEvent.clear(battery);
       await userEvent.type(battery, "77{Enter}");
       expect(JSON.parse(localStorage.getItem("pumperly-ev")!)).toEqual({ batteryKwh: 77, consumptionKwh100: 18, maxChargeKw: 150 });
-      expect(JSON.parse(localStorage.getItem("pumperly-vehicle")!)).toEqual({ tankL: 50, consumptionL100: 6.5 });
+      expect(localStorage.getItem("pumperly-vehicle")).toBeNull();
+    });
+
+    it("keeps the battery fields and the power select at 16 px on phones", async () => {
+      renderPlanner({ mode: "ev", stations: CHARGERS, routeKm: 300 });
+      await userEvent.click(screen.getByText("planner.titleEv"));
+      for (const f of [...screen.getAllByRole("spinbutton"), screen.getByLabelText("planner.minChargerKw")]) expect(f).toHaveClass("text-base");
+      expect(screen.getByText("planner.exampleValuesEv")).toBeInTheDocument();
     });
   });
 });
