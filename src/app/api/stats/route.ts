@@ -41,7 +41,9 @@ const STATS_WORK_MEM = "SET LOCAL work_mem = '32MB'";
 // the process for the same 300 s.
 const STATS_CACHE_TTL_MS = 300_000;
 
-let cached: { at: number; rows: Promise<CountStats[]> } | null = null;
+// `at` is when the rows arrived. It stays null while the query runs, so a
+// slow query is shared however long it takes.
+let cached: { at: number | null; rows: Promise<CountStats[]> } | null = null;
 
 async function queryStats(): Promise<CountStats[]> {
   const [, rows] = await prisma.$transaction([
@@ -52,16 +54,22 @@ async function queryStats(): Promise<CountStats[]> {
 }
 
 function loadStats(): Promise<CountStats[]> {
-  const now = Date.now();
-  if (cached && now - cached.at < STATS_CACHE_TTL_MS) return cached.rows;
+  if (cached && (cached.at === null || Date.now() - cached.at < STATS_CACHE_TTL_MS)) {
+    return cached.rows;
+  }
   // Share one query between calls that arrive while it runs. A failure is
   // not kept, so the next call tries again.
   const rows = queryStats();
-  const entry = { at: now, rows };
+  const entry: { at: number | null; rows: Promise<CountStats[]> } = { at: null, rows };
   cached = entry;
-  rows.catch(() => {
-    if (cached === entry) cached = null;
-  });
+  rows.then(
+    () => {
+      entry.at = Date.now();
+    },
+    () => {
+      if (cached === entry) cached = null;
+    },
+  );
   return rows;
 }
 

@@ -195,6 +195,23 @@ describe("stats API", () => {
     expect(prisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
   });
 
+  it("shares a query that is still running after 300 s", async () => {
+    vi.useFakeTimers();
+    const { prisma } = await import("@/lib/db");
+    let finish: (rows: unknown[]) => void = () => {};
+    vi.mocked(prisma.$queryRawUnsafe).mockClear()
+      .mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }) as never);
+
+    const { GET } = await import("./route");
+    const first = GET();
+    vi.advanceTimersByTime(400_000);
+    const second = GET();
+    finish([{ country: "ES", stations: 100, prices: 200, last_update: null }]);
+    await Promise.all([first, second]);
+
+    expect(prisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+  });
+
   it("does not keep a failed query, so the next call tries again", async () => {
     const { prisma } = await import("@/lib/db");
     vi.mocked(prisma.$queryRawUnsafe).mockClear()
