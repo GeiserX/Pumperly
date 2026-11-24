@@ -49,7 +49,7 @@ Spain uses Mapa REVE when `PUMPERLY_REVE_API_KEY` is set: it is the registry eve
 
 Germany uses the Open ChargePoint Database (OCPDB) by default — no API key, no signup. It contains the BNetzA Ladesäulenregister, which every operator of a publicly accessible charge point must file into under §5 Ladesäulenverordnung, and merges it with the operators' own feeds, which carry ad-hoc prices. It is read in full every 6 hours, so there is no backfill period: Open Charge Map and BNetzA stop being scraped for Germany, and their existing German rows are retired on the first healthy run. Set `PUMPERLY_DE_EV_SOURCE=bnetza` to use the register alone, without prices, or `ocm` to keep Open Charge Map.
 
-## Map &amp; routing
+## Map & routing
 
 | Service | Purpose | License |
 | --- | --- | --- |

@@ -686,7 +686,7 @@ Things to know:
 
 ## Sources that do not work today
 
-These scrapers are still in the code and still scheduled, but their sources refuse the requests. Each run fails and writes nothing, and the last prices stay on the map. [Coverage and status](<https://geiserx.github.io/Pumperly/data/coverage/#choosing-what-runs>) shows how to stop the requests.
+These scrapers are still in the code and still scheduled, but their sources refuse the requests. Each run fails and writes nothing, and the last prices stay on the map. [Coverage and status](<https://geiserx.github.io/Pumperly/data/coverage/index.md#choosing-what-runs>) shows how to stop the requests.
 
 ### Fuelo.net: twelve countries
 

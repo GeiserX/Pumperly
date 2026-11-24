@@ -81,13 +81,13 @@ Returns the settings the instance was started with. It does not touch the databa
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `defaultCountry` | string | ISO 3166-1 alpha-2 code from [`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_country>). Defaults to `ES`. |
-| `defaultFuel` | string | [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>) if set, otherwise the default fuel of the default country. |
+| `defaultCountry` | string | ISO 3166-1 alpha-2 code from [`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_country>). Defaults to `ES`. |
+| `defaultFuel` | string | [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_fuel>) if set, otherwise the default fuel of the default country. |
 | `center` | `[lon, lat]` | The default country's initial map centre. |
 | `zoom` | number | The default country's initial map zoom. |
 | `enabledCountries` | array | One object per enabled country: `code`, `name` (the country's own name for itself), `center` and `zoom`. |
 
-`enabledCountries` follows [`PUMPERLY_ENABLED_COUNTRIES`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_enabled_countries>). Codes Pumperly has no map settings for are dropped from this list. `US` is one of them: it enables EV chargers only and has no entry here.
+`enabledCountries` follows [`PUMPERLY_ENABLED_COUNTRIES`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_enabled_countries>). Codes Pumperly has no map settings for are dropped from this list. `US` is one of them: it enables EV chargers only and has no entry here.
 
 ```
 curl -s https://pumperly.com/api/config
@@ -214,7 +214,7 @@ curl -s "https://pumperly.com/api/stations/nearest?lat=40.4168&lon=-3.7038&radiu
 
 Searches for places by name through [Photon](<https://geiserx.github.io/Pumperly/configuration/geocoding-photon/index.md>). The search box on the map uses it for autocomplete.
 
-When `q` is a coordinate pair, latitude first, the endpoint skips Photon. It returns one result, with `name` set to the trimmed query, `city`, `state` and `country` set to `null`, and the parsed `coordinates`. See [Typing coordinates](<https://geiserx.github.io/Pumperly/using/routes/#typing-coordinates>) for the accepted formats.
+When `q` is a coordinate pair, latitude first, the endpoint skips Photon. It returns one result, with `name` set to the trimmed query, `city`, `state` and `country` set to `null`, and the parsed `coordinates`. See [Typing coordinates](<https://geiserx.github.io/Pumperly/using/routes/index.md#typing-coordinates>) for the accepted formats.
 
 **Query parameters:**
 
@@ -254,7 +254,7 @@ Shape of the response, with illustrative values:
 >
 > **An empty list is not always \\"nothing found\\"**
 >
-> Unless `q` is a coordinate pair, the endpoint returns `200` with `[]` when [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#photon_url>) is not set, when Photon answers with an error status, or when Photon's body is not JSON. Only a failed connection or a timeout (5 seconds) returns `502` with `Geocoding failed`.
+> Unless `q` is a coordinate pair, the endpoint returns `200` with `[]` when [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#photon_url>) is not set, when Photon answers with an error status, or when Photon's body is not JSON. Only a failed connection or a timeout (5 seconds) returns `502` with `Geocoding failed`.
 
 **Errors:** `400` for bad parameters, `502` with `Geocoding failed`.
 
@@ -334,7 +334,7 @@ curl -s -X POST http://localhost:3000/api/route \
 | --- | --- | --- |
 | `400` | `Invalid JSON` or `Invalid parameters` | Bad body. |
 | `429` | `Too many requests` | Rate limit. |
-| `502` | `Routing service unavailable` | Valhalla returned no route, answered with an error status, or [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_url>) is not set. |
+| `502` | `Routing service unavailable` | Valhalla returned no route, answered with an error status, or [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_url>) is not set. |
 | `502` | `Route calculation failed` | The call to Valhalla threw, for example on a timeout. The timeout is 15 seconds for A to B and 10 seconds with waypoints. |
 
 ## POST /api/route-stations
@@ -352,7 +352,7 @@ Returns the stations within a set distance of a route line, ordered from the sta
 | `fuel` | yes | A fuel code. |
 | `corridorKm` | no | Corridor half-width in km, 0.5 to 50. Defaults to `5`. |
 
-A station is in the [corridor](<https://geiserx.github.io/Pumperly/reference/glossary/#corridor>) when its true distance to the line, measured on the globe, is at most `corridorKm`. Selection by fuel follows the same rules as [`/api/stations`](<#stations>).
+A station is in the [corridor](<https://geiserx.github.io/Pumperly/reference/glossary/index.md#corridor>) when its true distance to the line, measured on the globe, is at most `corridorKm`. Selection by fuel follows the same rules as [`/api/stations`](<#stations>).
 
 **Response:** a `FeatureCollection` of [station features](<#the-station-feature>), each with an extra `routeFraction`. That is the station's position along the line, from `0` at the start to `1` at the end. Features come sorted by `routeFraction`.
 
@@ -396,7 +396,7 @@ Each station object:
 - **Route-relative**, when `before`, `after` and `onRouteSec` are all present. Pumperly asks Valhalla for `before → station → after` and subtracts `onRouteSec`. This measures the detour from the route you are on. When the web app measures detours against the selected route, it places the two anchors about 3 km either side of the station's position on the route.
 - **Whole trip**, otherwise. Pumperly asks Valhalla for `origin → station → destination` and subtracts `routeDuration`. This measures the best detour over any route.
 
-**Response:** `Content-Type: application/x-ndjson`. [NDJSON](<https://geiserx.github.io/Pumperly/reference/glossary/#ndjson>) is one JSON object per line:
+**Response:** `Content-Type: application/x-ndjson`. [NDJSON](<https://geiserx.github.io/Pumperly/reference/glossary/index.md#ndjson>) is one JSON object per line:
 
 ```
 {"id":"a1","detourMin":2.4}
@@ -409,11 +409,11 @@ Each station object:
 | `id` | The station `id` you sent. |
 | `detourMin` | Extra minutes, rounded to one decimal. `-1` means no result for this station. |
 
-`detourMin` is `-1` when Valhalla returned no route, the call failed or timed out (10 seconds), or [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_url>) is not set. It is also `-1` when the computed detour is more than 60 seconds negative, which means the inputs do not agree with each other. A detour between -60 and 0 seconds becomes `0`.
+`detourMin` is `-1` when Valhalla returned no route, the call failed or timed out (10 seconds), or [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_url>) is not set. It is also `-1` when the computed detour is more than 60 seconds negative, which means the inputs do not agree with each other. A detour between -60 and 0 seconds becomes `0`.
 
-Lines arrive in the order stations finish, not the order you sent them. Eight stations are worked on at a time. All requests to Valhalla also share one global limit of in-flight calls, [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_max_inflight>) (default 6). Once the stream has started the status is always `200`, even if every line is `-1`. If the client disconnects, stations not yet started are dropped.
+Lines arrive in the order stations finish, not the order you sent them. Eight stations are worked on at a time. All requests to Valhalla also share one global limit of in-flight calls, [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_max_inflight>) (default 6). Once the stream has started the status is always `200`, even if every line is `-1`. If the client disconnects, stations not yet started are dropped.
 
-[`PUMPERLY_MAX_DETOUR_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_max_detour_stations>) (default 150) caps how many stations one request routes. When a request holds more, Pumperly keeps an even spread along the list, in the original order. The body schema already rejects more than 150, so a lower value is the only one that has an effect.
+[`PUMPERLY_MAX_DETOUR_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_max_detour_stations>) (default 150) caps how many stations one request routes. When a request holds more, Pumperly keeps an even spread along the list, in the original order. The body schema already rejects more than 150, so a lower value is the only one that has an effect.
 
 The response also sends `Cache-Control: no-cache, no-transform` and `X-Accel-Buffering: no`. Those two headers ask proxies not to buffer or compress the stream. Pumperly turns off Next.js compression for the same reason.
 
@@ -452,7 +452,7 @@ curl -sN -X POST http://localhost:3000/api/route-detour \
 | Property | Always present | Meaning |
 | --- | --- | --- |
 | `id` | yes | Database UUID. It can change when a scraper re-imports a station. Do not store it. |
-| `externalId` | yes | The station's ID at its [source](<https://geiserx.github.io/Pumperly/reference/glossary/#source>). Together with `country` it is the durable identity. Share links use this pair. |
+| `externalId` | yes | The station's ID at its [source](<https://geiserx.github.io/Pumperly/reference/glossary/index.md#source>). Together with `country` it is the durable identity. Share links use this pair. |
 | `country` | yes | ISO 3166-1 alpha-2 code. |
 | `name` | yes | Station name as the source gives it. |
 | `brand` | yes, may be `null` | Brand or operator. |
@@ -462,7 +462,7 @@ curl -sN -X POST http://localhost:3000/api/route-detour \
 | `price` | no | Latest price for `fuelType`, in `currency`. Per kWh for `EV`. Absent on unpriced EV chargers. |
 | `reportedAt` | no | ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers. |
 | `powerKw` | no | EV chargers only: highest single-connector power in kW. Absent when the source publishes none. |
-| `evFees` | no | EV chargers only: fees on top of `price`, in the price's currency. Shaped like the [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/#ev_fees>) column. Absent when there are none. |
+| `evFees` | no | EV chargers only: fees on top of `price`, in the price's currency. Shaped like the [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/index.md#ev_fees>) column. Absent when there are none. |
 | `distanceKm` | only `/api/stations/nearest` | Approximate distance from the query point. |
 | `routeFraction` | only `/api/route-stations` | Position along the route, `0` to `1`. |
 

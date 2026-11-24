@@ -12,7 +12,7 @@ This page lists every API key Pumperly can use: where to get it, what it unlocks
 | [`PUMPERLY_REVE_API_KEY`](<#mapa-reve-spain>) | Mapa REVE | Spain's chargers from the official registry | Spain's chargers come from Open Charge Map instead. |
 | [`NSW_FUEL_API_KEY`](<#nsw-fuelcheck-australia>) and [`NSW_FUEL_API_SECRET`](<#nsw-fuelcheck-australia>) | NSW FuelCheck | Fuel prices in New South Wales, Australia | Only Western Australia updates. |
 
-Every other source, in every other country, is keyless. That includes Germany's charger sources, the [Open ChargePoint Database](<https://geiserx.github.io/Pumperly/data/ev-sources/#ocpdb>) and the [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/#bnetza>). [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) list them all.
+Every other source, in every other country, is keyless. That includes Germany's charger sources, the [Open ChargePoint Database](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#ocpdb>) and the [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#bnetza>). [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) list them all.
 
 ## Setting a key
 
@@ -72,7 +72,7 @@ Keys are read when the app starts. Restart it after adding or changing one.
 [Tankerkönig](<https://creativecommons.tankerkoenig.de>) republishes the prices German stations must report to the Markttransparenzstelle für Kraftstoffe (MTS-K), the Federal Cartel Office's fuel price transparency unit. It covers about 14,700 stations. The data is licensed CC BY 4.0.
 
 - **Get a key:** register at [onboarding.tankerkoenig.de](<https://onboarding.tankerkoenig.de>).
-- **Variable:** [`TANKERKOENIG_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#tankerkoenig_api_key>).
+- **Variable:** [`TANKERKOENIG_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#tankerkoenig_api_key>).
 - **How it is used:** the API searches a radius of at most 25 km. The scraper covers Germany with a grid of 340 overlapping circles, so one run makes 340 requests. The `DE` scraper runs every hour by default. When the API answers `503`, the scraper waits 10 seconds and moves on to the next circle.
 - **Without it:** every `DE` run fails before it writes anything, and the last German prices stay on the map. The log shows:
 
@@ -85,7 +85,7 @@ Keys are read when the app starts. Restart it after adding or changing one.
 [fuelprices.dk](<https://fuelprices.dk>) aggregates Danish station prices from the fuel companies, such as Circle K, Shell, OK and Q8. Prices are in Danish kroner.
 
 - **Get a key:** register at [fuelprices.dk/registrer](<https://fuelprices.dk/registrer>).
-- **Variable:** [`FUELPRICES_DK_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#fuelprices_dk_api_key>).
+- **Variable:** [`FUELPRICES_DK_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#fuelprices_dk_api_key>).
 - **How it is used:** one request per run, sent with the key in the `X-API-KEY` header. It returns every station in Denmark with its current prices. The `DK` scraper runs every 6 hours by default.
 - **Without it, or with a rejected key:** the scraper falls back to the DrivstoffAppen feed, the same one the Norway scraper uses. That feed no longer answers public requests, so in practice Denmark needs the key. The log shows one of:
 
@@ -99,8 +99,8 @@ Keys are read when the app starts. Restart it after adding or changing one.
 [Open Charge Map](<https://openchargemap.org>) is a community-maintained registry of EV chargers worldwide. It is licensed under the Open Database License (ODbL). Pumperly uses it in every country that has no official registry, and in the United States.
 
 - **Get a key:** create a free account at [openchargemap.org](<https://openchargemap.org>) and create an API key there.
-- **Variable:** [`PUMPERLY_OCM_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ocm_api_key>).
-- **How it is used:** the key goes in the `X-API-Key` header. Each `EV_<CC>` scraper runs once a day by default. A small country takes one request. The API returns at most 5,000 chargers per request, so for a large country the scraper splits the map into smaller boxes. By default it sends one request at a time across all countries, with 600 ms between requests, and at most 800 requests per country per run. [Open Charge Map tuning](<https://geiserx.github.io/Pumperly/reference/environment-variables/#open-charge-map-tuning>) lists the settings.
+- **Variable:** [`PUMPERLY_OCM_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ocm_api_key>).
+- **How it is used:** the key goes in the `X-API-Key` header. Each `EV_<CC>` scraper runs once a day by default. A small country takes one request. The API returns at most 5,000 chargers per request, so for a large country the scraper splits the map into smaller boxes. By default it sends one request at a time across all countries, with 600 ms between requests, and at most 800 requests per country per run. [Open Charge Map tuning](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#open-charge-map-tuning>) lists the settings.
 - **Without it:** every Open Charge Map scraper skips its run and writes nothing. Chargers already in the database stay. Germany still gets chargers from the keyless OCPDB, and Spain from REVE if you set that key. The log shows, for each country:
 
   ```
@@ -112,7 +112,7 @@ Keys are read when the app starts. Restart it after adding or changing one.
 [Mapa REVE](<https://www.mapareve.es>) is Spain's official registry of public charge points, run by Red Eléctrica de España. Every Spanish charge point operator must report to it, so it is authoritative where Open Charge Map is crowdsourced. It holds about 14,500 locations. The data may be used for non-commercial purposes only, and Red Eléctrica must be credited. Pumperly's legal notice does that.
 
 - **Get a key:** request one at [mapareve.es/api-contacto](<https://www.mapareve.es/api-contacto>). Keys expire after about a year, so note the date and request a new one in time.
-- **Variable:** [`PUMPERLY_REVE_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_api_key>). Two tuning settings go with it: [`PUMPERLY_REVE_PAGES_PER_RUN`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_pages_per_run>) and [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_cutover_ratio>).
+- **Variable:** [`PUMPERLY_REVE_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_api_key>). Two tuning settings go with it: [`PUMPERLY_REVE_PAGES_PER_RUN`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_pages_per_run>) and [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_cutover_ratio>).
 - **Without it:** Spain's chargers come from Open Charge Map, as for every other country.
 
 ### What happens when you set the key
@@ -144,16 +144,16 @@ The numbers above are examples.
 >
 > **Keep REVE hourly**
 >
-> `PUMPERLY_SCRAPE_INTERVAL_HOURS` changes REVE's interval too. [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#changing-intervals>) explains why REVE must stay hourly and how to pin it.
+> `PUMPERLY_SCRAPE_INTERVAL_HOURS` changes REVE's interval too. [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#changing-intervals>) explains why REVE must stay hourly and how to pin it.
 
-If you later remove the key, Spain goes back to Open Charge Map, and the REVE chargers stay in the database. See [Switching back leaves the registry's rows behind](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#spain-and-germany-ev-sources>) to remove them.
+If you later remove the key, Spain goes back to Open Charge Map, and the REVE chargers stay in the database. See [Switching back leaves the registry's rows behind](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#spain-and-germany-ev-sources>) to remove them.
 
 ## NSW FuelCheck (Australia)
 
 FuelCheck is the New South Wales Government's fuel price service. It covers about 3,200 stations, with prices in Australian cents per litre. The `AU` scraper covers Western Australia through FuelWatch, which needs no key. New South Wales is a separate scraper, `AU_NSW`.
 
 - **Get a key:** register an app for the Fuel API on the NSW Government's API portal. It gives you an API key and an API secret. The free tier allows 2,500 calls a month. Pumperly uses 2 calls per run, and runs `AU_NSW` every 12 hours by default, so it stays far below that.
-- **Variables:** [`NSW_FUEL_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#nsw_fuel_api_key>) and [`NSW_FUEL_API_SECRET`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#nsw_fuel_api_secret>). Both are required.
+- **Variables:** [`NSW_FUEL_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#nsw_fuel_api_key>) and [`NSW_FUEL_API_SECRET`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#nsw_fuel_api_secret>). Both are required.
 - **How it is used:** each run first trades the key and secret for an access token, then downloads all stations and prices in one request.
 - **Without them:** every `AU_NSW` run fails, and Western Australia keeps updating. The log shows:
 
@@ -165,7 +165,7 @@ FuelCheck is the New South Wales Government's fuel price service. It covers abou
 >
 > **`AU` alone does not include New South Wales**
 >
-> If you set `PUMPERLY_ENABLED_COUNTRIES`, list `AU_NSW` as well as `AU`. When the variable is unset, both run. See [Choosing countries](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#choosing-countries>).
+> If you set `PUMPERLY_ENABLED_COUNTRIES`, list `AU_NSW` as well as `AU`. When the variable is unset, both run. See [Choosing countries](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#choosing-countries>).
 
 ## Checking that a key works
 

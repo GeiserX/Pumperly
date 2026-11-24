@@ -1,6 +1,6 @@
 # Geocoding with Photon
 
-This page explains how Pumperly turns typed place names into map positions, and how to run the search engine behind it. Geocoding is optional. Without it, the search boxes only accept [typed coordinates](<https://geiserx.github.io/Pumperly/using/routes/#typing-coordinates>), and everything else keeps working.
+This page explains how Pumperly turns typed place names into map positions, and how to run the search engine behind it. Geocoding is optional. Without it, the search boxes only accept [typed coordinates](<https://geiserx.github.io/Pumperly/using/routes/index.md#typing-coordinates>), and everything else keeps working.
 
 Geocoding means turning a place name or address into coordinates. [Photon](<https://github.com/komoot/photon>) is an open-source geocoder built on [OpenStreetMap](<https://www.openstreetmap.org>) data. It is made for search-as-you-type. You run it yourself, next to the app.
 
@@ -31,7 +31,7 @@ Pumperly does not send a language to Photon. Each result's name comes back in Ph
 
 ## Running without Photon
 
-Leave [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#photon_url>) unset. Then:
+Leave [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#photon_url>) unset. Then:
 
 - `/api/geocode` returns an empty list, and the search boxes show no matches. Typed coordinates still work.
 - Visitors cannot pick a place by typing its name.
@@ -40,7 +40,7 @@ Leave [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-v
 
 ## Connecting Pumperly to Photon
 
-Set [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#photon_url>) to Photon's base URL, without a trailing slash, for example `http://pumperly-photon:2322`. Pumperly appends `/api`. Any Photon server that serves the standard `/api` search endpoint works.
+Set [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#photon_url>) to Photon's base URL, without a trailing slash, for example `http://pumperly-photon:2322`. Pumperly appends `/api`. Any Photon server that serves the standard `/api` search endpoint works.
 
 Pumperly calls Photon from the server, not from the browser. Photon does not need to be reachable from the internet, and it needs no CORS settings.
 

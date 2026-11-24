@@ -26,41 +26,41 @@ The **key** column is the name the scheduler and the logs use for the scraper. T
 
 | Country | Key | Source | Currency | Every | Default fuel | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| Austria | `AT` | [E-Control Spritpreisrechner](<https://geiserx.github.io/Pumperly/data/fuel-sources/#austria>) | EUR | 2 h | B7 | Running |
-| Belgium | `BE` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/#anwb>) | EUR | 6 h | E10 | Running |
-| Bosnia and Herzegovina | `BA` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | BAM | 12 h | B7 | Paused |
-| Bulgaria | `BG` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | B7 | Paused |
-| Croatia | `HR` | [MZOE](<https://geiserx.github.io/Pumperly/data/fuel-sources/#croatia>) | EUR | 12 h | B7 | Running |
-| Cyprus | `CY` | [Consumer Protection Service observatory](<https://geiserx.github.io/Pumperly/data/fuel-sources/#cyprus>) | EUR | 6 h | E5 | Running |
-| Czech Republic | `CZ` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | CZK | 12 h | E5 | Paused |
-| Denmark | `DK` | [FuelPrices.dk](<https://geiserx.github.io/Pumperly/data/fuel-sources/#denmark>) | DKK | 6 h | E10 | Needs a key |
-| Estonia | `EE` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
-| Finland | `FI` | [polttoaine.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#finland>) | EUR | 12 h | E10 | Running |
-| France | `FR` | [data.economie.gouv.fr](<https://geiserx.github.io/Pumperly/data/fuel-sources/#france>) | EUR | 1 h | E10 | Running |
-| Germany | `DE` | [Tankerkoenig](<https://geiserx.github.io/Pumperly/data/fuel-sources/#germany>) | EUR | 1 h | E5 | Needs a key |
-| Greece | `GR` | [FuelGR](<https://geiserx.github.io/Pumperly/data/fuel-sources/#greece>) | EUR | 12 h | B7 | Running |
-| Hungary | `HU` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | HUF | 12 h | E5 | Paused |
-| Iceland | `IS` | [Gasvaktin](<https://geiserx.github.io/Pumperly/data/fuel-sources/#iceland>) | ISK | 6 h | B7 | Running |
-| Ireland | `IE` | [Pick A Pump](<https://geiserx.github.io/Pumperly/data/fuel-sources/#ireland>) | EUR | 12 h | B7 | Blocked |
-| Italy | `IT` | [MIMIT](<https://geiserx.github.io/Pumperly/data/fuel-sources/#italy>) | EUR | 12 h | B7 | Running |
-| Latvia | `LV` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
-| Lithuania | `LT` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
-| Luxembourg | `LU` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/#anwb>) | EUR | 12 h | E10 | Running |
-| Moldova | `MD` | [ANRE](<https://geiserx.github.io/Pumperly/data/fuel-sources/#moldova>) | MDL | 12 h | B7 | Running |
-| Netherlands | `NL` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/#anwb>) | EUR | 6 h | E10 | Running |
-| North Macedonia | `MK` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | MKD | 12 h | B7 | Paused |
-| Norway | `NO` | [DrivstoffAppen](<https://geiserx.github.io/Pumperly/data/fuel-sources/#norway>) | NOK | 6 h | E5 | Down |
-| Poland | `PL` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | PLN | 12 h | E5 | Paused |
-| Portugal | `PT` | [DGEG](<https://geiserx.github.io/Pumperly/data/fuel-sources/#portugal>) | EUR | 12 h | B7 | Running |
-| Romania | `RO` | [Peco Online](<https://geiserx.github.io/Pumperly/data/fuel-sources/#romania>) | RON | 12 h | B7 | Running |
-| Serbia | `RS` | [NIS and cenagoriva.rs](<https://geiserx.github.io/Pumperly/data/fuel-sources/#serbia>) | RSD | 12 h | E5 | Running |
-| Slovakia | `SK` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | EUR | 12 h | E5 | Paused |
-| Slovenia | `SI` | [goriva.si](<https://geiserx.github.io/Pumperly/data/fuel-sources/#slovenia>) | EUR | 6 h | B7 | Running |
-| Spain | `ES` | [MITECO](<https://geiserx.github.io/Pumperly/data/fuel-sources/#spain>) | EUR | 12 h | B7 | Running |
-| Sweden | `SE` | [bensinpriser.nu](<https://geiserx.github.io/Pumperly/data/fuel-sources/#sweden>) | SEK | 12 h | E5 | Running |
-| Switzerland | `CH` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | CHF | 12 h | E5 | Paused |
-| Turkey | `TR` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) | TRY | 12 h | B7 | Paused |
-| United Kingdom | `GB` | [CMA open data](<https://geiserx.github.io/Pumperly/data/fuel-sources/#united-kingdom>) | GBP | 4 h | E5 | Running |
+| Austria | `AT` | [E-Control Spritpreisrechner](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#austria>) | EUR | 2 h | B7 | Running |
+| Belgium | `BE` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#anwb>) | EUR | 6 h | E10 | Running |
+| Bosnia and Herzegovina | `BA` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | BAM | 12 h | B7 | Paused |
+| Bulgaria | `BG` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | EUR | 12 h | B7 | Paused |
+| Croatia | `HR` | [MZOE](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#croatia>) | EUR | 12 h | B7 | Running |
+| Cyprus | `CY` | [Consumer Protection Service observatory](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#cyprus>) | EUR | 6 h | E5 | Running |
+| Czech Republic | `CZ` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | CZK | 12 h | E5 | Paused |
+| Denmark | `DK` | [FuelPrices.dk](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#denmark>) | DKK | 6 h | E10 | Needs a key |
+| Estonia | `EE` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | EUR | 12 h | E5 | Paused |
+| Finland | `FI` | [polttoaine.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#finland>) | EUR | 12 h | E10 | Running |
+| France | `FR` | [data.economie.gouv.fr](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#france>) | EUR | 1 h | E10 | Running |
+| Germany | `DE` | [Tankerkoenig](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#germany>) | EUR | 1 h | E5 | Needs a key |
+| Greece | `GR` | [FuelGR](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#greece>) | EUR | 12 h | B7 | Running |
+| Hungary | `HU` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | HUF | 12 h | E5 | Paused |
+| Iceland | `IS` | [Gasvaktin](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#iceland>) | ISK | 6 h | B7 | Running |
+| Ireland | `IE` | [Pick A Pump](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#ireland>) | EUR | 12 h | B7 | Blocked |
+| Italy | `IT` | [MIMIT](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#italy>) | EUR | 12 h | B7 | Running |
+| Latvia | `LV` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | EUR | 12 h | E5 | Paused |
+| Lithuania | `LT` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | EUR | 12 h | E5 | Paused |
+| Luxembourg | `LU` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#anwb>) | EUR | 12 h | E10 | Running |
+| Moldova | `MD` | [ANRE](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#moldova>) | MDL | 12 h | B7 | Running |
+| Netherlands | `NL` | [ANWB](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#anwb>) | EUR | 6 h | E10 | Running |
+| North Macedonia | `MK` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | MKD | 12 h | B7 | Paused |
+| Norway | `NO` | [DrivstoffAppen](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#norway>) | NOK | 6 h | E5 | Down |
+| Poland | `PL` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | PLN | 12 h | E5 | Paused |
+| Portugal | `PT` | [DGEG](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#portugal>) | EUR | 12 h | B7 | Running |
+| Romania | `RO` | [Peco Online](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#romania>) | RON | 12 h | B7 | Running |
+| Serbia | `RS` | [NIS and cenagoriva.rs](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#serbia>) | RSD | 12 h | E5 | Running |
+| Slovakia | `SK` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | EUR | 12 h | E5 | Paused |
+| Slovenia | `SI` | [goriva.si](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#slovenia>) | EUR | 6 h | B7 | Running |
+| Spain | `ES` | [MITECO](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#spain>) | EUR | 12 h | B7 | Running |
+| Sweden | `SE` | [bensinpriser.nu](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#sweden>) | SEK | 12 h | E5 | Running |
+| Switzerland | `CH` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | CHF | 12 h | E5 | Paused |
+| Turkey | `TR` | [Fuelo.net](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) | TRY | 12 h | B7 | Paused |
+| United Kingdom | `GB` | [CMA open data](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#united-kingdom>) | GBP | 4 h | E5 | Running |
 
 For the Fuelo countries the currency column is the scraper's fallback. The Fuelo scraper reads the currency from each price label and only uses the fallback when the label shows none it recognises.
 
@@ -68,11 +68,11 @@ For the Fuelo countries the currency column is the scraper's fallback. The Fuelo
 
 | Country | Key | Source | Currency | Every | Default fuel | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| Argentina | `AR` | [Secretaría de Energía](<https://geiserx.github.io/Pumperly/data/fuel-sources/#argentina>) | ARS | 12 h | E5 | Down from Europe |
-| Australia, Western Australia | `AU` | [FuelWatch](<https://geiserx.github.io/Pumperly/data/fuel-sources/#australia-western-australia>) | AUD | 12 h | E10 | Running |
-| Australia, New South Wales | `AU_NSW` | [FuelCheck](<https://geiserx.github.io/Pumperly/data/fuel-sources/#australia-new-south-wales>) | AUD | 12 h | E10 | Needs a key |
-| Mexico | `MX` | [CRE](<https://geiserx.github.io/Pumperly/data/fuel-sources/#mexico>) | MXN | 12 h | E5 | Running |
-| Taiwan | `TW` | [CPC Corporation](<https://geiserx.github.io/Pumperly/data/fuel-sources/#taiwan>) | TWD | 12 h | E5 | Running |
+| Argentina | `AR` | [Secretaría de Energía](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#argentina>) | ARS | 12 h | E5 | Down from Europe |
+| Australia, Western Australia | `AU` | [FuelWatch](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#australia-western-australia>) | AUD | 12 h | E10 | Running |
+| Australia, New South Wales | `AU_NSW` | [FuelCheck](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#australia-new-south-wales>) | AUD | 12 h | E10 | Needs a key |
+| Mexico | `MX` | [CRE](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#mexico>) | MXN | 12 h | E5 | Running |
+| Taiwan | `TW` | [CPC Corporation](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#taiwan>) | TWD | 12 h | E5 | Running |
 
 The United States has no fuel prices. It has [EV charging locations only](<#ev-charging>).
 
@@ -100,10 +100,10 @@ EV chargers come from three sources. Every fuel country above also gets EV charg
 
 | Region | Key | Source | Every | Needs |
 | --- | --- | --- | --- | --- |
-| Every supported country and the United States | `EV_<code>`, for example `EV_FR` | [Open Charge Map](<https://geiserx.github.io/Pumperly/data/ev-sources/#open-charge-map>) | 24 h | `PUMPERLY_OCM_API_KEY` |
-| Spain | `EV_ES_REVE` | [Mapa REVE](<https://geiserx.github.io/Pumperly/data/ev-sources/#mapa-reve>) | 1 h | `PUMPERLY_REVE_API_KEY` |
-| Germany | `EV_DE_OCPDB` | [Open ChargePoint Database](<https://geiserx.github.io/Pumperly/data/ev-sources/#ocpdb>), with prices | 6 h | nothing |
-| Germany, opt-in | `EV_DE_BNETZA` | [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/#bnetza>) | 24 h | nothing |
+| Every supported country and the United States | `EV_<code>`, for example `EV_FR` | [Open Charge Map](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#open-charge-map>) | 24 h | `PUMPERLY_OCM_API_KEY` |
+| Spain | `EV_ES_REVE` | [Mapa REVE](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#mapa-reve>) | 1 h | `PUMPERLY_REVE_API_KEY` |
+| Germany | `EV_DE_OCPDB` | [Open ChargePoint Database](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#ocpdb>), with prices | 6 h | nothing |
+| Germany, opt-in | `EV_DE_BNETZA` | [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#bnetza>) | 24 h | nothing |
 
 Spain and Germany each use exactly one EV source at a time:
 

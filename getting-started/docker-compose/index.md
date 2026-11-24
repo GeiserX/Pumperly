@@ -32,7 +32,7 @@ The repository ships one compose file, [`docker/docker-compose.yml`](<https://gi
 # One image for the app and for the migrate service, so the migrations a
 # release ships are the ones applied. The auto-tag workflow moves this pin.
 x-app-image: &app-image
-  image: drumsergio/pumperly:1.21.1
+  image: drumsergio/pumperly:1.21.8
 
 services:
   db:
@@ -365,7 +365,7 @@ Add these headers as well:
 
 ### Rate limits
 
-The app's own limits cover only route planning: 30 requests a minute per client IP for `/api/route` and `/api/route-stations`, and 10 for `/api/route-detour`. Every other endpoint answers as often as it is asked. [HTTP API](<https://geiserx.github.io/Pumperly/reference/api/#overview>) lists each endpoint and its limit.
+The app's own limits cover only route planning: 30 requests a minute per client IP for `/api/route` and `/api/route-stations`, and 10 for `/api/route-detour`. Every other endpoint answers as often as it is asked. [HTTP API](<https://geiserx.github.io/Pumperly/reference/api/index.md#overview>) lists each endpoint and its limit.
 
 Limit these at the proxy:
 
@@ -487,11 +487,11 @@ Pumperly's code is AGPL-3.0-or-later. The prices and charger locations it shows 
 
 | Source | Countries | What the licence asks of you |
 | --- | --- | --- |
-| [DGEG](<https://geiserx.github.io/Pumperly/data/fuel-sources/#portugal>) | Portugal, fuel | Non-commercial use only. |
-| [Mapa REVE](<https://geiserx.github.io/Pumperly/data/ev-sources/#mapa-reve>) | Spain, chargers, only when `PUMPERLY_REVE_API_KEY` is set | Non-commercial use only. Credit Red Eléctrica de España, and do not alter or misrepresent the data. |
-| [Consumer Protection Service](<https://geiserx.github.io/Pumperly/data/fuel-sources/#cyprus>) | Cyprus, fuel | CC BY-SA 4.0. Credit the source. Data you derive from it must be shared under the same licence. |
-| [Open Charge Map](<https://geiserx.github.io/Pumperly/data/ev-sources/#open-charge-map>) | Chargers in every country that uses it | Open Database License (ODbL). Credit Open Charge Map. A database you derive from it must stay under the ODbL. |
-| [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/#bnetza>) | Germany, chargers | CC BY 4.0. Credit "Bundesnetzagentur.de". |
+| [DGEG](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#portugal>) | Portugal, fuel | Non-commercial use only. |
+| [Mapa REVE](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#mapa-reve>) | Spain, chargers, only when `PUMPERLY_REVE_API_KEY` is set | Non-commercial use only. Credit Red Eléctrica de España, and do not alter or misrepresent the data. |
+| [Consumer Protection Service](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#cyprus>) | Cyprus, fuel | CC BY-SA 4.0. Credit the source. Data you derive from it must be shared under the same licence. |
+| [Open Charge Map](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#open-charge-map>) | Chargers in every country that uses it | Open Database License (ODbL). Credit Open Charge Map. A database you derive from it must stay under the ODbL. |
+| [BNetzA Ladesäulenregister](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#bnetza>) | Germany, chargers | CC BY 4.0. Credit "Bundesnetzagentur.de". |
 | OpenStreetMap, through the OpenFreeMap tiles and through Valhalla and Photon | The map, routes and address search | ODbL. Credit "© OpenStreetMap contributors". |
 
 Most other sources also ask for credit. [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) give each one's licence where the project records it.
@@ -507,6 +507,6 @@ The app gives that credit in its **Data Sources** dialog, opened from the menu. 
 > - Set `PUMPERLY_ENABLED_COUNTRIES` to a list without `PT`. Leaving it unset runs every scraper, Portugal included.
 > - Leave `PUMPERLY_REVE_API_KEY` unset. Spain's chargers then come from Open Charge Map instead, when `PUMPERLY_OCM_API_KEY` is set.
 >
-> Stopping a scraper does not remove what it already wrote, and the map keeps showing it. Delete Portugal's rows with `DELETE FROM stations WHERE country = 'PT';` in `psql`. Their prices go with them. [Switching a source back](<https://geiserx.github.io/Pumperly/data/ev-sources/#switching-back>) gives the statement for Mapa REVE's rows.
+> Stopping a scraper does not remove what it already wrote, and the map keeps showing it. Delete Portugal's rows with `DELETE FROM stations WHERE country = 'PT';` in `psql`. Their prices go with them. [Switching a source back](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#switching-back>) gives the statement for Mapa REVE's rows.
 >
 > Read each remaining source's terms yourself. This page lists what the project records. It is not legal advice.

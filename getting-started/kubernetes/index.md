@@ -95,7 +95,7 @@ The log lines and the checks are the same as with Docker. See [What happens on f
 
 ## The schema
 
-The app never creates its tables. They come from the SQL migrations under `prisma/migrations`, which the image carries together with `migrate.mjs`, the script that applies them. The chart's `migrate` init container, on by default, runs that script in the app image before the app starts: one transaction per migration, recorded in Prisma's history table `_prisma_migrations`, and the app does not start if a migration fails. [Apply new migrations](<https://geiserx.github.io/Pumperly/operations/upgrading/#apply-new-migrations>) describes what the script does and what it refuses.
+The app never creates its tables. They come from the SQL migrations under `prisma/migrations`, which the image carries together with `migrate.mjs`, the script that applies them. The chart's `migrate` init container, on by default, runs that script in the app image before the app starts: one transaction per migration, recorded in Prisma's history table `_prisma_migrations`, and the app does not start if a migration fails. [Apply new migrations](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#apply-new-migrations>) describes what the script does and what it refuses.
 
 > [!CAUTION]
 >
@@ -198,7 +198,7 @@ To use your own database, set `postgis.enabled: false` and fill `externalDatabas
 
 ### Health checks
 
-The app's startup, liveness and readiness probes all request `GET /api/config`. That route does not query the database, so a passing probe means the web server is up, not that the scrapes work. Check `/api/stats` for that. See [Check that it works](<https://geiserx.github.io/Pumperly/getting-started/first-start/#check-that-it-works>).
+The app's startup, liveness and readiness probes all request `GET /api/config`. That route does not query the database, so a passing probe means the web server is up, not that the scrapes work. Check `/api/stats` for that. See [Check that it works](<https://geiserx.github.io/Pumperly/getting-started/first-start/index.md#check-that-it-works>).
 
 ### Node drains and the disruption budget
 
@@ -229,12 +229,12 @@ The app speaks plain HTTP, has no login and sets no security headers. An Ingress
 
 Check your ingress controller's documentation for how it sets `X-Forwarded-For`, compression and response buffering. Pass its settings through `ingress.annotations`, or in the controller's own configuration.
 
-The rest of the list is the same as with Docker Compose. [Before you expose it](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#before-you-expose-it>) on that page covers each item:
+The rest of the list is the same as with Docker Compose. [Before you expose it](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#before-you-expose-it>) on that page covers each item:
 
-- [Security headers](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#security-headers>): the Content Security Policy the app needs and the other headers to add.
-- [Rate limits](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#rate-limits>): `/api/geocode`, `/api/stations` and `/api/stations/nearest` have no limit inside the app.
-- [The app still calls itself pumperly.com](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#the-app-still-calls-itself-pumperlycom>): the canonical URL, sitemap, robots file, legal dialogs and some scraper `User-Agent` headers name pumperly.com. No chart value changes them.
-- [Data licences on a public instance](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#data-licences-on-a-public-instance>): Portugal's fuel data and Mapa REVE are non-commercial only, and most sources require credit.
+- [Security headers](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#security-headers>): the Content Security Policy the app needs and the other headers to add.
+- [Rate limits](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#rate-limits>): `/api/geocode`, `/api/stations` and `/api/stations/nearest` have no limit inside the app.
+- [The app still calls itself pumperly.com](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#the-app-still-calls-itself-pumperlycom>): the canonical URL, sitemap, robots file, legal dialogs and some scraper `User-Agent` headers name pumperly.com. No chart value changes them.
+- [Data licences on a public instance](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#data-licences-on-a-public-instance>): Portugal's fuel data and Mapa REVE are non-commercial only, and most sources require credit.
 
 The chart already keeps PostGIS, Valhalla and Photon on `ClusterIP` Services, so nothing outside the cluster reaches them unless you add a route.
 

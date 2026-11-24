@@ -139,8 +139,8 @@ The first command should list your countries. The second should show a `geom` co
 
 On Helm, run the same `psql` commands with `kubectl exec pumperly-postgis-0 --` in place of `docker compose -f docker/docker-compose.yml exec db`.
 
-Then start the app and run the [checks after an upgrade](<https://geiserx.github.io/Pumperly/operations/upgrading/#after-an-upgrade>). They apply to a restore too. The first scraper starts 10 seconds after boot. Source by source, the scrapers replace the restored prices with fresh ones.
+Then start the app and run the [checks after an upgrade](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#after-an-upgrade>). They apply to a restore too. The first scraper starts 10 seconds after boot. Source by source, the scrapers replace the restored prices with fresh ones.
 
 ### Restoring an older dump into a newer release
 
-A dump carries the schema of the release that wrote it. If you restore it under a newer release, apply the migrations added since then. See [the database schema](<https://geiserx.github.io/Pumperly/operations/upgrading/#migrations>).
+A dump carries the schema of the release that wrote it. If you restore it under a newer release, apply the migrations added since then. See [the database schema](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#migrations>).

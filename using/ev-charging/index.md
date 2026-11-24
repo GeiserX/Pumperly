@@ -8,7 +8,7 @@ This page explains the EV layer: what it shows, what a charger's popup holds, an
 
 Pick **EV Charging** in the fuel selector, under the **Electric** group. Its code is `EV`. The map then shows charging stations instead of fuel stations.
 
-An operator can make it the first layer visitors see with [`PUMPERLY_DEFAULT_FUEL=EV`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>).
+An operator can make it the first layer visitors see with [`PUMPERLY_DEFAULT_FUEL=EV`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_fuel>).
 
 ## What the EV layer shows
 
@@ -16,7 +16,7 @@ Pumperly keeps a type on every station: a fuel station, an EV charger, or both. 
 
 The fuel layers work differently. They show a station only when it has a price for the chosen fuel. A station marked as both appears on the EV layer, and on each fuel layer it has a price for.
 
-Only German chargers have prices, per kWh, from [OCPDB](<https://geiserx.github.io/Pumperly/data/ev-sources/#ocpdb>). Chargers elsewhere carry none. That changes a few things on the map:
+Only German chargers have prices, per kWh, from [OCPDB](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#ocpdb>). Chargers elsewhere carry none. That changes a few things on the map:
 
 | On a fuel layer | On the EV layer |
 | --- | --- |
@@ -48,7 +48,7 @@ Click a charger to open its popup. It holds:
 2. The **address** and the **city**.
 3. For a priced charger, the **price per kWh**, with the charger's highest power and how old the price is. Fees on top follow on one line, such as `+0.20 €/min after 45 min · +0.50 € per session`. When the session fee depends on the time or day, each option is listed with when it applies, such as `+0.50 € per session (06:00–22:00) · +1.00 € per session (22:00–06:00)`.
 4. For an unpriced charger, its **highest power** in kW, such as `150 kW`, labelled "Max. charging power · Price not published". When the source lists no power, it reads "Power unknown" instead. Every charger source publishes power.
-5. The same four buttons as any station: **Get directions**, **Show on map**, **Copy link** and **Share**. See [Station popup](<https://geiserx.github.io/Pumperly/using/map/#station-popup>).
+5. The same four buttons as any station: **Get directions**, **Show on map**, **Copy link** and **Share**. See [Station popup](<https://geiserx.github.io/Pumperly/using/map/index.md#station-popup>).
 
 In a route's station list, a charger row shows the operator and the station name. Each source builds that name differently. The German registry, for example, combines the operator with the street and a site label, which tells apart two chargers at one address.
 
@@ -81,9 +81,9 @@ Every charger within the radius is included, priced or not. Unlike fuel stations
 >
 > **Keep the radius small in cities**
 >
-> Cities have far more chargers than fuel stations. A 5 km radius across a large city can hold hundreds of them. Pumperly times detours in batches of 150 chargers, and each batch is one request. A visitor may send 10 detour requests a minute, so the later batches of a very dense corridor come back as unknown detours. Lower the search radius, or pick a route that avoids the centre. The limits are listed in [Limits](<https://geiserx.github.io/Pumperly/using/routes/#limits>).
+> Cities have far more chargers than fuel stations. A 5 km radius across a large city can hold hundreds of them. Pumperly times detours in batches of 150 chargers, and each batch is one request. A visitor may send 10 detour requests a minute, so the later batches of a very dense corridor come back as unknown detours. Lower the search radius, or pick a route that avoids the centre. The limits are listed in [Limits](<https://geiserx.github.io/Pumperly/using/routes/index.md#limits>).
 
-Clicking a charger in the list or on the map adds it to the route as a stop, as on any layer. See [Pick a station as a stop](<https://geiserx.github.io/Pumperly/using/routes/#pick-a-station-as-a-stop>).
+Clicking a charger in the list or on the map adds it to the route as a stop, as on any layer. See [Pick a station as a stop](<https://geiserx.github.io/Pumperly/using/routes/index.md#pick-a-station-as-a-stop>).
 
 On the EV layer, the fuel stop planner becomes **Plan charging stops**. You set the battery size in kWh, the consumption in kWh/100 km, the car's max charge power, and the battery level at the start and at arrival.
 
@@ -93,7 +93,7 @@ Each stop charges to at most 80 %, because charging slows sharply above that. Ch
 
 ## Sharing a charger
 
-A charger link must carry `fuel=EV`. The map only loads chargers on the EV layer, so a link without it opens a fuel layer where the charger never loads. The **Copy link** and **Share** buttons add it for you. [The EV rule](<https://geiserx.github.io/Pumperly/using/links/#the-ev-rule>) explains it in full.
+A charger link must carry `fuel=EV`. The map only loads chargers on the EV layer, so a link without it opens a fuel layer where the charger never loads. The **Copy link** and **Share** buttons add it for you. [The EV rule](<https://geiserx.github.io/Pumperly/using/links/index.md#the-ev-rule>) explains it in full.
 
 ## Summary
 

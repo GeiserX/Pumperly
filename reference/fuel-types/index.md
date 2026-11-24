@@ -1,6 +1,6 @@
 # Fuel types
 
-This page lists every fuel code Pumperly knows, what each one means, and how the fuels that are not sold by the litre are handled. Use these codes wherever a `fuel` value is expected: in the [HTTP API](<https://geiserx.github.io/Pumperly/reference/api/index.md>), in share links and in [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>).
+This page lists every fuel code Pumperly knows, what each one means, and how the fuels that are not sold by the litre are handled. Use these codes wherever a `fuel` value is expected: in the [HTTP API](<https://geiserx.github.io/Pumperly/reference/api/index.md>), in share links and in [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_fuel>).
 
 ## Where the list lives
 
@@ -50,7 +50,7 @@ The fuel picker groups the codes under six headings, in this order:
 
 ## Default fuel per country
 
-When the map opens, it selects the default fuel of the instance's default country. [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>) overrides it for the whole instance. Pumperly does not check that value at startup, so use a code from the table above. A share link that carries its own `fuel` wins over both.
+When the map opens, it selects the default fuel of the instance's default country. [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_fuel>) overrides it for the whole instance. Pumperly does not check that value at startup, so use a code from the table above. A share link that carries its own `fuel` wins over both.
 
 | Default fuel | Countries |
 | --- | --- |
@@ -76,7 +76,7 @@ Many sources price CNG, LNG and hydrogen per kilogram. Sweden's feed, for exampl
 
 ### Price checks for CNG, LNG, H2 and AdBlue
 
-Every price a scraper produces goes through a sanity check before it is stored. Most fuels are checked against a range that depends on the currency. [Currencies and exchange rates](<https://geiserx.github.io/Pumperly/reference/currencies/#price-bands>) has the table.
+Every price a scraper produces goes through a sanity check before it is stored. Most fuels are checked against a range that depends on the currency. [Currencies and exchange rates](<https://geiserx.github.io/Pumperly/reference/currencies/index.md#price-bands>) has the table.
 
 `CNG`, `LNG`, `H2` and `ADBLUE` skip that table. For these four, any price of at least 0.05 and below 100 is kept, whatever the currency. `LPG` is sold by the litre, so it goes through the normal per-currency range. `EV` is per kWh and is kept only in EUR, from 0.10 to 2.00.
 
@@ -88,7 +88,7 @@ Every price a scraper produces goes through a sanity check before it is stored. 
 - A charger with an `EV` row in `fuel_prices` carries its newest `price`, per kWh, with `currency`, `reportedAt` and any `evFees`. Only German chargers from OCPDB have these rows.
 - Unpriced chargers have no `price` and no `reportedAt`. Their `currency` is `EUR` and carries no meaning.
 
-A charging tariff is more than a per-kWh price. The session and per-minute fees on top go in `evFees`, described with the [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/#ev_fees>) column. [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) lists where the chargers come from, and [EV charging](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md>) shows how they appear on the map.
+A charging tariff is more than a per-kWh price. The session and per-minute fees on top go in `evFees`, described with the [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/index.md#ev_fees>) column. [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) lists where the chargers come from, and [EV charging](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md>) shows how they appear on the map.
 
 ## Adding a fuel code
 

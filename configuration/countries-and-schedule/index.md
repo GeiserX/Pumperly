@@ -46,7 +46,7 @@ Static datasets are registered from [`src/scrapers/data/index.ts`](<https://gith
 
 ## Choosing countries
 
-[`PUMPERLY_ENABLED_COUNTRIES`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_enabled_countries>) picks which scraper keys run.
+[`PUMPERLY_ENABLED_COUNTRIES`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_enabled_countries>) picks which scraper keys run.
 
 When it is **unset or empty**, every scraper key runs. That is every fuel country, `AU_NSW`, every `EV_` key including `EV_US`, and any static dataset.
 
@@ -60,7 +60,7 @@ When it is **set**, the value is a comma-separated list. These rules apply:
 6. `AU` does not include New South Wales. Add `AU_NSW` to the list for it.
 7. If no entry matches, no scraper runs at all.
 
-With [`PUMPERLY_EV_ENABLED=0`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ev_enabled>), rule 3 is off and every `EV_` key is dropped, even one you listed.
+With [`PUMPERLY_EV_ENABLED=0`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ev_enabled>), rule 3 is off and every `EV_` key is dropped, even one you listed.
 
 | `PUMPERLY_ENABLED_COUNTRIES` | Scrapers that run |
 | --- | --- |
@@ -94,8 +94,8 @@ Spain and Germany each have more than one possible charger source: Open Charge M
 
 | Country | Official source | Picked when | Otherwise |
 | --- | --- | --- | --- |
-| Spain | Mapa REVE (`EV_ES_REVE`) | [`PUMPERLY_REVE_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_api_key>) is set | Open Charge Map (`EV_ES`) |
-| Germany | Open ChargePoint Database (`EV_DE_OCPDB`) | Always, unless the next column applies | The BNetzA register (`EV_DE_BNETZA`) when [`PUMPERLY_DE_EV_SOURCE=bnetza`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_de_ev_source>), Open Charge Map (`EV_DE`) when it is `ocm` |
+| Spain | Mapa REVE (`EV_ES_REVE`) | [`PUMPERLY_REVE_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_api_key>) is set | Open Charge Map (`EV_ES`) |
+| Germany | Open ChargePoint Database (`EV_DE_OCPDB`) | Always, unless the next column applies | The BNetzA register (`EV_DE_BNETZA`) when [`PUMPERLY_DE_EV_SOURCE=bnetza`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_de_ev_source>), Open Charge Map (`EV_DE`) when it is `ocm` |
 
 The log shows the choice at start-up:
 
@@ -106,9 +106,9 @@ The log shows the choice at start-up:
 
 Each official source deletes the other sources' rows for its country once it has taken over:
 
-- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ocpdb_min_stations>) stations.
-- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it refreshed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_bnetza_min_stations>) stations.
-- **REVE** fills in over many hourly runs. Open Charge Map's Spanish rows stay on the map until REVE holds [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_cutover_ratio>) of the registry, 95% by default. Until then, expect two pins on many Spanish chargers. [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/#mapa-reve-spain>) has the timing.
+- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ocpdb_min_stations>) stations.
+- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it refreshed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_bnetza_min_stations>) stations.
+- **REVE** fills in over many hourly runs. Open Charge Map's Spanish rows stay on the map until REVE holds [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_cutover_ratio>) of the registry, 95% by default. Until then, expect two pins on many Spanish chargers. [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md#mapa-reve-spain>) has the timing.
 
 > [!WARNING]
 >
@@ -131,8 +131,8 @@ Each official source deletes the other sources' rows for its country once it has
 
 Each scraper key gets an interval in hours. The first rule that applies wins:
 
-1. [`PUMPERLY_SCRAPE_INTERVAL_<KEY>`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_scrape_interval_key>) for that key, for example `PUMPERLY_SCRAPE_INTERVAL_FR`.
-2. [`PUMPERLY_SCRAPE_INTERVAL_HOURS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_scrape_interval_hours>), if it is above 0.
+1. [`PUMPERLY_SCRAPE_INTERVAL_<KEY>`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_scrape_interval_key>) for that key, for example `PUMPERLY_SCRAPE_INTERVAL_FR`.
+2. [`PUMPERLY_SCRAPE_INTERVAL_HOURS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_scrape_interval_hours>), if it is above 0.
 3. The key's default, from `DEFAULT_INTERVALS` in [`src/instrumentation-node.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts>).
 4. 12 hours, for a key with no default, such as a static dataset.
 
@@ -213,17 +213,17 @@ The CLI differs from the scheduler in five ways:
 - It has no `AU_NSW` key and does not run `STATIC_` datasets.
 - `all` keeps one EV source each for Spain and Germany, as the scheduler does. Naming `EV_ES` or `EV_DE` directly runs it anyway.
 
-The Docker image ships the built app only, not the scraper CLI. See [Run from source](<https://geiserx.github.io/Pumperly/development/#run-from-source>).
+The Docker image ships the built app only, not the scraper CLI. See [Run from source](<https://geiserx.github.io/Pumperly/development/index.md#run-from-source>).
 
 ## Default country and fuel
 
-[`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_country>) sets where the map opens. It uses the centre and zoom from `COUNTRIES` in [`src/lib/config.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/lib/config.ts>). The default is `ES`.
+[`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_country>) sets where the map opens. It uses the centre and zoom from `COUNTRIES` in [`src/lib/config.ts`](<https://github.com/GeiserX/Pumperly/blob/main/src/lib/config.ts>). The default is `ES`.
 
 - Use an upper-case code from the table below. The value is not upper-cased for you.
 - An unknown code opens the map on Spain, with Spain's default fuel.
 - The default country does not need to be in `PUMPERLY_ENABLED_COUNTRIES`, and it does not limit what the map shows.
 
-[`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>) sets the fuel selected when the map opens. Without it, the default country's fuel is used. Visitors can change the fuel at any time, and a [share link](<https://geiserx.github.io/Pumperly/using/links/index.md>) that names a fuel wins over the default. The value is not checked, so copy a code from [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>). `EV` opens on the charger layer.
+[`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_fuel>) sets the fuel selected when the map opens. Without it, the default country's fuel is used. Visitors can change the fuel at any time, and a [share link](<https://geiserx.github.io/Pumperly/using/links/index.md>) that names a fuel wins over the default. The value is not checked, so copy a code from [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>). `EV` opens on the charger layer.
 
 > [!NOTE]
 >
@@ -275,7 +275,7 @@ The Docker image ships the built app only, not the scraper CLI. See [Run from so
 
 ## Clustering
 
-Clustering groups nearby stations into one bubble when the map is zoomed out. It keeps a whole country readable and fast to draw. [`PUMPERLY_CLUSTER_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_cluster_stations>) turns it on or off. It is on by default.
+Clustering groups nearby stations into one bubble when the map is zoomed out. It keeps a whole country readable and fast to draw. [`PUMPERLY_CLUSTER_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_cluster_stations>) turns it on or off. It is on by default.
 
 When clustering is on:
 

@@ -49,7 +49,7 @@ docker compose -f docker/docker-compose.yml up -d db
 # One image for the app and for the migrate service, so the migrations a
 # release ships are the ones applied. The auto-tag workflow moves this pin.
 x-app-image: &app-image
-  image: drumsergio/pumperly:1.21.1
+  image: drumsergio/pumperly:1.21.8
 
 services:
   db:
@@ -282,7 +282,7 @@ A pull request runs these checks, depending on the files it changes. Fix any tha
 
 | Check | Runs when | What it runs |
 | --- | --- | --- |
-| CI: Lint &amp; Type Check | Code, schema, Docker or dependency changes | `npx tsc --noEmit` and `npm run lint` |
+| CI: Lint & Type Check | Code, schema, Docker or dependency changes | `npx tsc --noEmit` and `npm run lint` |
 | CI: Test | Same | The unit and component tests, with coverage. Integration tests do not run in CI |
 | CI: Build | Same | `npm run build` |
 | CI: CI Summary | Same | Fails when any of the three above failed |
@@ -337,7 +337,7 @@ PUMPERLY_ENABLED_COUNTRIES=ES
 PUMPERLY_SCRAPE_INTERVAL_HOURS=0
 ```
 
-The dev server runs the same scheduler as production. The first line limits it to one country. The second turns it off, so nothing scrapes until you run the command line yourself. See [What happens on first start](<https://geiserx.github.io/Pumperly/getting-started/first-start/#the-scheduler>).
+The dev server runs the same scheduler as production. The first line limits it to one country. The second turns it off, so nothing scrapes until you run the command line yourself. See [What happens on first start](<https://geiserx.github.io/Pumperly/getting-started/first-start/index.md#the-scheduler>).
 
 #### 3\. Start PostGIS
 
@@ -345,7 +345,7 @@ The dev server runs the same scheduler as production. The first line limits it t
 docker compose -f docker/docker-compose.yml up -d db
 ```
 
-This starts only the database. See [What the shipped compose file runs](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#what-the-shipped-compose-file-runs>).
+This starts only the database. See [What the shipped compose file runs](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#what-the-shipped-compose-file-runs>).
 
 #### 4\. Generate the Prisma client and create the schema
 
@@ -356,7 +356,7 @@ npx prisma migrate deploy
 
 - `prisma generate` writes the typed database client to `src/generated/prisma`. Git ignores that directory, so every fresh checkout needs this step. The tests and the build need it too.
 - `prisma migrate deploy` applies the SQL files under `prisma/migrations` and records them. It reads `DATABASE_URL` from `.env` through [`prisma.config.ts`](<https://github.com/GeiserX/Pumperly/blob/main/prisma.config.ts>).
-- The `ALTER TABLE` widens the price column to match `prisma/schema.prisma`. [Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#4-create-the-database-schema>) explains why.
+- The `ALTER TABLE` widens the price column to match `prisma/schema.prisma`. [Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#4-create-the-database-schema>) explains why.
 
 > [!WARNING]
 >
@@ -380,7 +380,7 @@ npm run dev
 
 Open [http://localhost:3000](<http://localhost:3000>). Before it starts, the `predev` step copies MapLibre's worker files into `public/maplibre/`. The map needs them to draw anything.
 
-Routing and address search stay off until you set `VALHALLA_URL` and `PHOTON_URL`. You can point them at any Valhalla and Photon you can reach. See [Run without routing and address search](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#run-without-routing-and-address-search>).
+Routing and address search stay off until you set `VALHALLA_URL` and `PHOTON_URL`. You can point them at any Valhalla and Photon you can reach. See [Run without routing and address search](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#run-without-routing-and-address-search>).
 
 ### Scripts
 

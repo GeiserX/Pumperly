@@ -318,7 +318,7 @@ done
 
 [Data model](<https://geiserx.github.io/Pumperly/reference/data-model/index.md>) explains why the migrations are applied directly here.
 
-Run the scraper against it from a checkout set up as in [Run from source](<https://geiserx.github.io/Pumperly/development/#run-from-source>). Export `DATABASE_URL` in the shell. The CLI also reads `.env`, but a variable already set in the shell wins.
+Run the scraper against it from a checkout set up as in [Run from source](<https://geiserx.github.io/Pumperly/development/index.md#run-from-source>). Export `DATABASE_URL` in the shell. The CLI also reads `.env`, but a variable already set in the shell wins.
 
 ```
 export DATABASE_URL=postgresql://pumperly:not-a-secret@127.0.0.1:55432/pumperly
@@ -380,7 +380,7 @@ Run `npx vitest run src/scrapers/exampleland.test.ts`. The de-duplication test m
 
 ## If the country already has a source
 
-When the new scraper replaces a dead source for a country that is already covered, the old source's prices would stay forever next to the new ones. Use the handover pattern in [How scrapers work](<https://geiserx.github.io/Pumperly/data/how-scrapers-work/#handing-a-country-over-to-a-new-source>). Retire the old source's rows in a `run()` override, and only after a full, error-free run of the new one that clears a minimum station count. Test both sides. The cleanup must run after a healthy run and delete nothing after a failed or thin one.
+When the new scraper replaces a dead source for a country that is already covered, the old source's prices would stay forever next to the new ones. Use the handover pattern in [How scrapers work](<https://geiserx.github.io/Pumperly/data/how-scrapers-work/index.md#handing-a-country-over-to-a-new-source>). Retire the old source's rows in a `run()` override, and only after a full, error-free run of the new one that clears a minimum station count. Test both sides. The cleanup must run after a healthy run and delete nothing after a failed or thin one.
 
 ## Open the pull request
 

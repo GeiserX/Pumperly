@@ -128,7 +128,7 @@ Your choice from the menu is saved in the browser's local storage under the key 
 
 ## How conversion works
 
-The browser asks [`/api/exchange-rates`](<https://geiserx.github.io/Pumperly/reference/api/#exchange-rates>) for the rates once per page load. Every rate is "units of this currency per 1 euro". To show a price in another currency, the browser divides by the source currency's rate and multiplies by the target's:
+The browser asks [`/api/exchange-rates`](<https://geiserx.github.io/Pumperly/reference/api/index.md#exchange-rates>) for the rates once per page load. Every rate is "units of this currency per 1 euro". To show a price in another currency, the browser divides by the source currency's rate and multiplies by the target's:
 
 ```
 shown price = price / rate[source currency] × rate[target currency]
@@ -192,7 +192,7 @@ The rules live in `BaseScraper.run()` in [`src/scrapers/base.ts`](<https://githu
 1. A price of zero or less is dropped.
 2. `EV` prices are per kWh. They are kept only in `EUR`, from 0.10 to 2.00. The rest of this list does not apply to them.
 3. `CNG`, `LNG`, `H2` and `ADBLUE` are kept if the price is at least 0.05 and below 100, whatever the currency. The rest of this list does not apply to them.
-4. A price in `EUR`, `GBP` or `CHF` is kept if it is from [`PUMPERLY_PRICE_MIN`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_price_min>) to [`PUMPERLY_PRICE_MAX`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_price_max>). The defaults are 0.30 and 4.00. The same two numbers apply to all three currencies.
+4. A price in `EUR`, `GBP` or `CHF` is kept if it is from [`PUMPERLY_PRICE_MIN`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_price_min>) to [`PUMPERLY_PRICE_MAX`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_price_max>). The defaults are 0.30 and 4.00. The same two numbers apply to all three currencies.
 5. Any other currency is checked against its row in the table below. Both ends are inclusive.
 6. A currency with no row is checked against a wide default of 0.1 to 100,000.
 
@@ -231,7 +231,7 @@ A fuel station left with no valid price at all is dropped from that run too. EV 
 >
 > **Raising the band for a price spike**
 >
-> If real prices in euros, pounds or Swiss francs pass 4.00 per litre, raise [`PUMPERLY_PRICE_MAX`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_price_max>). Otherwise every station above the limit loses that fuel on the next run. The other currencies' bands are constants in the code, so changing them needs a code change.
+> If real prices in euros, pounds or Swiss francs pass 4.00 per litre, raise [`PUMPERLY_PRICE_MAX`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_price_max>). Otherwise every station above the limit loses that fuel on the next run. The other currencies' bands are constants in the code, so changing them needs a code change.
 
 ### Bands and parsing
 

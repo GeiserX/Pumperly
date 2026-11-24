@@ -34,7 +34,7 @@ Pumperly asks for the destination first. On an empty map you see one box, **Wher
 
 The start box has a **My location** entry. It shows when the box has focus and holds fewer than two characters, and on top of the suggestions. Picking it asks the browser for your position. If that fails, a "Location denied" message shows for 3 seconds.
 
-See [Locate me](<https://geiserx.github.io/Pumperly/using/map/#locate-me>) for how the map uses your position.
+See [Locate me](<https://geiserx.github.io/Pumperly/using/map/index.md#locate-me>) for how the map uses your position.
 
 ### Search suggestions
 
@@ -150,7 +150,7 @@ The filter applies to the map and the list alike.
 - Stations with an unknown detour are hidden while a limit is set. Set **No limit** to see them.
 - While detours are still coming in, the list only shows stations whose detour has arrived. The map keeps showing the others until then.
 
-The [max-price filter](<https://geiserx.github.io/Pumperly/using/map/#max-price-filter>) from the map also applies to this list.
+The [max-price filter](<https://geiserx.github.io/Pumperly/using/map/index.md#max-price-filter>) from the map also applies to this list.
 
 ## The station list
 
@@ -201,7 +201,7 @@ The station list and the detour times stay those of your original route. The sta
 
 When you already have five stops, a station cannot be added and the list shows "Maximum stops reached". When the route through the station fails, a message shows for 3 seconds and the station is deselected.
 
-The station stop is part of the route link. See [Share links and deep links](<https://geiserx.github.io/Pumperly/using/links/#route-links>).
+The station stop is part of the route link. See [Share links and deep links](<https://geiserx.github.io/Pumperly/using/links/index.md#route-links>).
 
 ## Sharing the route
 
@@ -250,7 +250,7 @@ These limits protect the server and a self-hosted Valhalla from overload. The ra
 
 Pumperly sends the stations of a route to the detour service in batches of 150, one request per batch. A dense corridor with thousands of stations needs many requests, and batches past the rate limit come back as unknown detours. A smaller search radius avoids this.
 
-Two settings let the operator tune this. [`PUMPERLY_MAX_DETOUR_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_max_detour_stations>) lowers the number of stations timed per request, default 150. The stations it keeps are spread evenly along the route, and the rest show an unknown detour. [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_max_inflight>) caps how many Valhalla requests run at once across all visitors, default 6.
+Two settings let the operator tune this. [`PUMPERLY_MAX_DETOUR_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_max_detour_stations>) lowers the number of stations timed per request, default 150. The stations it keeps are spread evenly along the route, and the rest show an unknown detour. [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_max_inflight>) caps how many Valhalla requests run at once across all visitors, default 6.
 
 ## Summary
 

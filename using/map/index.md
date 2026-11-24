@@ -64,7 +64,7 @@ The fuel selector in the navbar decides which prices the map shows. Fuels are gr
 
 Each fuel has a code, such as `B7` for regular diesel or `EV` for charging. The full list with codes is in [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>).
 
-The first time you open Pumperly, the fuel is the instance default. After that, the map opens on the fuel you last picked, which a cookie remembers. A shared route or station link opens on its own fuel and does not change the one you picked. The operator sets the default with [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_fuel>). Without it, Pumperly uses the default fuel of the country in [`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_default_country>).
+The first time you open Pumperly, the fuel is the instance default. After that, the map opens on the fuel you last picked, which a cookie remembers. A shared route or station link opens on its own fuel and does not change the one you picked. The operator sets the default with [`PUMPERLY_DEFAULT_FUEL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_fuel>). Without it, Pumperly uses the default fuel of the country in [`PUMPERLY_DEFAULT_COUNTRY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_default_country>).
 
 On a fuel layer, a station appears only when it has a price for that fuel. A station that sells diesel but reported no diesel price does not show on the diesel layer. The EV layer works differently: it shows every charger, priced or not. Only German chargers have prices. See [EV charging](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md>).
 
@@ -127,7 +127,7 @@ With clustering on, nearby stations merge into one bigger circle with a count in
 
 A cluster is coloured by the average price of the priced stations inside it, on the same scale as single stations. A cluster with no priced station is grey. When no station on screen has a price, as on the EV layer, there is no scale and every cluster is orange. Click a cluster to zoom in until it splits.
 
-Clustering is on by default. The operator turns it off with [`PUMPERLY_CLUSTER_STATIONS=false`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_cluster_stations>). Clustering is always off while a route is open, because every single station on the route matters there.
+Clustering is on by default. The operator turns it off with [`PUMPERLY_CLUSTER_STATIONS=false`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_cluster_stations>). Clustering is always off while a route is open, because every single station on the route matters there.
 
 ## Station popup
 
@@ -154,11 +154,11 @@ From top to bottom the popup shows:
 | Copy link | Copies a link to this station to the clipboard. The icon turns into a check mark when it worked. |
 | Share | Opens your device's share sheet. Where the browser has none, it copies the link instead. |
 
-When the station has no price for the chosen fuel, the price block reads "No price for" and the fuel name. An EV charger shows its price per kWh when it has one, and its power otherwise. See [What a charger shows](<https://geiserx.github.io/Pumperly/using/ev-charging/#what-a-charger-shows>).
+When the station has no price for the chosen fuel, the price block reads "No price for" and the fuel name. An EV charger shows its price per kWh when it has one, and its power otherwise. See [What a charger shows](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md#what-a-charger-shows>).
 
 The two link buttons are described in [Share links and deep links](<https://geiserx.github.io/Pumperly/using/links/index.md>).
 
-With a route open, clicking a station also adds it to the route as a stop. See [Pick a station as a stop](<https://geiserx.github.io/Pumperly/using/routes/#pick-a-station-as-a-stop>).
+With a route open, clicking a station also adds it to the route as a stop. See [Pick a station as a stop](<https://geiserx.github.io/Pumperly/using/routes/index.md#pick-a-station-as-a-stop>).
 
 ## Currency
 
@@ -227,7 +227,7 @@ The locate-me button in the navbar centres the map on where you are.
 
 Pumperly also tries this once when the map first loads, unless your browser has already refused location access. It does not try when you open a [shared link](<https://geiserx.github.io/Pumperly/using/links/index.md>), so the shared station or route stays in view.
 
-Pumperly uses your position to move the map and to fill in "My location" as the start of a route. See [Planning a route](<https://geiserx.github.io/Pumperly/using/routes/#start-and-destination>).
+Pumperly uses your position to move the map and to fill in "My location" as the start of a route. See [Planning a route](<https://geiserx.github.io/Pumperly/using/routes/index.md#start-and-destination>).
 
 ## Stats panel
 

@@ -11,7 +11,7 @@ Pumperly has no dedicated health endpoint, and the Docker image declares no heal
 | `GET /api/config` | The web server answers. It reads configuration only and never touches the database. The Helm chart's startup, liveness and readiness probes call it. |
 | `GET /api/stats` | The database answers. It returns, per country, the station count, the price count and `lastUpdate`, the time of the newest price. It answers HTTP 500 when the query fails. |
 
-A green probe does not prove that the data is current, or that the map draws. Watch `lastUpdate` per country in `/api/stats`. A country whose `lastUpdate` stops moving has a source that fails. Look at the map itself after every upgrade, as described in [Checks after an upgrade](<https://geiserx.github.io/Pumperly/operations/upgrading/#after-an-upgrade>).
+A green probe does not prove that the data is current, or that the map draws. Watch `lastUpdate` per country in `/api/stats`. A country whose `lastUpdate` stops moving has a source that fails. Look at the map itself after every upgrade, as described in [Checks after an upgrade](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#after-an-upgrade>).
 
 ```
 curl -s https://pumperly.example.com/api/stats
@@ -37,7 +37,7 @@ The pod also has init containers. `wait-for-database` logs `waiting for database
 kubectl logs deployment/pumperly -c wait-for-database
 ```
 
-Two kinds of line matter for scraping. A [scraper key](<https://geiserx.github.io/Pumperly/reference/glossary/#scraper-key>) names one scheduled source: a country code such as `ES` for fuel prices, or `EV_` plus a country code such as `EV_FR` for chargers. The scheduler writes lines that start with `[scraper]` and the key. Each scraper writes lines that start with its source name in brackets, such as `[miteco]` or `[ocm]`. A source name can serve several countries: `anwb` covers the Netherlands, Belgium and Luxembourg, and `ocm` covers every Open Charge Map country. See [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) for which source serves which country.
+Two kinds of line matter for scraping. A [scraper key](<https://geiserx.github.io/Pumperly/reference/glossary/index.md#scraper-key>) names one scheduled source: a country code such as `ES` for fuel prices, or `EV_` plus a country code such as `EV_FR` for chargers. The scheduler writes lines that start with `[scraper]` and the key. Each scraper writes lines that start with its source name in brackets, such as `[miteco]` or `[ocm]`. A source name can serve several countries: `anwb` covers the Netherlands, Belgium and Luxembourg, and `ocm` covers every Open Charge Map country. See [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) for which source serves which country.
 
 ### Scheduler lines
 
@@ -62,7 +62,7 @@ Some API endpoints also log one line per request. The station endpoint the map c
 [stations] bbox=-3.75,40.38,-3.65,40.45 fuel=B7 → <n> stations (<n> with price)
 ```
 
-If these lines report stations while the browser shows an empty map, the problem is in the browser. See [The map shows stations](<https://geiserx.github.io/Pumperly/operations/upgrading/#map-check>).
+If these lines report stations while the browser shows an empty map, the problem is in the browser. See [The map shows stations](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#map-check>).
 
 ### Lines from one scrape run
 
@@ -215,7 +215,7 @@ This is expected and is not an error. While the registry fills in, Spain shows b
 [reve] backfill <n>/<total> — keeping <n> OpenChargeMap row(s) until <target>
 ```
 
-Once the registry reaches 95% of its reported total, the Open Charge Map rows for Spain are removed. [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_cutover_ratio>) sets that share, `0.95` by default. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>).
+Once the registry reaches 95% of its reported total, the Open Charge Map rows for Spain are removed. [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_cutover_ratio>) sets that share, `0.95` by default. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>).
 
 ### The German charging registry keeps old rows
 
@@ -316,15 +316,15 @@ The tool writes to the same tables as the running app. The app's guard against o
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| The map shows only its background, with no stations or clusters | The MapLibre worker under `/maplibre/` does not load. The API and routing keep working. | See [The map shows stations](<https://geiserx.github.io/Pumperly/operations/upgrading/#map-check>). Check the browser's developer tools and the two worker files. |
+| The map shows only its background, with no stations or clusters | The MapLibre worker under `/maplibre/` does not load. The API and routing keep working. | See [The map shows stations](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#map-check>). Check the browser's developer tools and the two worker files. |
 | A country in `PUMPERLY_ENABLED_COUNTRIES` never scrapes, and has no `scraping every` line | The code is misspelled or unknown. Unknown codes are dropped without a warning. | Use the keys from [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>). New South Wales must be listed as `AU_NSW`; `AU` alone does not enable it. |
 | A country's prices stop changing | Its source fails on every run. | Search the log for that source's `Fatal error` or `Aborted destructive replace` line, and see the sections above. |
-| Scraper runs fail with `column "geom" of relation "stations" does not exist` | The schema was built from `schema.prisma` with `prisma db push`, not from the migrations. | Build the schema from `prisma/migrations`. See [the database schema](<https://geiserx.github.io/Pumperly/operations/upgrading/#migrations>). |
+| Scraper runs fail with `column "geom" of relation "stations" does not exist` | The schema was built from `schema.prisma` with `prisma db push`, not from the migrations. | Build the schema from `prisma/migrations`. See [the database schema](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#migrations>). |
 | `/api/stats` answers HTTP 500 | The app cannot query the database. The log shows `Failed to query stats:` and the error. | Check `DATABASE_URL`, and that PostGIS runs and accepts connections. |
 | Every visitor gets `Too many requests` from route planning | The per-client limit reads the client address from `X-Forwarded-For`, then `X-Real-IP`. Without either header, every visitor shares one budget. The route endpoints allow 30 requests a minute, and detour search 10. | Put Pumperly behind a reverse proxy that sets `X-Forwarded-For`, replacing any value the client sent. |
 | Spain shows two pins for many chargers | The Spanish registry is still filling in, and Open Charge Map rows stay until it reaches 95% by default. | Wait. See [The Spanish charging registry rate limit](<#the-spanish-charging-registry-rate-limit>). |
 | `previous run still in progress — skipping this tick` repeats for one key | Runs of that source take longer than its interval. | Raise the key's interval with `PUMPERLY_SCRAPE_INTERVAL_<KEY>`. |
-| The Helm pod stays in `Init` | `wait-for-database` cannot reach PostGIS, or the `migrate` init container fails. With an external database, `wait-for-database` probes `externalDatabase.host`. | Read the init container's log with `-c <name>`. Set `externalDatabase.host`, or `waitForDatabase.enabled: false`. A failed migration is printed by `migrate`; fix the database or set `databaseInit.enabled: false` and apply the migrations yourself, as in [Run on Kubernetes with Helm](<https://geiserx.github.io/Pumperly/getting-started/kubernetes/#the-schema>). |
+| The Helm pod stays in `Init` | `wait-for-database` cannot reach PostGIS, or the `migrate` init container fails. With an external database, `wait-for-database` probes `externalDatabase.host`. | Read the init container's log with `-c <name>`. Set `externalDatabase.host`, or `waitForDatabase.enabled: false`. A failed migration is printed by `migrate`; fix the database or set `databaseInit.enabled: false` and apply the migrations yourself, as in [Run on Kubernetes with Helm](<https://geiserx.github.io/Pumperly/getting-started/kubernetes/index.md#the-schema>). |
 
 ## Reporting a bug
 

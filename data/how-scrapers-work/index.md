@@ -19,7 +19,7 @@ A scraper declares two names and implements one method. The base class does ever
 | Record | Fields |
 | --- | --- |
 | `RawStation` | `externalId`, `name`, `brand` (or `null`), `address`, `city`, `province` (or `null`), `latitude`, `longitude`, `stationType` (`"fuel"`, `"ev_charger"` or `"both"`) |
-| `RawFuelPrice` | `stationExternalId` (matches a station's `externalId` in the same result), `fuelType` (one of the [fuel type codes](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>)), `price` (per litre, in local currency; per kWh for `EV`), `currency` (ISO 4217). Optional: `evFees` (`EV` only, written to [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/#ev_fees>)) and `reportedAt` (when the upstream last vouched for the price) |
+| `RawFuelPrice` | `stationExternalId` (matches a station's `externalId` in the same result), `fuelType` (one of the [fuel type codes](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>)), `price` (per litre, in local currency; per kWh for `EV`), `currency` (ISO 4217). Optional: `evFees` (`EV` only, written to [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/index.md#ev_fees>)) and `reportedAt` (when the upstream last vouched for the price) |
 
 The `externalId` is the source's own id for the station, usually with a short prefix such as `ocm-` or `se-bp-`. Together with `country` it identifies a station across runs. [Data model](<https://geiserx.github.io/Pumperly/reference/data-model/index.md>) explains both columns in full.
 
@@ -259,7 +259,7 @@ It differs from the scheduler in a few ways:
 - It does not run `STATIC_` datasets.
 - It prints a summary per scraper and exits with status 1 if any scraper recorded an error.
 
-[Run from source](<https://geiserx.github.io/Pumperly/development/#run-from-source>) shows how to point it at a local database.
+[Run from source](<https://geiserx.github.io/Pumperly/development/index.md#run-from-source>) shows how to point it at a local database.
 
 ## Handing a country over to a new source
 

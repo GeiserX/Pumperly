@@ -16,7 +16,7 @@ Two API routes call Valhalla. Both send `POST /route` requests with the `auto` c
 The detour endpoint is the heavy one. One visitor who moves the detour slider can cause 150 Valhalla calls. Pumperly limits this in two places:
 
 - Each detour request works through its stations with 8 workers at most.
-- All Valhalla calls in the app share one pool of [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_max_inflight>) slots, 6 by default. A call waits in a queue until a slot is free. A visitor who leaves the page cancels the calls still waiting.
+- All Valhalla calls in the app share one pool of [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_max_inflight>) slots, 6 by default. A call waits in a queue until a slot is free. A visitor who leaves the page cancels the calls still waiting.
 
 ```
 sequenceDiagram
@@ -45,7 +45,7 @@ The detour answers stream back one line at a time, so the list fills in while Va
 
 ## Running without Valhalla
 
-Leave [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_url>) unset. Then:
+Leave [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_url>) unset. Then:
 
 - `POST /api/route` answers `502` with `{"error": "Routing service unavailable"}`, and the route panel shows an error.
 - `POST /api/route-detour` returns `-1` for every station.
@@ -57,9 +57,9 @@ Pumperly behaves the same way when Valhalla is set but unreachable, still buildi
 
 | Variable | Default | Set it to |
 | --- | --- | --- |
-| [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_url>) | unset | Valhalla's base URL without a trailing slash, such as `http://pumperly-valhalla:8002`. Pumperly appends `/route`. |
-| [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_max_inflight>) | `6` | How many Valhalla calls may run at once. Raise it if Valhalla has spare CPU and detour times arrive slowly. Lower it if Valhalla struggles. It must be a whole number of 1 or more. |
-| [`PUMPERLY_MAX_DETOUR_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_max_detour_stations>) | `150` | The most stations one detour request may route. Lower it to reduce load. Extra stations are thinned out evenly along the route. |
+| [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_url>) | unset | Valhalla's base URL without a trailing slash, such as `http://pumperly-valhalla:8002`. Pumperly appends `/route`. |
+| [`VALHALLA_MAX_INFLIGHT`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_max_inflight>) | `6` | How many Valhalla calls may run at once. Raise it if Valhalla has spare CPU and detour times arrive slowly. Lower it if Valhalla struggles. It must be a whole number of 1 or more. |
+| [`PUMPERLY_MAX_DETOUR_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_max_detour_stations>) | `150` | The most stations one detour request may route. Lower it to reduce load. Extra stations are thinned out evenly along the route. |
 
 > [!CAUTION]
 >

@@ -4,11 +4,11 @@ This page defines the terms used across the Pumperly documentation. Each entry i
 
 ## Alternate route
 
-A second or third way to drive between the same two points. For a plain trip from A to B, Pumperly asks [Valhalla](<#valhalla>) for up to 2 alternates and shows them next to the main route. A trip with [waypoints](<#waypoint>) gets one route only. See [`POST /api/route`](<https://geiserx.github.io/Pumperly/reference/api/#route>).
+A second or third way to drive between the same two points. For a plain trip from A to B, Pumperly asks [Valhalla](<#valhalla>) for up to 2 alternates and shows them next to the main route. A trip with [waypoints](<#waypoint>) gets one route only. See [`POST /api/route`](<https://geiserx.github.io/Pumperly/reference/api/index.md#route>).
 
 ## Bounding box (bbox)
 
-A rectangle on the map, given as four numbers: `minLon,minLat,maxLon,maxLat`. The map sends the visible area as a bounding box to [`/api/stations`](<https://geiserx.github.io/Pumperly/reference/api/#stations>).
+A rectangle on the map, given as four numbers: `minLon,minLat,maxLon,maxLat`. The map sends the visible area as a bounding box to [`/api/stations`](<https://geiserx.github.io/Pumperly/reference/api/index.md#stations>).
 
 ## BNetzA
 
@@ -16,7 +16,7 @@ The Bundesnetzagentur, Germany's federal network agency. It publishes the Lades�
 
 ## Corridor
 
-The strip of land either side of a planned route in which Pumperly looks for stations. Its half-width is set in kilometres, from 0.5 to 50, and defaults to 5. A station is in the corridor when its shortest distance to the route line, measured on the globe, is within that width. The corridor slider in the route panel changes it. See [Planning a route](<https://geiserx.github.io/Pumperly/using/routes/index.md>) and [`POST /api/route-stations`](<https://geiserx.github.io/Pumperly/reference/api/#route-stations>).
+The strip of land either side of a planned route in which Pumperly looks for stations. Its half-width is set in kilometres, from 0.5 to 50, and defaults to 5. A station is in the corridor when its shortest distance to the route line, measured on the globe, is within that width. The corridor slider in the route panel changes it. See [Planning a route](<https://geiserx.github.io/Pumperly/using/routes/index.md>) and [`POST /api/route-stations`](<https://geiserx.github.io/Pumperly/reference/api/index.md#route-stations>).
 
 ## Currency
 
@@ -29,11 +29,11 @@ The extra driving time, in minutes, that stopping at a station adds to a trip. P
 - **Route-relative:** the time to drive from a point on the route before the station, through the station, to a point after it, minus the time the route itself takes between those two points. This measures the detour from the route you are on.
 - **Whole trip:** the time from origin through the station to destination, minus the original route's time. This measures the best detour over any route.
 
-See [`POST /api/route-detour`](<https://geiserx.github.io/Pumperly/reference/api/#route-detour>).
+See [`POST /api/route-detour`](<https://geiserx.github.io/Pumperly/reference/api/index.md#route-detour>).
 
 ## ECB reference rates
 
-The daily euro exchange rates published by the European Central Bank. Pumperly uses them to convert prices between currencies, with fixed [fallback rates](<https://geiserx.github.io/Pumperly/reference/currencies/#fallback-rates>) for a few currencies the ECB does not publish. See [The ECB feed](<https://geiserx.github.io/Pumperly/reference/currencies/#the-ecb-feed>).
+The daily euro exchange rates published by the European Central Bank. Pumperly uses them to convert prices between currencies, with fixed [fallback rates](<https://geiserx.github.io/Pumperly/reference/currencies/index.md#fallback-rates>) for a few currencies the ECB does not publish. See [The ECB feed](<https://geiserx.github.io/Pumperly/reference/currencies/index.md#the-ecb-feed>).
 
 ## Empty-fetch guard
 
@@ -41,11 +41,11 @@ A safety check in every [scraper](<#scraper>) run. If a fetch returns no station
 
 ## Enabled countries
 
-The countries an instance scrapes. They come from [`PUMPERLY_ENABLED_COUNTRIES`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_enabled_countries>), a comma-separated list of country codes or [scraper keys](<#scraper-key>). When it is unset, every country with a scraper is enabled. Enabling a country also enables its [EV\_XX key](<#ev-xx-key>). Disabling a country stops its scrapers. It does not delete the rows already stored. See [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>).
+The countries an instance scrapes. They come from [`PUMPERLY_ENABLED_COUNTRIES`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_enabled_countries>), a comma-separated list of country codes or [scraper keys](<#scraper-key>). When it is unset, every country with a scraper is enabled. Enabling a country also enables its [EV\_XX key](<#ev-xx-key>). Disabling a country stops its scrapers. It does not delete the rows already stored. See [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>).
 
 ## EV\_XX key
 
-The [scraper key](<#scraper-key>) for a country's EV chargers from [OpenChargeMap](<#ocm>), where `XX` is the country code: `EV_FR`, `EV_IT` and so on. Listing `FR` in the [enabled countries](<#enabled-countries>) turns on `EV_FR` too, unless [`PUMPERLY_EV_ENABLED`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ev_enabled>) is `0`. `EV_US` exists without a matching fuel scraper, so listing `US` gives EV chargers only. Spain and Germany have more EV keys: `EV_ES_REVE` for Spain, `EV_DE_OCPDB` and `EV_DE_BNETZA` for Germany. Only one key per country ever runs. See [handover](<#handover>).
+The [scraper key](<#scraper-key>) for a country's EV chargers from [OpenChargeMap](<#ocm>), where `XX` is the country code: `EV_FR`, `EV_IT` and so on. Listing `FR` in the [enabled countries](<#enabled-countries>) turns on `EV_FR` too, unless [`PUMPERLY_EV_ENABLED`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ev_enabled>) is `0`. `EV_US` exists without a matching fuel scraper, so listing `US` gives EV chargers only. Spain and Germany have more EV keys: `EV_ES_REVE` for Spain, `EV_DE_OCPDB` and `EV_DE_BNETZA` for Germany. Only one key per country ever runs. See [handover](<#handover>).
 
 ## External ID
 
@@ -57,7 +57,7 @@ The short code Pumperly uses for a fuel, such as `B7` for diesel or `E10` for pe
 
 ## Fuelo.net
 
-A community-sourced fuel price site that covers many countries in Europe and nearby. One shared Pumperly scraper reads it for twelve countries, among them Switzerland, Poland and the Czech Republic. Fuelo.net currently refuses those requests, so these countries are paused. See [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/#fuelo>) and [Coverage and status](<https://geiserx.github.io/Pumperly/data/coverage/index.md>).
+A community-sourced fuel price site that covers many countries in Europe and nearby. One shared Pumperly scraper reads it for twelve countries, among them Switzerland, Poland and the Czech Republic. Fuelo.net currently refuses those requests, so these countries are paused. See [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md#fuelo>) and [Coverage and status](<https://geiserx.github.io/Pumperly/data/coverage/index.md>).
 
 ## GeoJSON
 
@@ -73,15 +73,15 @@ The price Pumperly shows for a station and fuel: the stored price with the newes
 
 ## NDJSON
 
-Newline-delimited JSON: one complete JSON object per line. [`POST /api/route-detour`](<https://geiserx.github.io/Pumperly/reference/api/#route-detour>) streams its results in this format, so each station's detour appears as soon as it is known.
+Newline-delimited JSON: one complete JSON object per line. [`POST /api/route-detour`](<https://geiserx.github.io/Pumperly/reference/api/index.md#route-detour>) streams its results in this format, so each station's detour appears as soon as it is known.
 
 ## OCM (OpenChargeMap)
 
-[OpenChargeMap](<https://openchargemap.org>), a crowdsourced, worldwide registry of EV charge points, published under the Open Database License. It is Pumperly's default EV source for every country except Germany. It needs a free API key in [`PUMPERLY_OCM_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_ocm_api_key>). Without one, the OpenChargeMap scrapers fetch nothing. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) and [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md>).
+[OpenChargeMap](<https://openchargemap.org>), a crowdsourced, worldwide registry of EV charge points, published under the Open Database License. It is Pumperly's default EV source for every country except Germany. It needs a free API key in [`PUMPERLY_OCM_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ocm_api_key>). Without one, the OpenChargeMap scrapers fetch nothing. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) and [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md>).
 
 ## OCPDB (Open ChargePoint Database)
 
-A German charge point database run by MobiData BW. It merges the [BNetzA](<#bnetza>) register with the operators' own feeds, which carry ad-hoc prices. It is Germany's default EV source and the only one with prices: the cheapest ad-hoc tariff per kWh, plus any session and per-minute fees. It needs no API key. Its [scraper key](<#scraper-key>) is `EV_DE_OCPDB`. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/#ocpdb>).
+A German charge point database run by MobiData BW. It merges the [BNetzA](<#bnetza>) register with the operators' own feeds, which carry ad-hoc prices. It is Germany's default EV source and the only one with prices: the cheapest ad-hoc tariff per kWh, plus any session and per-minute fees. It needs no API key. Its [scraper key](<#scraper-key>) is `EV_DE_OCPDB`. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#ocpdb>).
 
 ## Orphan cleanup
 
@@ -89,7 +89,7 @@ The last step of a scraper run. It deletes the country's fuel stations that no l
 
 ## Photon
 
-An open-source geocoder built on OpenStreetMap data. A geocoder turns a place name into coordinates. Pumperly calls Photon for the search box on the map, through [`/api/geocode`](<https://geiserx.github.io/Pumperly/reference/api/#geocode>). Without [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#photon_url>) the search returns no results. See [Geocoding with Photon](<https://geiserx.github.io/Pumperly/configuration/geocoding-photon/index.md>).
+An open-source geocoder built on OpenStreetMap data. A geocoder turns a place name into coordinates. Pumperly calls Photon for the search box on the map, through [`/api/geocode`](<https://geiserx.github.io/Pumperly/reference/api/index.md#geocode>). Without [`PHOTON_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#photon_url>) the search returns no results. See [Geocoding with Photon](<https://geiserx.github.io/Pumperly/configuration/geocoding-photon/index.md>).
 
 ## PostGIS
 
@@ -97,19 +97,19 @@ The spatial extension for PostgreSQL. It stores each station's position as a poi
 
 ## Price band
 
-The range of prices Pumperly accepts for a currency, such as 200 to 2,000 for Hungarian forints. EV prices have their own range: 0.10 to 2.00 EUR per kWh. A scraper drops any price outside its band before storing it. That catches placeholders and prices in the wrong unit. See [Price bands](<https://geiserx.github.io/Pumperly/reference/currencies/#price-bands>).
+The range of prices Pumperly accepts for a currency, such as 200 to 2,000 for Hungarian forints. EV prices have their own range: 0.10 to 2.00 EUR per kWh. A scraper drops any price outside its band before storing it. That catches placeholders and prices in the wrong unit. See [Price bands](<https://geiserx.github.io/Pumperly/reference/currencies/index.md#price-bands>).
 
 ## Rate limit
 
-A cap on how many requests one client IP may send to an endpoint per minute. It applies to the three route endpoints only. Going over it returns `429 Too many requests`. See [Rate limits](<https://geiserx.github.io/Pumperly/reference/api/#rate-limits>).
+A cap on how many requests one client IP may send to an endpoint per minute. It applies to the three route endpoints only. Going over it returns `429 Too many requests`. See [Rate limits](<https://geiserx.github.io/Pumperly/reference/api/index.md#rate-limits>).
 
 ## REVE (Mapa REVE)
 
-Spain's official registry of EV charge points, run by Red Eléctrica de España. Every Spanish charge point operator must file into it. Pumperly uses it for Spain's chargers when [`PUMPERLY_REVE_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#pumperly_reve_api_key>) is set. Its API allows only 5 requests an hour, so the first full load takes more than a day. Its [scraper key](<#scraper-key>) is `EV_ES_REVE`. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>).
+Spain's official registry of EV charge points, run by Red Eléctrica de España. Every Spanish charge point operator must file into it. Pumperly uses it for Spain's chargers when [`PUMPERLY_REVE_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_api_key>) is set. Its API allows only 5 requests an hour, so the first full load takes more than a day. Its [scraper key](<#scraper-key>) is `EV_ES_REVE`. See [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>).
 
 ## Route fraction
 
-A station's position along a route, from `0` at the start to `1` at the end. [`POST /api/route-stations`](<https://geiserx.github.io/Pumperly/reference/api/#route-stations>) returns stations sorted by it.
+A station's position along a route, from `0` at the start to `1` at the end. [`POST /api/route-stations`](<https://geiserx.github.io/Pumperly/reference/api/index.md#route-stations>) returns stations sorted by it.
 
 ## Scrape interval
 
@@ -137,7 +137,7 @@ One place on the map: a fuel station, an EV charge point, or both. A station has
 
 ## Station leg
 
-The route redrawn through a station you pick while a route is on screen. The web app sends the station to [`POST /api/route`](<https://geiserx.github.io/Pumperly/reference/api/#route>) as a [waypoint](<#waypoint>) and shows the new line. It keeps the stations it already found along the original route, so the list does not reload.
+The route redrawn through a station you pick while a route is on screen. The web app sends the station to [`POST /api/route`](<https://geiserx.github.io/Pumperly/reference/api/index.md#route>) as a [waypoint](<#waypoint>) and shows the new line. It keeps the stations it already found along the original route, so the list does not reload.
 
 ## Station type
 
@@ -145,11 +145,11 @@ One of `fuel`, `ev_charger` or `both`. Selecting the `EV` fuel shows stations of
 
 ## Tankerkoenig
 
-The service that republishes German fuel prices from the Markttransparenzstelle für Kraftstoffe (MTS-K), the federal market transparency unit for fuel. Pumperly's German fuel scraper needs a free Tankerkoenig API key in [`TANKERKOENIG_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#tankerkoenig_api_key>). See [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md>).
+The service that republishes German fuel prices from the Markttransparenzstelle für Kraftstoffe (MTS-K), the federal market transparency unit for fuel. Pumperly's German fuel scraper needs a free Tankerkoenig API key in [`TANKERKOENIG_API_KEY`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#tankerkoenig_api_key>). See [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md>).
 
 ## Valhalla
 
-An open-source routing engine built on OpenStreetMap data. Pumperly uses it to plan routes and to compute [detours](<#detour>). Without [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/#valhalla_url>), route planning is unavailable and the rest of the map still works. See [Routing with Valhalla](<https://geiserx.github.io/Pumperly/configuration/routing-valhalla/index.md>).
+An open-source routing engine built on OpenStreetMap data. Pumperly uses it to plan routes and to compute [detours](<#detour>). Without [`VALHALLA_URL`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#valhalla_url>), route planning is unavailable and the rest of the map still works. See [Routing with Valhalla](<https://geiserx.github.io/Pumperly/configuration/routing-valhalla/index.md>).
 
 ## Waypoint
 

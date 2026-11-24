@@ -5,7 +5,7 @@ This page follows a new install from the first `docker compose up` to a map full
 ## The short version
 
 1. PostGIS creates its data directory, user and database.
-2. The schema is applied: by the `migrate` service of the shipped compose file, before the app starts, or by you on other setups. The app never creates tables itself. See [step 4 of Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#4-create-the-database-schema>).
+2. The schema is applied: by the `migrate` service of the shipped compose file, before the app starts, or by you on other setups. The app never creates tables itself. See [step 4 of Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#4-create-the-database-schema>).
 3. The app starts its web server on port 3000 and its scheduler in the same process.
 4. The scheduler starts each enabled scraper in turn, 5 seconds apart, beginning 10 seconds after boot.
 5. As each first scrape finishes, that country's stations appear on the map.
@@ -34,7 +34,7 @@ sequenceDiagram
 
 The `postgis/postgis` image initialises its volume on the first start only. It creates the `pumperly` user and database from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`. Later starts reuse the volume and ignore those variables.
 
-The app runs `node server.js` and does not run migrations. The tables come from the SQL files under [`prisma/migrations`](<https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations>), which the image carries together with `migrate.mjs`, the script that applies them. The shipped compose file runs that script as its `migrate` service before the app starts; on other setups you run it yourself. [Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#4-create-the-database-schema>) shows how.
+The app runs `node server.js` and does not run migrations. The tables come from the SQL files under [`prisma/migrations`](<https://github.com/GeiserX/Pumperly/tree/main/prisma/migrations>), which the image carries together with `migrate.mjs`, the script that applies them. The shipped compose file runs that script as its `migrate` service before the app starts; on other setups you run it yourself. [Run with Docker Compose](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#4-create-the-database-schema>) shows how.
 
 > [!TIP]
 >

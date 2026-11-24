@@ -250,7 +250,7 @@ If you see only the background:
   ```
 
   A 404, or an HTML content type, means the worker cannot start. Check whether a reverse proxy or cache in front of Pumperly rewrites or blocks `/maplibre/`.
-- If the files load and the map is still empty, report it with the console output. See [Reporting a bug](<https://geiserx.github.io/Pumperly/operations/troubleshooting/#reporting-a-bug>).
+- If the files load and the map is still empty, report it with the console output. See [Reporting a bug](<https://geiserx.github.io/Pumperly/operations/troubleshooting/index.md#reporting-a-bug>).
 
 ### 3\. The data is fresh
 
@@ -272,4 +272,4 @@ The answer is a GeoJSON `FeatureCollection`. Its `features` list must not be emp
 
 ### 4\. Routing and search work
 
-If you run Valhalla and Photon, plan a route between two addresses on the map. Typing in the search box tests Photon, and the route tests Valhalla. See [Valhalla or Photon is not ready](<https://geiserx.github.io/Pumperly/operations/troubleshooting/#valhalla-or-photon-is-not-ready>) if either fails.
+If you run Valhalla and Photon, plan a route between two addresses on the map. Typing in the search box tests Photon, and the route tests Valhalla. See [Valhalla or Photon is not ready](<https://geiserx.github.io/Pumperly/operations/troubleshooting/index.md#valhalla-or-photon-is-not-ready>) if either fails.

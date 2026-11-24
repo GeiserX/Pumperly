@@ -238,7 +238,7 @@ One row per price of one fuel at one station.
 | `source` | `varchar(50)` | No | The name of the scraper source that wrote the row. See [`source`](<#source>). |
 | `ev_fees` | `jsonb` | Yes | `EV` rows only: charges on top of the per-kWh price, in `currency`. See [`ev_fees`](<#ev_fees>). `null` for fuel rows and for tariffs with no extra charges. |
 
-An `EV` search queries stations by `station_type`, then joins each one to its newest `EV` row here, if any. Only the [OCPDB scraper](<https://geiserx.github.io/Pumperly/data/ev-sources/#ocpdb>) writes `EV` rows, so only German chargers have prices. Every other charger has no rows in this table and shows unpriced.
+An `EV` search queries stations by `station_type`, then joins each one to its newest `EV` row here, if any. Only the [OCPDB scraper](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md#ocpdb>) writes `EV` rows, so only German chargers have prices. Every other charger has no rows in this table and shows unpriced.
 
 ### `ev_fees`
 
@@ -288,7 +288,7 @@ To keep sources apart, scrapers prefix the upstream id with a short tag. Some ex
 | `ocpdb` (Open ChargePoint Database, Germany) | `ocpdb-<latitude>_<longitude>`, rounded to 5 decimals, from the location that anchors the pin. Locations within 25 m of each other merge into one station. |
 | `miteco` (Spain) | The ministry's station id, with no prefix |
 
-Some older scrapers use the upstream id without a prefix, as `miteco` does. A new scraper should use a prefix. [Adding a country](<https://geiserx.github.io/Pumperly/data/adding-a-country/#choosing-source-and-externalid>) gives the rules.
+Some older scrapers use the upstream id without a prefix, as `miteco` does. A new scraper should use a prefix. [Adding a country](<https://geiserx.github.io/Pumperly/data/adding-a-country/index.md#choosing-source-and-externalid>) gives the rules.
 
 `stations` has no `source` column. For EV chargers, most of which have no prices, the `external_id` prefix is the only record of where a row came from. That is how the EV scrapers find the rows of the sources they replace: Mapa REVE deletes `external_id LIKE 'ocm-%'` in Spain, and OCPDB and BNetzA each delete the other German prefixes among `ocm-`, `bnetza-` and `ocpdb-`.
 
@@ -299,7 +299,7 @@ Some older scrapers use the upstream id without a prefix, as `miteco` does. A ne
 Every scraper run replaces exactly the price rows that carry its own `source` for stations in its own country. It never touches another source's rows. Two consequences:
 
 - One source name can serve several countries. The Netherlands, Belgium and Luxembourg scrapers all write `anwb`, and none of them deletes the others' prices, because the replace is limited to one country.
-- When a source is retired, its rows stay until something deletes them. The replacement scraper has to do that itself. [How scrapers work](<https://geiserx.github.io/Pumperly/data/how-scrapers-work/#handing-a-country-over-to-a-new-source>) shows the pattern.
+- When a source is retired, its rows stay until something deletes them. The replacement scraper has to do that itself. [How scrapers work](<https://geiserx.github.io/Pumperly/data/how-scrapers-work/index.md#handing-a-country-over-to-a-new-source>) shows the pattern.
 
 ## How rows change over time
 

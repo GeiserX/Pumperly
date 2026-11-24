@@ -47,7 +47,7 @@ docker/docker-compose.yml
 # One image for the app and for the migrate service, so the migrations a
 # release ships are the ones applied. The auto-tag workflow moves this pin.
 x-app-image: &app-image
-  image: drumsergio/pumperly:1.21.1
+  image: drumsergio/pumperly:1.21.8
 
 services:
   db:
@@ -100,11 +100,11 @@ This file publishes PostgreSQL on host port 5433, so a checkout on the same mach
 
 ## Map defaults
 
-Feature page: [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#default-country-and-fuel>).
+Feature page: [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#default-country-and-fuel>).
 
 | Variable | Default | Read by | Notes |
 | --- | --- | --- | --- |
-| `PUMPERLY_DEFAULT_COUNTRY` | `ES` | `src/lib/config.ts` | Country whose centre and zoom the map opens on. Must be an upper-case code from the [country table](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#default-country-and-fuel>). An unknown code, or a lower-case one, opens on Spain. It is also the source of the default fuel. |
+| `PUMPERLY_DEFAULT_COUNTRY` | `ES` | `src/lib/config.ts` | Country whose centre and zoom the map opens on. Must be an upper-case code from the [country table](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#default-country-and-fuel>). An unknown code, or a lower-case one, opens on Spain. It is also the source of the default fuel. |
 | `PUMPERLY_DEFAULT_FUEL` | the default country's fuel, such as `B7` for Spain | `src/lib/config.ts` | Fuel selected when the map opens. Use a code from [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>), for example `E10` or `EV`. The value is not checked. A `fuel` parameter in a [share link](<https://geiserx.github.io/Pumperly/using/links/index.md>) wins over it. |
 | `PUMPERLY_CLUSTER_STATIONS` | `true` | `src/lib/config.ts` | Groups nearby stations into clusters at low zoom. Only `true`, in any case, turns it on. Any other value turns it off. Clustering is always off while a route is shown. |
 
@@ -112,13 +112,13 @@ Feature page: [Countries and scrape schedule](<https://geiserx.github.io/Pumperl
 
 Feature page: [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>).
 
-A scraper key names one scheduled scraper. Most are a country code (`ES`). The others are `AU_NSW`, `EV_<CC>` for Open Charge Map, `EV_ES_REVE`, `EV_DE_BNETZA`, `EV_DE_OCPDB` and `STATIC_<SOURCE>`. [Scraper keys](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#scraper-keys>) lists them.
+A scraper key names one scheduled scraper. Most are a country code (`ES`). The others are `AU_NSW`, `EV_<CC>` for Open Charge Map, `EV_ES_REVE`, `EV_DE_BNETZA`, `EV_DE_OCPDB` and `STATIC_<SOURCE>`. [Scraper keys](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#scraper-keys>) lists them.
 
 | Variable | Default | Read by | Notes |
 | --- | --- | --- | --- |
-| `PUMPERLY_ENABLED_COUNTRIES` | unset, meaning every scraper | `src/instrumentation-node.ts`, `src/lib/config.ts` | Comma-separated scraper keys. Case and spaces do not matter. A plain country code also enables that country's `EV_` scraper. Unknown codes are ignored without a warning. An empty value means unset. A value where nothing matches schedules nothing. [Choosing countries](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#choosing-countries>) has the full rules. |
+| `PUMPERLY_ENABLED_COUNTRIES` | unset, meaning every scraper | `src/instrumentation-node.ts`, `src/lib/config.ts` | Comma-separated scraper keys. Case and spaces do not matter. A plain country code also enables that country's `EV_` scraper. Unknown codes are ignored without a warning. An empty value means unset. A value where nothing matches schedules nothing. [Choosing countries](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#choosing-countries>) has the full rules. |
 | `PUMPERLY_SCRAPE_INTERVAL_HOURS` | unset, meaning each scraper's own default | `src/instrumentation-node.ts` | Hours between runs, for every scraper at once. Decimals work. `0` turns off all automatic scraping, including scrapers that have their own override. A negative value or one that is not a number means the defaults. Above about 596 hours the timer breaks and scrapers run back to back. |
-| `PUMPERLY_SCRAPE_INTERVAL_<KEY>` | the scraper's default, see [How often scrapers run](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/#how-often-scrapers-run>) | `src/instrumentation-node.ts` | Hours between runs for one scraper key, for example `PUMPERLY_SCRAPE_INTERVAL_FR=0.5` or `PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE=1`. Beats the global interval. `0` or a negative value turns that scraper off. The value must be a number between 0 and about 596. An empty value or one that is not a number is not caught: the scraper then runs back to back and fills the log with skip warnings. |
+| `PUMPERLY_SCRAPE_INTERVAL_<KEY>` | the scraper's default, see [How often scrapers run](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md#how-often-scrapers-run>) | `src/instrumentation-node.ts` | Hours between runs for one scraper key, for example `PUMPERLY_SCRAPE_INTERVAL_FR=0.5` or `PUMPERLY_SCRAPE_INTERVAL_EV_ES_REVE=1`. Beats the global interval. `0` or a negative value turns that scraper off. The value must be a number between 0 and about 596. An empty value or one that is not a number is not caught: the scraper then runs back to back and fills the log with skip warnings. |
 
 ## Price validation
 

@@ -62,7 +62,7 @@ Dark mode
 - Fuel stations with their latest prices for the fuel you choose: diesel, petrol, LPG, CNG, LNG, hydrogen, HVO and AdBlue. See [Fuel types](<https://geiserx.github.io/Pumperly/reference/fuel-types/index.md>).
 - Live prices from 22 countries with no key to set, and from two more with a free key. 39 countries are supported in all; [Coverage and status](<https://geiserx.github.io/Pumperly/data/coverage/index.md>) lists each one, its source and whether the source works today.
 - EV chargers from the official registries of Spain and Germany and from [Open Charge Map](<https://openchargemap.org>) elsewhere. See [EV charging](<https://geiserx.github.io/Pumperly/using/ev-charging/index.md>).
-- A station's popup: brand, address, price, when it was last updated, directions, and a link to share. See [Station popup](<https://geiserx.github.io/Pumperly/using/map/#station-popup>).
+- A station's popup: brand, address, price, when it was last updated, directions, and a link to share. See [Station popup](<https://geiserx.github.io/Pumperly/using/map/index.md#station-popup>).
 - Routes with up to five stops and up to three alternatives, when Valhalla is configured; address search as you type, when Photon is configured.
 - Prices in any of 37 currencies, converted with the European Central Bank's daily rates; the interface in 17 languages. See [Currencies and exchange rates](<https://geiserx.github.io/Pumperly/reference/currencies/index.md>).
 - Share links for a station or a route. See [Share links and deep links](<https://geiserx.github.io/Pumperly/using/links/index.md>).
@@ -143,4 +143,4 @@ flowchart LR
 
 ## License
 
-Pumperly is released under the [AGPL-3.0-or-later](<https://github.com/GeiserX/Pumperly/blob/main/LICENSE>) license. Price and charger data keep the licence of their source; [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) list them, and some allow only non-commercial use. If you run a public instance, read [Data licences on a public instance](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/#data-licences-on-a-public-instance>) first.
+Pumperly is released under the [AGPL-3.0-or-later](<https://github.com/GeiserX/Pumperly/blob/main/LICENSE>) license. Price and charger data keep the licence of their source; [Fuel price sources](<https://geiserx.github.io/Pumperly/data/fuel-sources/index.md>) and [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev-sources/index.md>) list them, and some allow only non-commercial use. If you run a public instance, read [Data licences on a public instance](<https://geiserx.github.io/Pumperly/getting-started/docker-compose/index.md#data-licences-on-a-public-instance>) first.
