@@ -784,16 +784,35 @@ describe("OcpdbScraper.fetch", () => {
     }
   });
 
+  it("retries a page whose envelope does not parse", async () => {
+    const urls = stubApi();
+    const pages = vi.mocked(fetch).getMockImplementation()!;
+    let bad = 1;
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (String(input).includes("/tariffs?") && bad-- > 0) {
+        urls.push(String(input));
+        return { ok: true, status: 200, json: async () => ({ items: "not a list" }) } as unknown as Response;
+      }
+      return pages(input, init);
+    });
+    const { OcpdbScraper } = await import("./ocpdb");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(new OcpdbScraper().fetch()).resolves.toBeDefined();
+    expect(urls.filter((u) => u.includes("/tariffs?"))).toHaveLength(2);
+  });
+
   it("fails the run when the limit never lifts, so the current prices stay", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout"] });
     try {
       stubApi();
       const pages = vi.mocked(fetch).getMockImplementation()!;
-      vi.mocked(fetch).mockImplementation(async (input, init) =>
-        String(input).includes("/locations?")
-          ? ({ ok: false, status: 429, json: async () => ({}) } as unknown as Response)
-          : pages(input, init),
-      );
+      let limited = 0;
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (!String(input).includes("/locations?")) return pages(input, init);
+        limited++;
+        return { ok: false, status: 429, json: async () => ({}) } as unknown as Response;
+      });
       const { OcpdbScraper } = await import("./ocpdb");
       vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -801,6 +820,7 @@ describe("OcpdbScraper.fetch", () => {
       const failed = expect(run).rejects.toThrow(/429/);
       await vi.advanceTimersByTimeAsync(60 * 60_000);
       await failed;
+      expect(limited).toBe(6); // the first try and 5 retries, nothing after
     } finally {
       vi.useRealTimers();
     }

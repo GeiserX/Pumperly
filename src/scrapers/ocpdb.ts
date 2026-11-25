@@ -82,34 +82,35 @@ const RATE_LIMIT_WAIT_MS = 30_000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * GET a JSON document. A 429 waits and retries up to RATE_LIMIT_RETRIES
- * times; any other failure (network, timeout, 5xx) is retried once, so a
- * single slow page does not cost the whole run.
+ * GET a JSON document and parse it. A 429 waits and retries up to
+ * RATE_LIMIT_RETRIES times, then fails. Any other failure (network, timeout,
+ * 5xx, a body `parse` rejects) is retried once, so a single slow page does not
+ * cost the whole run.
  */
-async function getJson(url: string, what: string): Promise<unknown> {
+async function getJson<T>(url: string, what: string, parse: (body: unknown) => T): Promise<T> {
   let limited = 0;
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < 2; ) {
+  let failures = 0;
+  for (;;) {
+    let res: Response;
     try {
-      const res = await fetch(url, {
+      res = await fetch(url, {
         headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0 (+https://pumperly.com)" },
         signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
       });
-      if (res.status === 429 && limited < RATE_LIMIT_RETRIES) {
-        limited++;
-        await res.body?.cancel();
-        console.warn(`[ocpdb] DE: HTTP 429 for ${what}, retrying in ${(RATE_LIMIT_WAIT_MS * limited) / 1000} s`);
-        await sleep(RATE_LIMIT_WAIT_MS * limited);
-        continue;
+      if (res.status !== 429) {
+        if (!res.ok) throw new Error(`OCPDB HTTP ${res.status} for ${what}`);
+        return parse(await res.json());
       }
-      if (!res.ok) throw new Error(`OCPDB HTTP ${res.status} for ${what}`);
-      return await res.json();
     } catch (err) {
-      lastErr = err;
-      attempt++;
+      if (++failures >= 2) throw err;
+      continue;
     }
+    await res.body?.cancel();
+    if (limited === RATE_LIMIT_RETRIES) throw new Error(`OCPDB HTTP 429 for ${what}`);
+    limited++;
+    console.warn(`[ocpdb] DE: HTTP 429 for ${what}, retrying in ${(RATE_LIMIT_WAIT_MS * limited) / 1000} s`);
+    await sleep(RATE_LIMIT_WAIT_MS * limited);
   }
-  throw lastErr;
 }
 
 // Germany's bounding box, padded. Same as bnetza.ts.
@@ -651,7 +652,7 @@ const PageSchema = z.object({
 async function fetchPage(path: string, offset: number): Promise<z.infer<typeof PageSchema>> {
   const sep = path.includes("?") ? "&" : "?";
   const url = `${BASE_URL}/${path}${sep}limit=${PAGE_SIZE}&offset=${offset}`;
-  return PageSchema.parse(await getJson(url, `${path} @${offset}`));
+  return getJson(url, `${path} @${offset}`, (body) => PageSchema.parse(body));
 }
 
 /**
@@ -686,8 +687,9 @@ async function fetchAll<T>(path: string, schema: z.ZodType<T>): Promise<{ items:
  * Retried like a page: a failure here costs the whole run.
  */
 async function fetchSources(): Promise<OcpdbSource[]> {
-  const body = await getJson("https://api.mobidata-bw.de/ocpdb/api/public/v1/sources", "sources");
-  return z.object({ items: z.array(SourceSchema) }).parse(body).items;
+  return getJson("https://api.mobidata-bw.de/ocpdb/api/public/v1/sources", "sources", (body) =>
+    z.object({ items: z.array(SourceSchema) }).parse(body).items,
+  );
 }
 
 export class OcpdbScraper extends BaseScraper {
