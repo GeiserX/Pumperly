@@ -724,6 +724,87 @@ describe("OcpdbScraper.fetch", () => {
 
     await expect(new OcpdbScraper().fetch()).rejects.toThrow(/503/);
   });
+
+  // MobiData BW's bulk limit since 2026-11-17: a request with an offset, or a
+  // limit of 500 or more, gets a 429 at once when the client already has 3 in
+  // flight. Parallel paging hit it on every run and froze the prices.
+  it("reads one page at a time, so the upstream bulk limit never rejects it", async () => {
+    stubApi({ locationsTotal: 5500 });
+    const pages = vi.mocked(fetch).getMockImplementation()!;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = new URL(String(input));
+      const bulk = url.searchParams.has("offset") || Number(url.searchParams.get("limit")) >= 500;
+      if (!bulk) return pages(input, init);
+      if (inFlight >= 3) return { ok: false, status: 429, json: async () => ({}) } as unknown as Response;
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight--;
+      return pages(input, init);
+    });
+    const { OcpdbScraper } = await import("./ocpdb");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const { stations } = await new OcpdbScraper().fetch();
+
+    expect(stations).toHaveLength(6);
+    expect(maxInFlight).toBe(1);
+  });
+
+  it("waits out a 429 and retries the page, rather than failing the run", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      const urls = stubApi();
+      const pages = vi.mocked(fetch).getMockImplementation()!;
+      let limited = 2;
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (String(input).includes("/tariffs?") && limited-- > 0) {
+          urls.push(String(input));
+          return { ok: false, status: 429, json: async () => ({}) } as unknown as Response;
+        }
+        return pages(input, init);
+      });
+      const { OcpdbScraper } = await import("./ocpdb");
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const run = new OcpdbScraper().fetch();
+      await vi.advanceTimersByTimeAsync(29_000);
+      expect(urls.filter((u) => u.includes("/tariffs?"))).toHaveLength(1); // still waiting
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      const { stations } = await run;
+      expect(stations).toHaveLength(1);
+      expect(urls.filter((u) => u.includes("/tariffs?"))).toHaveLength(3);
+      expect(warn.mock.calls.flat().join("\n")).toMatch(/429 for tariffs @0, retrying in 30 s/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("fails the run when the limit never lifts, so the current prices stay", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      stubApi();
+      const pages = vi.mocked(fetch).getMockImplementation()!;
+      vi.mocked(fetch).mockImplementation(async (input, init) =>
+        String(input).includes("/locations?")
+          ? ({ ok: false, status: 429, json: async () => ({}) } as unknown as Response)
+          : pages(input, init),
+      );
+      const { OcpdbScraper } = await import("./ocpdb");
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const run = new OcpdbScraper().fetch();
+      const failed = expect(run).rejects.toThrow(/429/);
+      await vi.advanceTimersByTimeAsync(60 * 60_000);
+      await failed;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
