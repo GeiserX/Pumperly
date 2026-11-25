@@ -14,10 +14,9 @@ import type { FuelType } from "../types/station";
 // they keep their price when they rank among the 5. With
 // `includeClosed=false`, every station that closed for the night dropped out
 // of the run: its prices were deleted, then the station itself, and in the
-// morning both came back under a new id. On 2026-11-25 that had re-created
-// 1,046 of Austria's 1,685 priced stations in a single day, with no price
-// behind any of it. A closed station's price is still the one it charges
-// when it opens.
+// morning both came back under a new id. On 2026-11-25 the runs at 05:00 and
+// 07:00 local time alone re-created 648 stations this way. A closed station's
+// price is still the one it charges when it opens.
 // ---------------------------------------------------------------------------
 
 const BASE_URL =
