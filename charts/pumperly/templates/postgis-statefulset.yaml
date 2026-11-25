@@ -37,7 +37,17 @@ spec:
         - name: postgis
           image: "{{ .Values.postgis.image.repository }}:{{ .Values.postgis.image.tag }}"
           imagePullPolicy: IfNotPresent
-          {{- with .Values.postgis.extraArgs }}
+          {{- /* Unset extraArgs: lz4 WAL compression only on the image the chart
+               ships (postgis/postgis, major 15+), so an image override never
+               gets a setting its build may lack. */}}
+          {{- $args := .Values.postgis.extraArgs }}
+          {{- if kindIs "invalid" $args }}
+          {{- $major := regexFind "^[0-9]+" (toString .Values.postgis.image.tag) | default "0" | atoi }}
+          {{- if and (eq .Values.postgis.image.repository "postgis/postgis") (ge $major 15) }}
+          {{- $args = list "-c" "wal_compression=lz4" }}
+          {{- end }}
+          {{- end }}
+          {{- with $args }}
           args:
             {{- toYaml . | nindent 12 }}
           {{- end }}
