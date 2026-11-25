@@ -59,6 +59,7 @@ helm upgrade --install pumperly ./charts/pumperly -f my-values.yaml
 - `waitForDatabase.timeoutSeconds`: fail startup if the database never becomes reachable instead of waiting forever
 - `deploymentStrategy.type`: switch back to `RollingUpdate` only if you are comfortable with overlapping scraper pods during upgrades
 - `postgis.enabled`: disable bundled PostGIS for managed PostgreSQL/PostGIS
+- `postgis.extraArgs`: arguments for the bundled postgres server. Left unset, the chart passes `["-c", "wal_compression=lz4"]` to the `postgis/postgis` image at major 15 or later, which compresses the WAL, and nothing to any other image or tag. Set a list to choose your own, or `[]` for none. Turn lz4 off only after a clean shutdown: WAL already written with lz4 needs an lz4 build to replay after a crash
 - `databaseInit.enabled`: run `node migrate.mjs` from the app image before the app starts, applying the migrations the database has not recorded yet
 - `externalServices.valhallaUrl`: use an external Valhalla instance
 - `externalServices.photonUrl`: use an external Photon instance

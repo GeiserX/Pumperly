@@ -58,7 +58,16 @@ d("stations/nearest GET handler against PostGIS (integration)", () => {
         price DECIMAL(6,3) NOT NULL,
         currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
         reported_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        source VARCHAR(50) NOT NULL DEFAULT 'test',
         ev_fees JSONB
+      )
+    `);
+    await client.query(`
+      CREATE TABLE price_sources (
+        country VARCHAR(2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        confirmed_at TIMESTAMPTZ,
+        PRIMARY KEY (country, source)
       )
     `);
 
@@ -99,6 +108,24 @@ d("stations/nearest GET handler against PostGIS (integration)", () => {
     for (const f of body.features) {
       const want = STATIONS.find((s) => s.name === f.properties.name)!.km;
       expect(Math.abs(f.properties.distanceKm - want) / want).toBeLessThan(0.02);
+    }
+  });
+
+  it("dates an unchanged price by its source's last confirmation, else by the row", async () => {
+    const ask = async () => {
+      const res = await GET(
+        makeRequest({ lat: String(ORIGIN.lat), lon: String(ORIGIN.lon), radius_km: "10", fuel: "E10", limit: "1" }),
+      );
+      const body = (await res.json()) as { features: Array<{ properties: { reportedAt?: string } }> };
+      return body.features[0].properties.reportedAt;
+    };
+    await client.query(`UPDATE fuel_prices SET reported_at = '2026-02-01T08:00:00Z'`);
+    try {
+      expect(await ask()).toBe("2026-02-01T08:00:00.000Z");
+      await client.query(`INSERT INTO price_sources VALUES ('NL', 'test', '2026-02-01T09:30:00Z')`);
+      expect(await ask()).toBe("2026-02-01T09:30:00.000Z");
+    } finally {
+      await client.query(`DELETE FROM price_sources`);
     }
   });
 });

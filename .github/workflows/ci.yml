@@ -12,6 +12,7 @@ on:
       - 'tsconfig.json'
       - 'next.config.*'
       - 'vitest.config.*'
+      - 'vitest.integration.config.*'
       - 'docker/**'
       - '.github/workflows/ci.yml'
   # Every PR runs this workflow, so "CI Summary" can be a required check. The
@@ -57,6 +58,7 @@ jobs:
               - 'tsconfig.json'
               - 'next.config.*'
               - 'vitest.config.*'
+              - 'vitest.integration.config.*'
               - 'docker/**'
               - '.github/workflows/ci.yml'
 
@@ -125,6 +127,38 @@ jobs:
         with:
           fail_ci_if_error: false
 
+  # The suites that drive the scrapers and readers against a real PostGIS
+  # (testcontainers): among them the checks that an unchanged run writes no
+  # row and that the EV sweep never deletes a live charger. Docker comes with
+  # the hosted runner.
+  integration:
+    name: Integration Tests
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://mock:mock@localhost:5432/mock"
+
+      - name: Run integration tests
+        run: npm run test:integration
+
   build:
     name: Build
     needs: changes
@@ -159,7 +193,7 @@ jobs:
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [changes, lint, test, build]
+    needs: [changes, lint, test, integration, build]
     if: always()
     steps:
       - name: Check results
@@ -168,6 +202,7 @@ jobs:
           RUN_ALL: ${{ github.event_name != 'pull_request' || needs.changes.outputs.code == 'true' }}
           LINT: ${{ needs.lint.result }}
           TEST: ${{ needs.test.result }}
+          INTEGRATION: ${{ needs.integration.result }}
           BUILD: ${{ needs.build.result }}
         run: |
           if [ "$CHANGES" != "success" ]; then
@@ -175,11 +210,11 @@ jobs:
             exit 1
           fi
           if [ "$RUN_ALL" != "true" ]; then
-            echo "No code changed: lint, test and build skipped"
+            echo "No code changed: lint, test, integration and build skipped"
             exit 0
           fi
-          if [ "$LINT" != "success" ] || [ "$TEST" != "success" ] || [ "$BUILD" != "success" ]; then
-            echo "CI failed: lint=$LINT test=$TEST build=$BUILD"
+          if [ "$LINT" != "success" ] || [ "$TEST" != "success" ] || [ "$INTEGRATION" != "success" ] || [ "$BUILD" != "success" ]; then
+            echo "CI failed: lint=$LINT test=$TEST integration=$INTEGRATION build=$BUILD"
             exit 1
           fi
           echo "All checks passed"

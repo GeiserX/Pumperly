@@ -753,13 +753,17 @@ describe("OcpdbScraper cleanup", () => {
     vi.mocked(PrismaClient).mockImplementation(function () {
       return client;
     } as never);
-    vi.spyOn(BaseScraper.prototype, "run").mockResolvedValue({
-      country: "DE",
-      source: "ocpdb",
-      stationsUpserted: 69160,
-      pricesUpserted: 25500,
-      durationMs: 60_000,
-      errors: opts.errors ?? [],
+    // base.run() records the ids it listed; the sweep reads them.
+    vi.spyOn(BaseScraper.prototype, "run").mockImplementation(async function (this: { lastRunExternalIds: string[] }) {
+      this.lastRunExternalIds = ["ocpdb-a", "ocpdb-b"];
+      return {
+        country: "DE",
+        source: "ocpdb",
+        stationsUpserted: 69160,
+        pricesUpserted: 25500,
+        durationMs: 60_000,
+        errors: opts.errors ?? [],
+      };
     });
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -777,16 +781,18 @@ describe("OcpdbScraper cleanup", () => {
     expect(result.errors).toEqual([]);
     expect(queries).toHaveLength(3);
 
-    // The floor counts only rows this run refreshed.
+    // The floor counts only rows this run listed.
     expect(queries[0].sql).toMatch(/count\(\*\)/);
     expect(queries[0].sql).not.toMatch(/DELETE/);
-    expect(queries[0].sql).toMatch(/updated_at >= NOW\(\) - make_interval/);
-    expect(queries[0].params).toEqual([60 + 300, "DE", "ocpdb-%"]);
+    expect(queries[0].sql).toMatch(/external_id IN \(SELECT unnest\(\$3::text\[\]\)\)/);
+    expect(queries[0].params).toEqual(["DE", "ocpdb-%", ["ocpdb-a", "ocpdb-b"]]);
 
-    // Stale sweep: this source only, cut off by run duration + margin.
+    // Stale sweep: this source only, the own rows the run did not list.
     expect(queries[1].sql).toMatch(/DELETE FROM stations/);
-    expect(queries[1].sql).toMatch(/updated_at < NOW\(\) - make_interval/);
-    expect(queries[1].params).toEqual([60 + 300, "DE", "ocpdb-%"]);
+    expect(queries[1].sql).toMatch(/NOT EXISTS \(SELECT 1 FROM unnest\(\$3::text\[\]\)/);
+    // A row another run wrote within this run's window is never swept.
+    expect(queries[1].sql).toMatch(/updated_at < NOW\(\) - make_interval\(secs => \$4::float8\)/);
+    expect(queries[1].params).toEqual(["DE", "ocpdb-%", ["ocpdb-a", "ocpdb-b"], 60 + 300]);
 
     // Retirement: German chargers only, from the two sources OCPDB replaces.
     expect(queries[2].sql).toMatch(/DELETE FROM stations/);

@@ -24,7 +24,7 @@ sequenceDiagram
     loop every 5 seconds, from 10 s after boot
         App->>Src: first scrape of the next scraper
         Src-->>App: stations and prices
-        App->>DB: upsert stations, replace prices
+        App->>DB: upsert changed stations, sync prices
     end
     Note over V: tile build and address import, hours
     App-->>V: routing and search work once they answer
@@ -110,8 +110,8 @@ Each scrape downloads the source, checks the data and writes it. A healthy Spani
 ```text
 [miteco] Fetching data for ES ...
 [miteco] Fetched N stations, N price rows
-[miteco] Upserted N stations
-[miteco] Inserted N prices
+[miteco] Stations: N listed, N inserted or changed
+[miteco] Prices: N listed, N changed, N new, N removed
 [scraper] ES: OK — N stations, N prices in N.Ns
 ```
 
@@ -122,7 +122,7 @@ Between those lines the scraper:
 - drops prices outside the plausible range for their currency, and logs `Filtered out N invalid prices`;
 - drops fuel stations left with no price;
 - aborts without touching the database if the source returned no stations at all, so an empty answer never wipes a country;
-- replaces the source's prices for that country in one transaction, so the map never shows half an update;
+- writes only the stations and prices that changed, and syncs the source's prices for that country in one transaction, so the map never shows half an update;
 - deletes fuel stations that no longer have any price.
 
 [How scrapers work](../data/how-scrapers-work.md) covers each step.

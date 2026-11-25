@@ -196,7 +196,7 @@ function formatResult(r: ScraperResult): string {
   const lines = [
     `  [${r.source}] ${r.country}: ${status} in ${(r.durationMs / 1000).toFixed(1)}s`,
     `    Stations upserted: ${r.stationsUpserted}`,
-    `    Prices inserted:   ${r.pricesUpserted}`,
+    `    Prices synced:     ${r.pricesUpserted}`,
   ];
   if (r.errors.length > 0) {
     lines.push(`    Errors (${r.errors.length}):`);

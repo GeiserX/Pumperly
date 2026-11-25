@@ -117,10 +117,10 @@ An error saying the relation does not exist means the database has no history. P
 
     ```bash
     docker compose -f docker/docker-compose.yml exec -T db \
-      psql -v ON_ERROR_STOP=1 -U pumperly -d pumperly < prisma/migrations/<migration-folder>/migration.sql
+      psql -1 -v ON_ERROR_STOP=1 -U pumperly -d pumperly -f - < prisma/migrations/<migration-folder>/migration.sql
     ```
 
-    `ON_ERROR_STOP=1` makes `psql` stop at the first error instead of carrying on.
+    `ON_ERROR_STOP=1` makes `psql` stop at the first error instead of carrying on. `-1` runs the whole file as one transaction, as the migration runner does (`psql` accepts `-1` only with `-f` or `-c`, so `-f -` reads the file from standard input): a failed migration then leaves nothing half applied, and its `SET LOCAL` settings take effect.
 
     To start keeping a history instead, first confirm that `stations` has a `geom` column (`\d stations` in `psql`). Then, from a checkout of the new release tag with `DATABASE_URL` set as in the other tab, mark the first migration as already applied and let `migrate deploy` take over:
 
@@ -135,6 +135,27 @@ An error saying the relation does not exist means the database has no history. P
     A migration that builds an index takes a lock that blocks writes to that table until it finishes. On a large `stations` table that can stall the scrapers. When a migration file offers a `CREATE INDEX CONCURRENTLY` variant in its comments, run that variant first with `psql`. If the migration's own statement uses `IF NOT EXISTS`, it then finds the index and does nothing.
 
 Pumperly ships no down migrations. To go back to an older release after a migration ran, restore the backup you took before upgrading. See [Backing up the database](backup-and-restore.md).
+
+## Scrapers write only what changed { #write-on-change }
+
+From the release that adds the migration `20261125000000_write_on_change`, a scraper run writes only the stations and prices that changed. Before, every run deleted and reinserted every price of its source and rewrote every station, even when nothing had changed. On a full install that was millions of row writes a day, with the WAL, dead rows and autovacuum work that come with them.
+
+What to know when you upgrade:
+
+- **The migration is required.** It adds the `price_sources` table and swaps a `fuel_prices` index. The compose `migrate` service and the Helm `databaseInit` init container apply it. Without it, every price write fails with `relation "price_sources" does not exist`, and prices stop at their last values.
+- **The migration waits at most 10 seconds for its lock.** Dropping the old index needs an exclusive lock on `fuel_prices`. If a scraper of the old release holds a price transaction, the migration stops with `canceling statement due to lock timeout` and changes nothing. Run it again: `docker compose up -d` again, or let the pod restart. While the migration waits for that lock, new reads of `fuel_prices` queue behind it, so on Helm the running pod can answer price requests up to 10 seconds late during the upgrade.
+- **Two columns change meaning for your own SQL.** `stations.updated_at` is now when the station's data last changed, not when a run last saw it. `fuel_prices.reported_at` is when the price value was stored. When a source last confirmed its prices is in `price_sources.confirmed_at`. A source that sends its own price times, such as OCPDB, is the exception. There `reported_at` holds the upstream time and `confirmed_at` stays NULL. So neither column tells you when Pumperly stored the row or when the source last ran. The app and the API show `GREATEST(reported_at, confirmed_at)`, so what they show does not change. [Data model](../reference/data-model.md#reading-the-newest-price) has the query.
+- **Price counts drop once.** A source that lists one fuel twice for a station now keeps one price: the newest, else the first one listed. In practice that is the price the map already showed: on a production instance it matched for all 30,402 such pairs in Italy. The first run of each source removes the extra rows, so the per-country price counts in `/api/stats` drop, by about 40,000 rows on a full install, most of them in Italy. France and Norway no longer file E85 as E10. About 10 French stations sell only E85, so they leave the map.
+- **Going back works.** The older release runs on the new schema unchanged. Its map shows each price's last change time instead of its last confirmation until each source has run once.
+- **The bundled database compresses its WAL.** The compose file and the Helm chart now start PostGIS with `wal_compression=lz4` (Helm: `postgis.extraArgs`). It needs PostgreSQL 15 or later built with lz4, and costs a little CPU. The Helm chart adds it only to its own `postgis/postgis` image at major 15 or later, so a release that overrides `postgis.image` keeps its old arguments. If you run your own image without lz4 in compose, PostgreSQL refuses to start: remove the setting from the compose file. Do that only after a clean shutdown: WAL written with lz4 needs an lz4 build to replay, so after a crash let an lz4 image finish recovery first.
+
+!!! tip "Fewer disk writes on your own host"
+    These settings cut writes further, but each depends on your storage and on the risk you accept, so Pumperly does not set them:
+
+    - `checkpoint_timeout = 15min`: fewer full-page images in the WAL, at the cost of a longer crash recovery.
+    - `full_page_writes = off`: safe only on a copy-on-write filesystem with atomic 8 kB writes, such as ZFS. On ext4, XFS or NFS a crash can corrupt pages.
+    - On ZFS, a dataset for the data directory with `recordsize=16K` (or `8K`), `compression=lz4` and `atime=off`.
+    - `synchronous_commit = off`: a crash can lose the last second of writes. Scraped data comes back with the next run, but decide for yourself.
 
 ## Upgrade a Docker Compose install
 

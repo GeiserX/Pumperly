@@ -86,6 +86,11 @@ describe("NorwayScraper", () => {
                   id: 3, fuelTypeId: 3, currency: "KR", price: 23.19,
                   deleted: 0, lastUpdated: 1700000000, createdAt: "", updatedAt: "",
                 },
+                {
+                  // E-85: not an E10 price, so it is not emitted.
+                  id: 4, fuelTypeId: 9, currency: "KR", price: 15.49,
+                  deleted: 0, lastUpdated: 1700000000, createdAt: "", updatedAt: "",
+                },
               ],
               brand: {
                 id: 1, name: "Circle K", pictureUrl: "", displayOrder: 1,
@@ -145,6 +150,7 @@ describe("NorwayScraper", () => {
 
     const circleKPrices = prices.filter((p) => p.stationExternalId === "no-1001");
     expect(circleKPrices).toHaveLength(3);
+    expect(circleKPrices.find((p) => p.fuelType === "E10")).toBeUndefined();
 
     const dieselPrice = circleKPrices.find((p) => p.fuelType === "B7");
     expect(dieselPrice).toBeDefined();

@@ -68,6 +68,9 @@ export async function GET(request: NextRequest) {
     // EV fuel type: query by station_type instead of price join
     const isEV = fuel === "EV";
 
+    // A price's age is GREATEST(reported_at, price_sources.confirmed_at): a
+    // scraper run rewrites only the prices that changed, and confirmed_at is
+    // when its source last vouched for the rest.
     const rows: StationRow[] = isEV
       ? await prisma.$queryRawUnsafe(
           `
@@ -88,11 +91,12 @@ export async function GET(request: NextRequest) {
             s.max_power_kw::int AS max_power_kw
           FROM stations s
           LEFT JOIN LATERAL (
-            SELECT price, currency, reported_at, ev_fees
-            FROM fuel_prices
-            WHERE station_id = s.id
-              AND fuel_type = 'EV'
-            ORDER BY reported_at DESC NULLS LAST
+            SELECT p.price, p.currency, GREATEST(p.reported_at, ps.confirmed_at) AS reported_at, p.ev_fees
+            FROM fuel_prices p
+            LEFT JOIN price_sources ps ON ps.country = s.country AND ps.source = p.source
+            WHERE p.station_id = s.id
+              AND p.fuel_type = 'EV'
+            ORDER BY 3 DESC NULLS LAST
             LIMIT 1
           ) fp ON true
           WHERE s.station_type IN ('ev_charger', 'both')
@@ -125,11 +129,12 @@ export async function GET(request: NextRequest) {
             fp.reported_at
           FROM stations s
           JOIN LATERAL (
-            SELECT price, currency, reported_at
-            FROM fuel_prices
-            WHERE station_id = s.id
-              AND fuel_type = $5
-            ORDER BY reported_at DESC NULLS LAST
+            SELECT p.price, p.currency, GREATEST(p.reported_at, ps.confirmed_at) AS reported_at
+            FROM fuel_prices p
+            LEFT JOIN price_sources ps ON ps.country = s.country AND ps.source = p.source
+            WHERE p.station_id = s.id
+              AND p.fuel_type = $5
+            ORDER BY 3 DESC NULLS LAST
             LIMIT 1
           ) fp ON true
           WHERE ST_Within(

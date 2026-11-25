@@ -85,8 +85,10 @@ describe("FranceScraper", () => {
     expect(stations[1].province).toBe("Bouches-du-Rhone");
 
     // Paris: B7, E5, E10, E5_98 = 4 prices
-    // Marseille: B7, E10, E10(e85), LPG = 4 prices
-    expect(prices).toHaveLength(8);
+    // Marseille: B7, E10, LPG = 3 prices (its E85 is not filed as E10)
+    expect(prices).toHaveLength(7);
+    const marseilleE10 = prices.filter((p) => p.stationExternalId === "13001002" && p.fuelType === "E10");
+    expect(marseilleE10.map((p) => p.price)).toEqual([1.749]);
 
     const parisPrices = prices.filter((p) => p.stationExternalId === "75001001");
     expect(parisPrices).toHaveLength(4);
