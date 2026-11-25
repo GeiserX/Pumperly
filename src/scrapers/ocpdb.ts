@@ -64,8 +64,55 @@ const BASE_URL = "https://api.mobidata-bw.de/ocpdb/api/ocpi/3.0";
 
 // Hard upstream cap: a larger limit is a 400.
 const PAGE_SIZE = 1000;
-const CONCURRENCY = 4;
 const PAGE_TIMEOUT_MS = 120_000;
+
+// Since 2026-11-17 MobiData BW limits "bulk" requests (any `offset`, or a
+// `limit` of 500 or more) per client IP: 3 in flight, 60 a minute with a
+// burst of 120. Anything over that is a 429 at once, and their changelog asks
+// full-dataset clients to fetch pages one at a time and to retry a 429 after
+// a delay. Every page here is a bulk request, so fetch() reads one page at a
+// time across all collections (~110 pages, a few seconds each), and a 429
+// waits and retries instead of failing the run. Parallel paging got a 429 on
+// every run from 2026-11-17 on, which froze Germany's charger prices.
+const RATE_LIMIT_RETRIES = 5;
+// The per-minute bucket refills at one request a second, so 30 s buys 30
+// requests. Grows with each retry: 30, 60, 90, 120, 150 s.
+const RATE_LIMIT_WAIT_MS = 30_000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * GET a JSON document and parse it. A 429 waits and retries up to
+ * RATE_LIMIT_RETRIES times, then fails. Any other failure (network, timeout,
+ * 5xx, a body `parse` rejects) is retried once, so a single slow page does not
+ * cost the whole run.
+ */
+async function getJson<T>(url: string, what: string, parse: (body: unknown) => T): Promise<T> {
+  let limited = 0;
+  let failures = 0;
+  for (;;) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0 (+https://pumperly.com)" },
+        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
+      });
+      if (res.status !== 429) {
+        if (!res.ok) throw new Error(`OCPDB HTTP ${res.status} for ${what}`);
+        return parse(await res.json());
+      }
+    } catch (err) {
+      if (++failures >= 2) throw err;
+      continue;
+    }
+    // Best effort: a body that already errored must not skip the retry.
+    await res.body?.cancel().catch(() => {});
+    if (limited === RATE_LIMIT_RETRIES) throw new Error(`OCPDB HTTP 429 for ${what}`);
+    limited++;
+    console.warn(`[ocpdb] DE: HTTP 429 for ${what}, retrying in ${(RATE_LIMIT_WAIT_MS * limited) / 1000} s`);
+    await sleep(RATE_LIMIT_WAIT_MS * limited);
+  }
+}
 
 // Germany's bounding box, padded. Same as bnetza.ts.
 const DE_BBOX = { latMin: 47, latMax: 56, lonMin: 5.5, lonMax: 15.5 };
@@ -606,21 +653,7 @@ const PageSchema = z.object({
 async function fetchPage(path: string, offset: number): Promise<z.infer<typeof PageSchema>> {
   const sep = path.includes("?") ? "&" : "?";
   const url = `${BASE_URL}/${path}${sep}limit=${PAGE_SIZE}&offset=${offset}`;
-  let lastErr: unknown;
-  // One retry: a single slow page should not cost the whole run.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0 (+https://pumperly.com)" },
-        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
-      });
-      if (!res.ok) throw new Error(`OCPDB HTTP ${res.status} for ${path} @${offset}`);
-      return PageSchema.parse(await res.json());
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  throw lastErr;
+  return getJson(url, `${path} @${offset}`, (body) => PageSchema.parse(body));
 }
 
 /**
@@ -641,37 +674,23 @@ async function fetchAll<T>(path: string, schema: z.ZodType<T>): Promise<{ items:
     }
   };
 
+  // One page at a time: see RATE_LIMIT_RETRIES.
   const first = await fetchPage(path, 0);
   keep(first.items);
-  const offsets: number[] = [];
-  for (let o = PAGE_SIZE; o < first.total_count; o += PAGE_SIZE) offsets.push(o);
-
-  for (let i = 0; i < offsets.length; i += CONCURRENCY) {
-    const batch = await Promise.all(offsets.slice(i, i + CONCURRENCY).map((o) => fetchPage(path, o)));
-    for (const p of batch) keep(p.items);
+  for (let offset = PAGE_SIZE; offset < first.total_count; offset += PAGE_SIZE) {
+    keep((await fetchPage(path, offset)).items);
   }
   return { items, invalid, total: items.length + invalid };
 }
 
 /**
  * Feed health from OCPDB's own status endpoint (not paginated, ~15 rows).
- * Retried once like a page: a failure here costs the whole run.
+ * Retried like a page: a failure here costs the whole run.
  */
 async function fetchSources(): Promise<OcpdbSource[]> {
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch("https://api.mobidata-bw.de/ocpdb/api/public/v1/sources", {
-        headers: { Accept: "application/json", "User-Agent": "Pumperly/1.0 (+https://pumperly.com)" },
-        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
-      });
-      if (!res.ok) throw new Error(`OCPDB HTTP ${res.status} for sources`);
-      return z.object({ items: z.array(SourceSchema) }).parse(await res.json()).items;
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  throw lastErr;
+  return getJson("https://api.mobidata-bw.de/ocpdb/api/public/v1/sources", "sources", (body) =>
+    z.object({ items: z.array(SourceSchema) }).parse(body).items,
+  );
 }
 
 export class OcpdbScraper extends BaseScraper {
@@ -679,14 +698,13 @@ export class OcpdbScraper extends BaseScraper {
   readonly source = "ocpdb";
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
-    const [sources, tariffs, associations, locations] = await Promise.all([
-      // Without feed health no tariff can be vouched for, and a run without
-      // prices would wipe the current ones: failing here keeps them.
-      fetchSources(),
-      fetchAll("tariffs", TariffSchema),
-      fetchAll("tariff-associations", AssociationSchema),
-      fetchAll("locations?country=DEU", LocationSchema),
-    ]);
+    // Without feed health no tariff can be vouched for, and a run without
+    // prices would wipe the current ones: failing here keeps them.
+    const sources = await fetchSources();
+    // In turn, not in parallel: every page is a bulk request (see RATE_LIMIT_RETRIES).
+    const tariffs = await fetchAll("tariffs", TariffSchema);
+    const associations = await fetchAll("tariff-associations", AssociationSchema);
+    const locations = await fetchAll("locations?country=DEU", LocationSchema);
     // A few bad records are skipped: their stations go unpriced or drop out
     // until the feed fixes them. Many mean the shape changed, and a run on a
     // fraction of the data would unprice or sweep the rest: keep the current rows.
