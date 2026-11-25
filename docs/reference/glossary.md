@@ -69,7 +69,7 @@ The switch from one [source](#source) to another for the same data, done without
 
 ## Latest price {#latest-price}
 
-The price Pumperly shows for a station and fuel: the stored price with the newest `reported_at` time. `reported_at` is when Pumperly's scraper stored the price, not when the source published it.
+The price Pumperly shows for a station and fuel: the stored price with the newest time, where a price's time is the later of its `reported_at` (when the value was stored) and its source's `price_sources.confirmed_at` (when a run last saw it unchanged). Neither is when the source published it.
 
 ## NDJSON {#ndjson}
 

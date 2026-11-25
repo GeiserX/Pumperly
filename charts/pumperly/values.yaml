@@ -53,6 +53,11 @@ postgis:
   image:
     repository: postgis/postgis
     tag: "17-3.4-alpine"
+  # Extra arguments for the postgres server. The default compresses full-page
+  # images in the WAL (Postgres 15+): less WAL on any storage, a little CPU.
+  extraArgs:
+    - "-c"
+    - "wal_compression=lz4"
   auth:
     username: pumperly
     password: ""

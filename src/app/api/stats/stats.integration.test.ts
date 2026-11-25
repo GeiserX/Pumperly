@@ -41,7 +41,16 @@ d("stats GET handler (integration)", () => {
         id BIGSERIAL PRIMARY KEY,
         station_id UUID NOT NULL REFERENCES stations(id),
         fuel_type VARCHAR NOT NULL,
-        reported_at TIMESTAMPTZ NOT NULL
+        reported_at TIMESTAMPTZ NOT NULL,
+        source VARCHAR(50) NOT NULL DEFAULT 'test'
+      )
+    `);
+    await client.query(`
+      CREATE TABLE price_sources (
+        country VARCHAR(2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        confirmed_at TIMESTAMPTZ,
+        PRIMARY KEY (country, source)
       )
     `);
     // ES: 30 stations, 3 prices each. DE: 50 stations, 1 price on every
@@ -105,6 +114,35 @@ d("stats GET handler (integration)", () => {
     expect(body.countries.find((c) => c.code === "US")).toMatchObject({ stations: 20, prices: 0, lastUpdate: null });
     expect(body.countries.find((c) => c.code === "DE")).toMatchObject({ stations: 50, prices: 25 });
     expect(body.totals).toEqual({ stations: 120, prices: 90 + 25 + 20 + 10 });
+  });
+
+  it("dates a country by its sources' last confirmation when that is later than every row", async () => {
+    try {
+      await client.query(`
+        INSERT INTO price_sources (country, source, confirmed_at) VALUES
+          ('ES', 'test', '2026-11-20T00:00:00Z'),  -- later than every ES row: wins
+          ('DE', 'test', '2026-10-01T00:00:00Z'),  -- older than the rows: ignored
+          ('IT', 'test', NULL),                     -- source dates its own rows
+          ('US', 'test', '2026-11-20T00:00:00Z')   -- no prices: contributes nothing
+      `);
+      // The route keeps its rows for 300 s in the module; load a fresh copy.
+      delete (globalThis as { prisma?: unknown }).prisma;
+      vi.resetModules();
+      const fresh = (await import("./route")).GET as unknown as () => Promise<Response>;
+      const body = (await (await fresh()).json()) as {
+        countries: Array<{ code: string; lastUpdate: string | null }>;
+      };
+      const old = await client.query<{ country: string; last_update: Date | null }>(OLD_STATS_SQL);
+      const before = new Map(old.rows.map((r) => [r.country, r.last_update?.toISOString() ?? null]));
+      const at = new Map(body.countries.map((c) => [c.code, c.lastUpdate]));
+
+      expect(at.get("ES")).toBe("2026-11-20T00:00:00.000Z");
+      expect(at.get("DE")).toBe(before.get("DE"));
+      expect(at.get("IT")).toBe(before.get("IT"));
+      expect(at.get("US")).toBeNull();
+    } finally {
+      await client.query(`DELETE FROM price_sources`);
+    }
   });
 
   it("leaves work_mem unchanged for the rest of the session", async () => {

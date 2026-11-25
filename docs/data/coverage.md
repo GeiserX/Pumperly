@@ -159,7 +159,7 @@ flowchart TD
     B -- No --> C[Run fails, error logged]
     C --> D[Nothing written.<br>Last prices stay on the map]
     B -- Yes --> E[Prices checked against<br>plausible ranges]
-    E --> F[Stations upserted.<br>This source's prices replaced in one transaction]
+    E --> F[Stations upserted.<br>This source's prices synced in one transaction]
 ```
 
 A source that returns an answer with no stations in it is treated as a failure too, so an empty reply can never wipe a country. [How scrapers work](how-scrapers-work.md) explains the full run, and [Monitoring and troubleshooting](../operations/troubleshooting.md) covers reading the logs.

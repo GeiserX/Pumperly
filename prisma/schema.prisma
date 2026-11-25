@@ -43,6 +43,18 @@ model FuelPrice {
 
   station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
 
-  @@index([stationId, fuelType, reportedAt(sort: Desc)])
+  @@index([stationId, fuelType])
   @@map("fuel_prices")
+}
+
+/// When each source last confirmed its prices in a country. Readers show
+/// GREATEST(fuel_prices.reported_at, confirmed_at). NULL: the source's rows
+/// carry their own upstream time.
+model PriceSource {
+  country     String    @db.VarChar(2)
+  source      String    @db.VarChar(50)
+  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz
+
+  @@id([country, source])
+  @@map("price_sources")
 }

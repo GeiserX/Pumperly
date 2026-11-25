@@ -59,6 +59,7 @@ helm upgrade --install pumperly ./charts/pumperly -f my-values.yaml
 - `waitForDatabase.timeoutSeconds`: fail startup if the database never becomes reachable instead of waiting forever
 - `deploymentStrategy.type`: switch back to `RollingUpdate` only if you are comfortable with overlapping scraper pods during upgrades
 - `postgis.enabled`: disable bundled PostGIS for managed PostgreSQL/PostGIS
+- `postgis.extraArgs`: arguments for the bundled postgres server; the default `["-c", "wal_compression=lz4"]` compresses the WAL
 - `databaseInit.enabled`: run `node migrate.mjs` from the app image before the app starts, applying the migrations the database has not recorded yet
 - `externalServices.valhallaUrl`: use an external Valhalla instance
 - `externalServices.photonUrl`: use an external Photon instance

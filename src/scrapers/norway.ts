@@ -43,7 +43,7 @@ import type { FuelType } from "../types/station";
 //   3 = 98 Oktan (FT_98)       → E5_98
 //   4 = Frigårdsdiesel (FT_FD) → B7 (duty-free diesel, same spec)
 //   7 = HVO 100 (FT_100)       → HVO
-//   9 = E-85 (FT_E85)          → E10 (high ethanol, closest match)
+//   9 = E-85 (FT_E85)          → not mapped (no E85 fuel type)
 //
 // stationTypeId: 1 = road stations (fuel + EV), 2 = marine stations
 // countryId: 1 = Norway, 2 = Sweden, 3 = Denmark, 4 = Finland
@@ -71,7 +71,7 @@ const FUEL_TYPE_MAP: ReadonlyMap<number, FuelType> = new Map([
   [3, "E5_98"],      // 98 Oktan
   [4, "B7"],         // Frigårdsdiesel (duty-free diesel, same fuel spec as B7)
   [7, "HVO"],        // HVO 100
-  [9, "E10"],        // E-85 (high ethanol blend; closest standard type)
+  // 9 = E-85 is not mapped: E85 is not E10, and there is no E85 fuel type (see sweden.ts).
 ]);
 
 // Marine fuel types (stationTypeId=2) — included for completeness

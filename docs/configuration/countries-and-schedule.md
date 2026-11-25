@@ -103,8 +103,8 @@ The log shows the choice at start-up:
 
 Each official source deletes the other sources' rows for its country once it has taken over:
 
-- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) stations.
-- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it refreshed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](../reference/environment-variables.md#pumperly_bnetza_min_stations) stations.
+- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it listed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) stations.
+- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it listed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](../reference/environment-variables.md#pumperly_bnetza_min_stations) stations.
 - **REVE** fills in over many hourly runs. Open Charge Map's Spanish rows stay on the map until REVE holds [`PUMPERLY_REVE_CUTOVER_RATIO`](../reference/environment-variables.md#pumperly_reve_cutover_ratio) of the registry, 95% by default. Until then, expect two pins on many Spanish chargers. [API keys](api-keys.md#mapa-reve-spain) has the timing.
 
 !!! warning "Switching back leaves the official rows behind"

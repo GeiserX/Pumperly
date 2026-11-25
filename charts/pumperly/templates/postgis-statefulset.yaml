@@ -37,6 +37,10 @@ spec:
         - name: postgis
           image: "{{ .Values.postgis.image.repository }}:{{ .Values.postgis.image.tag }}"
           imagePullPolicy: IfNotPresent
+          {{- with .Values.postgis.extraArgs }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.postgis.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}

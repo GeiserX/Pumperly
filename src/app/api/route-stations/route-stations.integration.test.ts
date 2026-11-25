@@ -95,7 +95,16 @@ d("route-stations POST handler against PostGIS (integration)", () => {
         fuel_type VARCHAR NOT NULL,
         price DECIMAL(6,3) NOT NULL,
         currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
-        reported_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        reported_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        source VARCHAR(50) NOT NULL DEFAULT 'test'
+      )
+    `);
+    await client.query(`
+      CREATE TABLE price_sources (
+        country VARCHAR(2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        confirmed_at TIMESTAMPTZ,
+        PRIMARY KEY (country, source)
       )
     `);
 
@@ -188,6 +197,24 @@ d("route-stations POST handler against PostGIS (integration)", () => {
     const names = collection.features.map((x) => x.properties.name);
     expect(names).toContain("Repsol Centro");
     expect(names).not.toContain("Cepsa Lejos");
+  });
+
+  it("dates an unchanged price by its source's last confirmation, else by the row", async () => {
+    const ask = async () => {
+      const res = await POST(
+        makeRequest({ geometry: { type: "LineString", coordinates: ROUTE }, fuel: "E5", corridorKm: CORRIDOR_KM }),
+      );
+      const body = (await res.json()) as { features: Array<{ properties: { reportedAt?: string } }> };
+      return body.features[0].properties.reportedAt;
+    };
+    await client.query(`UPDATE fuel_prices SET reported_at = '2026-03-01T08:00:00Z'`);
+    try {
+      expect(await ask()).toBe("2026-03-01T08:00:00.000Z");
+      await client.query(`INSERT INTO price_sources VALUES ('ES', 'test', '2026-03-01T10:00:00Z')`);
+      expect(await ask()).toBe("2026-03-01T10:00:00.000Z");
+    } finally {
+      await client.query(`DELETE FROM price_sources`);
+    }
   });
 
   it("DEG_PAD stays in lockstep with the corridor constant", () => {

@@ -17,7 +17,8 @@ const FUEL_FIELD_MAP: ReadonlyMap<string, FuelType> = new Map([
   ["sp95_prix", "E5"],
   ["e10_prix", "E10"],
   ["sp98_prix", "E5_98"],
-  ["e85_prix", "E10"],      // E85 maps closest to E10
+  // e85_prix is not mapped: E85 is not E10, and there is no E85 fuel type.
+  // Filing it as E10 showed a ~0.85 EUR "E10" price (see sweden.ts).
   ["gplc_prix", "LPG"],
 ]);
 

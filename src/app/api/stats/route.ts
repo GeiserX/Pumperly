@@ -13,6 +13,9 @@ interface CountStats {
 // plain COUNT over the join. The old COUNT(DISTINCT s.id) over the LEFT JOIN
 // sorted every price row by (country, id) and spilled that sort to disk on
 // each call. The same numbers come out of two hash aggregates with no sort.
+// A price's age is GREATEST(reported_at, confirmed_at): runs write only the
+// prices that changed, and price_sources records when each source last
+// confirmed the rest.
 const STATS_SQL = `
   WITH st AS (
     SELECT country, COUNT(*)::int AS stations
@@ -20,9 +23,10 @@ const STATS_SQL = `
     GROUP BY country
   ),
   pr AS (
-    SELECT s.country, COUNT(*)::int AS prices, MAX(fp.reported_at) AS last_update
+    SELECT s.country, COUNT(*)::int AS prices, MAX(GREATEST(fp.reported_at, ps.confirmed_at)) AS last_update
     FROM fuel_prices fp
     JOIN stations s ON s.id = fp.station_id
+    LEFT JOIN price_sources ps ON ps.country = s.country AND ps.source = fp.source
     GROUP BY s.country
   )
   SELECT st.country, st.stations, COALESCE(pr.prices, 0)::int AS prices, pr.last_update

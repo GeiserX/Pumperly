@@ -19,7 +19,7 @@ All scrapers share one pipeline, described in [How scrapers work](how-scrapers-w
 
 - **Implausible prices are dropped.** Each currency has a plausible per-litre range, so a placeholder like `999999` or a price in the wrong unit never reaches the map.
 - **A station with no valid price is dropped.** Only stations with at least one price are written.
-- **Each run replaces the source's prices for its country in one transaction.** The map never shows half a run.
+- **Each run syncs the source's prices for its country in one transaction.** Only changed, new and removed prices are written, and the map never shows half a run.
 - **A station missing from a run disappears.** When a run no longer lists a station, its prices go, and the station is deleted unless another source still prices it. For grid-based scrapers, a grid point that fails for one run can hide its stations until the next good run.
 
 ## Government and official sources {#government-sources}
@@ -206,12 +206,12 @@ The French government publishes live pump prices on data.economie.gouv.fr, in th
 | `sp95_prix` | `E5` |
 | `e10_prix` | `E10` |
 | `sp98_prix` | `E5_98` |
-| `e85_prix` | `E10` |
+| `e85_prix` | Not used |
 | `gplc_prix` | `LPG` |
 
 Things to know:
 
-- **E85 is filed as `E10`.** The fuel model has no E85 code. A station that sells both E10 and E85 therefore has two `E10` prices, and the map may show either one.
+- **E85 is dropped.** The fuel model has no E85 code, and filing it as `E10` would show an E85 price (about 0.85 EUR) to drivers filtering for E10. The few stations that sell only E85 therefore drop off the map.
 - **Mainland France and Corsica only.** Stations outside 41–52° N and 6° W–10° E, which includes the overseas departments, are skipped.
 - **The export has no brand.** Station names are built from the town and the address.
 - The dataset is refreshed upstream about every 10 minutes. Pumperly reads it hourly.
@@ -781,4 +781,4 @@ When the source answers, the scraper maps these fuels:
 | 3, 98 Oktan | `E5_98` |
 | 4, Frigårdsdiesel (farm diesel) | `B7` |
 | 7, HVO 100 | `HVO` |
-| 9, E-85 | `E10` |
+| 9, E-85 | Not used: no E85 code, and it is not E10 |
