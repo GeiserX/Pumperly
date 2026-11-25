@@ -255,14 +255,14 @@ Without the feed-health endpoint, no tariff can be vouched for, and a run withou
 
 ### Cleanup after each run {#ocpdb-cleanup}
 
-Cleanup works as for [BNetzA](#bnetza-cleanup). After a run with no errors, if the run refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) stations, the scraper deletes:
+Cleanup works as for [BNetzA](#bnetza-cleanup). After a run with no errors, if at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) of the stations the run listed are in the database, the scraper deletes:
 
-1. **OCPDB stations the run did not refresh.** These left the database, or their anchor's coordinates changed, which changes the id.
+1. **OCPDB stations the run did not list.** These left the database, or their anchor's coordinates changed, which changes the id.
 2. **Every German Open Charge Map and BNetzA charger.** Once OCPDB has landed, those rows are duplicates.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
+| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | Stations a run must list, and the database hold, before either deletion runs. A value below 1 or not a number falls back to the default. |
 | `PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS` | `3` | Days a feed may go without refreshing before its tariffs are ignored. A value of 0 or less, or not a number, falls back to the default. |
 
 ## BNetzA Ladesäulenregister, Germany {#bnetza}
@@ -306,16 +306,18 @@ Each run logs how many rows it read, merged and skipped:
 
 ### Cleanup after each run {#bnetza-cleanup}
 
-The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run refreshed. If the count reaches the safety floor, it makes two deletions:
+The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations in the database that the run listed. If the count reaches the safety floor, it makes two deletions:
 
-1. **BNetzA stations the run did not refresh.** These left the register, or their operator corrected the coordinates, which changes the id.
+1. **BNetzA stations the run did not list.** These left the register, or their operator corrected the coordinates, which changes the id.
 2. **Every German Open Charge Map and OCPDB charger.** Once BNetzA has landed, those rows are duplicates.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
+| `PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | Stations a run must list, and the database hold, before either deletion runs. A value below 1 or not a number falls back to the default. |
 
-The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires the other sources on its strength.
+The floor counts only the stations this run listed, not every row already in the database. A broken download that lists a handful of stations can therefore never delete the rest, and never retires the other sources on its strength.
+
+Which stations a run "listed" is a set of ids the run keeps in memory, not a timestamp. A run writes a charger only when its data changed, so an unchanged charger keeps an old `updated_at`, and a cleanup based on `updated_at` would delete it.
 
 ## Switching a source back {#switching-back}
 

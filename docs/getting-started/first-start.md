@@ -110,9 +110,9 @@ Each scrape downloads the source, checks the data and writes it. A healthy Spani
 ```text
 [miteco] Fetching data for ES ...
 [miteco] Fetched N stations, N price rows
-[miteco] Upserted N stations
-[miteco] Inserted N prices
-[scraper] ES: OK — N stations, N prices in N.Ns
+[miteco] Stations: N current, N written
+[miteco] Prices: N current, N written, N removed
+[scraper] ES: OK — N stations (N written), N prices (N written, N removed) in N.Ns
 ```
 
 The name in the first brackets is the source, not the country. The last line is the scheduler's summary. `OK` means no errors; otherwise it shows the error count, such as `1 error(s)`.
@@ -122,7 +122,7 @@ Between those lines the scraper:
 - drops prices outside the plausible range for their currency, and logs `Filtered out N invalid prices`;
 - drops fuel stations left with no price;
 - aborts without touching the database if the source returned no stations at all, so an empty answer never wipes a country;
-- replaces the source's prices for that country in one transaction, so the map never shows half an update;
+- writes only the stations and prices that are new or changed, and deletes the prices the source no longer lists, all prices in one transaction, so the map never shows half an update;
 - deletes fuel stations that no longer have any price.
 
 [How scrapers work](../data/how-scrapers-work.md) covers each step.

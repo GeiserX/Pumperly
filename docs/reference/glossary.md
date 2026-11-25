@@ -65,11 +65,11 @@ A standard JSON format for map data. Pumperly returns stations as a GeoJSON `Fea
 
 ## Handover {#handover}
 
-The switch from one [source](#source) to another for the same data, done without leaving the map empty in between. For Spain, [REVE](#reve) takes over EV chargers from [OpenChargeMap](#ocm) once a REVE key is set. REVE fills in slowly, over about a day and a half, so the OpenChargeMap rows stay until REVE holds 95% of its registry by default, and are deleted then. For Germany, [OCPDB](#ocpdb) or [BNetzA](#bnetza) takes over after its first healthy run, because each arrives complete in one run. That run must refresh a minimum number of stations before it may delete anything, so a broken download cannot remove working rows. Sweden's fuel scraper uses the same kind of floor when it retires the rows of an older source. See [EV charging sources](../data/ev-sources.md).
+The switch from one [source](#source) to another for the same data, done without leaving the map empty in between. For Spain, [REVE](#reve) takes over EV chargers from [OpenChargeMap](#ocm) once a REVE key is set. REVE fills in slowly, over about a day and a half, so the OpenChargeMap rows stay until REVE holds 95% of its registry by default, and are deleted then. For Germany, [OCPDB](#ocpdb) or [BNetzA](#bnetza) takes over after its first healthy run, because each arrives complete in one run. That run must list a minimum number of stations before it may delete anything, so a broken download cannot remove working rows. Sweden's fuel scraper uses the same kind of floor when it retires the rows of an older source. See [EV charging sources](../data/ev-sources.md).
 
 ## Latest price {#latest-price}
 
-The price Pumperly shows for a station and fuel: the stored price with the newest `reported_at` time. `reported_at` is when Pumperly's scraper stored the price, not when the source published it.
+The price Pumperly shows for a station and fuel: the stored price with the newest date. That date is the source's own when it gives one, as OCPDB does. Otherwise it is the source's last successful run, kept in the `scrape_runs` table, so it says when Pumperly last confirmed the price, not when the price last changed.
 
 ## NDJSON {#ndjson}
 

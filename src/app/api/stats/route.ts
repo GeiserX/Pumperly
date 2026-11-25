@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getConfig, COUNTRIES } from "@/lib/config";
+import { priceDate, scrapeRunJoin } from "@/lib/price-sql";
 
 interface CountStats {
   country: string;
@@ -20,9 +21,10 @@ const STATS_SQL = `
     GROUP BY country
   ),
   pr AS (
-    SELECT s.country, COUNT(*)::int AS prices, MAX(fp.reported_at) AS last_update
+    SELECT s.country, COUNT(*)::int AS prices, MAX(${priceDate("fp")}) AS last_update
     FROM fuel_prices fp
     JOIN stations s ON s.id = fp.station_id
+    ${scrapeRunJoin("fp", "s")}
     GROUP BY s.country
   )
   SELECT st.country, st.stations, COALESCE(pr.prices, 0)::int AS prices, pr.last_update

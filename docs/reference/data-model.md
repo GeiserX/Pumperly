@@ -1,11 +1,12 @@
 # Data model
 
-This page describes the database Pumperly stores its data in: the two tables, their columns and indexes, and what the `external_id` and `source` columns mean. It is for contributors writing scrapers and for operators who query their own database.
+This page describes the database Pumperly stores its data in: the tables, their columns and indexes, and what the `external_id` and `source` columns mean. It is for contributors writing scrapers and for operators who query their own database.
 
-Pumperly uses PostgreSQL with the [PostGIS](https://postgis.net) extension. **PostGIS** adds geographic types and functions, so the database itself can answer "which stations are inside this box" or "within 5 km of this route". Everything Pumperly shows lives in two tables:
+Pumperly uses PostgreSQL with the [PostGIS](https://postgis.net) extension. **PostGIS** adds geographic types and functions, so the database itself can answer "which stations are inside this box" or "within 5 km of this route". Everything Pumperly shows lives in three tables:
 
 - `stations`: one row per fuel station or EV charger.
 - `fuel_prices`: one row per price, pointing at a station.
+- `scrape_runs`: one row per country and source, with the time of its last successful run. It dates the prices whose source gives no date.
 
 ```mermaid
 erDiagram
@@ -34,6 +35,11 @@ erDiagram
         timestamptz reported_at
         varchar source
         jsonb ev_fees
+    }
+    scrape_runs {
+        varchar country PK
+        varchar source PK
+        timestamptz last_success_at
     }
 ```
 
@@ -95,6 +101,12 @@ The shipped files, included here word for word:
     --8<-- "prisma/migrations/20261022000000_fuel_price_ev_fees/migration.sql"
     ```
 
+=== "Write-on-change migration"
+
+    ```sql
+    --8<-- "prisma/migrations/20261125000000_write_on_change/migration.sql"
+    ```
+
 ## `stations`
 
 One row per place: a fuel station, an EV charger, or a site that is both.
@@ -113,7 +125,7 @@ One row per place: a fuel station, an EV charger, or a site that is both.
 | `geom` | `geometry(Point, 4326)` | Yes | The position, as a PostGIS point in WGS84 longitude and latitude. Scrapers always set it. |
 | `max_power_kw` | `smallint` | Yes | EV chargers: highest single-connector power in kW, set by the OCPDB, BNetzA, OCM and REVE scrapers. `null` for fuel stations and chargers with no published power. |
 | `created_at` | `timestamptz` | No | When the row was first inserted. Never changed afterwards. |
-| `updated_at` | `timestamptz` | No | When a scraper run last wrote this station. Every successful upsert sets it to the current time, even when nothing changed. |
+| `updated_at` | `timestamptz` | No | When the station's data last changed. A run writes a station only when its name, brand, address, city, province, type, position or power differs from the stored row, and then sets this to the current time. A run that lists the station unchanged leaves the row alone. |
 
 `station_type` decides how the app queries a station:
 
@@ -136,7 +148,7 @@ One row per price of one fuel at one station.
 | `fuel_type` | `varchar(20)` | No | A fuel code such as `E5`, `E10` or `B7`. See [Fuel types](fuel-types.md). The database does not check the value. The `RawFuelPrice` type limits scrapers to codes from the list when the code is compiled. |
 | `price` | `decimal` | No | Price per litre in `currency`, with three decimals. Gas fuels sold by weight, such as CNG in some countries, are per kilogram. `EV` prices are per kWh. |
 | `currency` | `varchar(3)` | No | ISO 4217 code of `price`, such as `EUR` or `SEK`. Defaults to `EUR`. Scrapers always set it. |
-| `reported_at` | `timestamptz` | No | When Pumperly wrote the price, not when the source last changed it. The OCPDB scraper is the exception: it writes when the tariff's operator feed last refreshed. |
+| `reported_at` | `timestamptz` | Yes | The date the source gives the price, when it gives one: the OCPDB scraper writes when the tariff's operator feed last refreshed. `null` for every other source. A `null` price is as recent as its source's last successful run in the station's country, which [`scrape_runs`](#scrape_runs) records. Read the two together, as the [example](#reading-the-newest-price) does. |
 | `source` | `varchar(50)` | No | The name of the scraper source that wrote the row. See [`source`](#source). |
 | `ev_fees` | `jsonb` | Yes | `EV` rows only: charges on top of the per-kWh price, in `currency`. See [`ev_fees`](#ev_fees). `null` for fuel rows and for tariffs with no extra charges. |
 
@@ -153,7 +165,21 @@ The JSON object holds the parts of a charging tariff that a per-kWh price cannot
 | `perMinute` | A blocking fee per minute. |
 | `afterMin` | Minutes into the session at which `perMinute` starts. `0` means from the start. |
 
-Nothing stops two rows for the same station and fuel. Readers take the newest one by `reported_at`. The example query [below](#reading-the-newest-price) shows the pattern.
+There is one row per station, fuel and source, enforced by a unique index. Some sources list a fuel twice for one station: Italy publishes self-service and served prices, and France maps E85 to `E10`. The scraper keeps one of them, the one the map showed before the index existed: the newest by upstream date, and otherwise the first the source listed.
+
+Two sources could still each hold a row for the same station and fuel. Readers take the newest one. The example query [below](#reading-the-newest-price) shows the pattern.
+
+## `scrape_runs` {#scrape_runs}
+
+One row per country and source: when that source last finished a successful run there.
+
+| Column | Type | Null | Meaning |
+| --- | --- | --- | --- |
+| `country` | `varchar(2)` | No | The scraper's country, as in `stations.country`. |
+| `source` | `varchar(50)` | No | The scraper's source, as in `fuel_prices.source`. |
+| `last_success_at` | `timestamptz` | No | The start of the transaction that wrote the run's prices. It commits together with them. |
+
+A run writes a price row only when the price changed, so the row's own date does not move on a run that confirms it. The run marker does. When a source fails or stops, its marker stops too, and the age the map shows keeps growing, as it did when every run rewrote every row. A retired source has no marker and keeps the dates its rows were written with.
 
 ## Indexes and constraints
 
@@ -164,8 +190,11 @@ Nothing stops two rows for the same station and fuel. Readers take the newest on
 | `stations_geom_idx` | `stations USING GIST (geom)` | Bounding-box searches on the map (`ST_Within` an envelope), radius searches for the nearest stations, and the fast `&&` pre-filter of the route search. |
 | `stations_geom_geography_idx` | `stations USING GIST ((geom::geography))` | Distance in metres along a route (`ST_DWithin` on `geography`). |
 | `fuel_prices_pkey` | `fuel_prices (id)` | Primary key. |
-| `fuel_prices_station_id_fuel_type_reported_at_idx` | `fuel_prices (station_id, fuel_type, reported_at DESC)` | Finding the newest price of one fuel at one station. |
+| `fuel_prices_station_id_fuel_type_source_key` | `fuel_prices (station_id, fuel_type, source)`, unique | The conflict target of the price upsert, and finding the prices of one fuel at one station. |
 | `fuel_prices_station_id_fkey` | `fuel_prices.station_id` references `stations.id` | `ON DELETE CASCADE` and `ON UPDATE CASCADE`: a deleted station takes its prices with it. |
+| `scrape_runs_pkey` | `scrape_runs (country, source)` | Primary key, and the join from a price to its run marker. |
+
+`fuel_prices` has a fill factor of 90: each page keeps 10% free, so a changed price can usually be rewritten in place, without touching the index.
 
 A **GiST index** is PostgreSQL's index type for geometric data. It lets a spatial query skip rows far from the area it asks about. The second GiST index is built on the expression `geom::geography`, so a query written with that exact cast can use it. The migration notes that on a large existing table you may prefer to build it by hand with `CREATE INDEX CONCURRENTLY`, which does not block writes.
 
@@ -198,9 +227,9 @@ Some older scrapers use the upstream id without a prefix, as `miteco` does. A ne
 
 `source` is the name of the scraper that wrote a price row, such as `miteco`, `cma`, `fuelo_pl` or `bensinpriser`. It lives on `fuel_prices` only.
 
-Every scraper run replaces exactly the price rows that carry its own `source` for stations in its own country. It never touches another source's rows. Two consequences:
+Every scraper run updates and deletes only the price rows that carry its own `source` for stations in its own country. It never touches another source's rows. Two consequences:
 
-- One source name can serve several countries. The Netherlands, Belgium and Luxembourg scrapers all write `anwb`, and none of them deletes the others' prices, because the replace is limited to one country.
+- One source name can serve several countries. The Netherlands, Belgium and Luxembourg scrapers all write `anwb`, and none of them deletes the others' prices, because each run is limited to one country. Their run markers are separate too.
 - When a source is retired, its rows stay until something deletes them. The replacement scraper has to do that itself. [How scrapers work](../data/how-scrapers-work.md#handing-a-country-over-to-a-new-source) shows the pattern.
 
 ## How rows change over time
@@ -210,29 +239,32 @@ Only scrapers write to these tables. The app's API routes only read them.
 | Event | Effect on `stations` | Effect on `fuel_prices` |
 | --- | --- | --- |
 | A source lists a new station | Row inserted | Its prices inserted |
-| A source lists a known station again | Name, brand, address, city, province, type and position overwritten, `updated_at` set to now | This source's rows deleted and inserted fresh, with a new `reported_at` |
+| A source lists a known station, unchanged | Nothing written | Nothing written, except prices whose value changed. The run's time goes to `scrape_runs`. |
+| A source lists a known station with new data | Changed columns overwritten, `updated_at` set to now | As above |
+| A source stops listing a price | None | That row deleted |
 | A source stops listing a fuel station | Deleted at the end of the run, once no source has a price for it | Its rows from this source deleted |
 | A source stops listing an EV charger | Kept, unless the EV scraper removes it itself | None |
-| A run ends in a `Fatal` error | Unchanged, or partly updated if the error came after some station batches | Unchanged, unless the error came after the price replace committed |
-| A station batch fails | The other batches are written. No station is deleted this run. | Replaced as usual for the stations the database knows |
+| A run ends in a `Fatal` error | Unchanged, or partly updated if the error came after some station batches | Unchanged, unless the error came after the price transaction committed. `scrape_runs` keeps the previous run's time. |
+| A station batch fails | The other batches are written. No station is deleted this run. | Updated as usual for the stations the database knows |
 
 The full sequence, including the guards that stop a bad run from deleting data, is in [How scrapers work](../data/how-scrapers-work.md).
 
-Prices are replaced, not appended. The database holds the current price per station, fuel and source, not a price history.
+Prices are updated in place, not appended. The database holds the current price per station, fuel and source, not a price history.
 
 ## Reading the newest price
 
-To query the data yourself, join each station to its newest price for one fuel. This is the pattern the app's own station endpoints use:
+To query the data yourself, join each station to its newest price for one fuel. A price with no date of its own takes its source's last successful run from `scrape_runs`. This is the pattern the app's own station endpoints use:
 
 ```sql
 SELECT s.name, s.brand, s.city, fp.price, fp.currency, fp.reported_at
 FROM stations s
 JOIN LATERAL (
-  SELECT price, currency, reported_at
-  FROM fuel_prices
-  WHERE station_id = s.id
-    AND fuel_type = 'B7'
-  ORDER BY reported_at DESC NULLS LAST
+  SELECT p.price, p.currency, COALESCE(p.reported_at, sr.last_success_at) AS reported_at
+  FROM fuel_prices p
+  LEFT JOIN scrape_runs sr ON sr.country = s.country AND sr.source = p.source
+  WHERE p.station_id = s.id
+    AND p.fuel_type = 'B7'
+  ORDER BY 3 DESC NULLS LAST
   LIMIT 1
 ) fp ON true
 WHERE ST_DWithin(
@@ -244,6 +276,6 @@ ORDER BY fp.price
 LIMIT 10;
 ```
 
-This lists the ten cheapest diesel prices within 5 km of a point. `ST_MakePoint` takes longitude first. The lateral subquery can use the `fuel_prices` index, and the `ST_DWithin` on `geom::geography` can use the geography index.
+This lists the ten cheapest diesel prices within 5 km of a point. `ST_MakePoint` takes longitude first. The lateral subquery can use the `fuel_prices` unique index, and the `ST_DWithin` on `geom::geography` can use the geography index. A query that reads `fuel_prices.reported_at` alone sees `null` for most rows.
 
 For the same data over HTTP, see the [HTTP API](api.md).

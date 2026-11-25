@@ -28,6 +28,11 @@ import {
   isPlausibleEvPrice,
   maxSanePowerKw,
   sanePowerKw,
+  dedupePrices,
+  stationUpsertSql,
+  PRICE_UPSERT_SQL,
+  PRICE_REMOVE_SQL,
+  SCRAPE_RUN_SQL,
   type RawStation,
   type RawFuelPrice,
 } from "./base";
@@ -128,17 +133,24 @@ describe("BaseScraper.run()", () => {
     // Default: station lookup returns matching IDs
     mockQueryRawUnsafe.mockResolvedValue([]);
     // Default: transaction executes the callback
-    mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
-      await fn({
+    mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
         $executeRawUnsafe: mockExecuteRawUnsafe,
-      });
-    });
+      }),
+    );
   });
 
   afterEach(() => {
     process.env = ORIG_ENV;
     vi.restoreAllMocks();
   });
+
+  /** The price rows sent to every upsert chunk, in order. */
+  function priceRows(): Array<Record<string, unknown>> {
+    return mockExecuteRawUnsafe.mock.calls
+      .filter(([sql]) => sql === PRICE_UPSERT_SQL)
+      .flatMap(([, rows]) => JSON.parse(rows as string) as Array<Record<string, unknown>>);
+  }
 
   it("aborts the destructive replace when no data is fetched", async () => {
     scraper.mockStations = [];
@@ -177,12 +189,11 @@ describe("BaseScraper.run()", () => {
       (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
     );
     expect(stationCall).toBeDefined();
-    // 11 params per station; the 11th is max_power_kw (null when unset).
+    // One jsonb parameter carries the rows; max_power_kw is null when unset.
     expect(stationCall![0]).toContain("max_power_kw = EXCLUDED.max_power_kw");
-    const params = stationCall!.slice(1);
-    expect(params).toHaveLength(22);
-    expect(params[10]).toBeNull();
-    expect(params[21]).toBe(150);
+    expect(stationCall!.slice(1)).toEqual([expect.any(String), "XX"]);
+    const rows = JSON.parse(stationCall![1] as string) as Array<{ max_power_kw: number | null }>;
+    expect(rows.map((r) => r.max_power_kw)).toEqual([null, 150]);
   });
 
   it("upserts stations and prices in full pipeline", async () => {
@@ -215,9 +226,9 @@ describe("BaseScraper.run()", () => {
       (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO stations"),
     );
     expect(stationCall).toBeDefined();
-    // Fuel-only batch: no max_power_kw, so it runs on an un-migrated database.
+    // Fuel-only batch: max_power_kw is left alone.
     expect(stationCall![0]).not.toContain("max_power_kw");
-    expect(stationCall!.slice(1)).toHaveLength(20);
+    expect(JSON.parse(stationCall![1] as string)).toHaveLength(2);
 
     // Verify price insert SQL was called
     const priceCall = mockExecuteRawUnsafe.mock.calls.find(
@@ -297,14 +308,12 @@ describe("BaseScraper.run()", () => {
     const result = await scraper.run();
     expect(result.pricesUpserted).toBe(1);
 
-    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
-      String(sql).includes("INSERT INTO fuel_prices"),
-    );
-    expect(priceInsert?.[0]).toContain("ev_fees");
-    expect(priceInsert).toContain(JSON.stringify({ perMinute: 0.24, afterMin: 30 }));
+    expect(priceRows()).toEqual([
+      expect.objectContaining({ fuel_type: "EV", price: 0.79, ev_fees: { perMinute: 0.24, afterMin: 30 } }),
+    ]);
   });
 
-  it("leaves ev_fees out of fuel price inserts", async () => {
+  it("writes a NULL ev_fees for fuel prices", async () => {
     scraper.mockStations = [makeStation("s1")];
     scraper.mockPrices = [makePrice("s1", "B7", 1.5, "EUR")];
 
@@ -313,13 +322,10 @@ describe("BaseScraper.run()", () => {
     mockExecuteRawUnsafe.mockResolvedValue(undefined);
 
     await scraper.run();
-    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
-      String(sql).includes("INSERT INTO fuel_prices"),
-    );
-    expect(priceInsert?.[0]).not.toContain("ev_fees");
+    expect(priceRows()).toEqual([expect.objectContaining({ fuel_type: "B7", ev_fees: null })]);
   });
 
-  it("writes an upstream reported_at when the price carries one, NOW() otherwise", async () => {
+  it("writes an upstream reported_at when the price carries one", async () => {
     scraper.mockStations = [{ ...makeStation("ev1"), stationType: "ev_charger" }];
     scraper.mockPrices = [{ ...makePrice("ev1", "EV", 0.79, "EUR"), reportedAt: new Date("2026-10-20T04:00:00Z") }];
 
@@ -328,14 +334,10 @@ describe("BaseScraper.run()", () => {
     mockExecuteRawUnsafe.mockResolvedValue(undefined);
 
     await scraper.run();
-    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
-      String(sql).includes("INSERT INTO fuel_prices"),
-    );
-    expect(priceInsert?.[0]).toContain("COALESCE($6::timestamptz, NOW())");
-    expect(priceInsert).toContain("2026-10-20T04:00:00.000Z");
+    expect(priceRows()).toEqual([expect.objectContaining({ reported_at: "2026-10-20T04:00:00.000Z" })]);
   });
 
-  it("keeps NOW() for prices without an upstream timestamp", async () => {
+  it("writes a NULL reported_at for prices without an upstream timestamp", async () => {
     scraper.mockStations = [makeStation("s1")];
     scraper.mockPrices = [makePrice("s1", "B7", 1.5, "EUR")];
 
@@ -344,10 +346,8 @@ describe("BaseScraper.run()", () => {
     mockExecuteRawUnsafe.mockResolvedValue(undefined);
 
     await scraper.run();
-    const priceInsert = mockExecuteRawUnsafe.mock.calls.find(([sql]) =>
-      String(sql).includes("INSERT INTO fuel_prices"),
-    );
-    expect(priceInsert?.[0]).not.toContain("COALESCE");
+    // NULL means "dated by this source's last successful run" (scrape_runs).
+    expect(priceRows()).toEqual([expect.objectContaining({ reported_at: null })]);
   });
 
   it("drops fuel stations with no valid prices (keeps EV chargers)", async () => {
@@ -498,6 +498,123 @@ describe("BaseScraper.run()", () => {
     expect(result.stationsUpserted).toBe(600);
   });
 
+  it("upserts the changed prices, removes the vanished ones and dates the run, in one transaction", async () => {
+    scraper.mockStations = [makeStation("s1"), makeStation("s2")];
+    scraper.mockPrices = [makePrice("s1", "B7", 1.45), makePrice("s2", "E5", 1.6)];
+    mockQueryRawUnsafe.mockResolvedValueOnce([
+      { id: "uuid-1", external_id: "s1" },
+      { id: "uuid-2", external_id: "s2" },
+    ]);
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockImplementation(async (sql: string) => {
+      if (sql === PRICE_UPSERT_SQL) return 1;
+      if (sql === PRICE_REMOVE_SQL) return 4;
+      if (sql === SCRAPE_RUN_SQL) return 1;
+      return 2; // station batch
+    });
+    const inTx: string[] = [];
+    mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        $executeRawUnsafe: async (sql: string, ...params: unknown[]) => {
+          inTx.push(sql);
+          return mockExecuteRawUnsafe(sql, ...params);
+        },
+      }),
+    );
+
+    const result = await scraper.run();
+
+    expect(inTx).toEqual([PRICE_UPSERT_SQL, PRICE_REMOVE_SQL, SCRAPE_RUN_SQL]);
+    const call = (sql: string) => mockExecuteRawUnsafe.mock.calls.find(([s]) => s === sql)!;
+    expect(call(PRICE_UPSERT_SQL)[2]).toBe("test_source");
+    expect(call(PRICE_REMOVE_SQL).slice(1)).toEqual([
+      "test_source",
+      "XX",
+      JSON.stringify([
+        { station_id: "uuid-1", fuel_type: "B7" },
+        { station_id: "uuid-2", fuel_type: "E5" },
+      ]),
+    ]);
+    expect(call(SCRAPE_RUN_SQL).slice(1)).toEqual(["XX", "test_source"]);
+    expect(result).toMatchObject({
+      stationsUpserted: 2,
+      stationsChanged: 2,
+      pricesUpserted: 2,
+      pricesChanged: 1,
+      pricesRemoved: 4,
+      errors: [],
+    });
+  });
+
+  it("does not count a rolled-back price transaction as written", async () => {
+    scraper.mockStations = [makeStation("s1")];
+    scraper.mockPrices = [makePrice("s1", "B7", 1.45)];
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-1", external_id: "s1" }]);
+    mockExecuteRawUnsafe.mockImplementation(async (sql: string) => {
+      if (sql === SCRAPE_RUN_SQL) throw new Error("deadlock detected");
+      return 1;
+    });
+
+    const result = await scraper.run();
+
+    expect(result.pricesChanged).toBe(0);
+    expect(result.pricesRemoved).toBe(0);
+    expect(result.errors).toEqual(["Fatal: deadlock detected"]);
+  });
+
+  it("keeps one price per station and fuel, the one readers showed", async () => {
+    scraper.mockStations = [makeStation("s1")];
+    scraper.mockPrices = [
+      makePrice("s1", "B7", 1.45), // self-service, emitted first
+      makePrice("s1", "B7", 1.65), // served
+      makePrice("s1", "E5", 1.7),
+    ];
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-1", external_id: "s1" }]);
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockResolvedValue(0);
+
+    const result = await scraper.run();
+
+    expect(result.pricesUpserted).toBe(2);
+    expect(priceRows().map((r) => [r.fuel_type, r.price])).toEqual([
+      ["B7", 1.45],
+      ["E5", 1.7],
+    ]);
+  });
+
+  it("sends prices in chunks, sorted by station and fuel", async () => {
+    const stations = Array.from({ length: 6000 }, (_, i) => makeStation(`s${i}`));
+    scraper.mockStations = stations;
+    scraper.mockPrices = stations.flatMap((s) => [makePrice(s.externalId, "E5"), makePrice(s.externalId, "B7")]);
+    // UUIDs in the reverse order of emission, so sorting is visible.
+    mockQueryRawUnsafe.mockResolvedValueOnce(
+      stations.map((s, i) => ({ id: `uuid-${String(99999 - i).padStart(5, "0")}`, external_id: s.externalId })),
+    );
+    mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockExecuteRawUnsafe.mockResolvedValue(0);
+
+    await scraper.run();
+
+    const chunks = mockExecuteRawUnsafe.mock.calls.filter(([sql]) => sql === PRICE_UPSERT_SQL);
+    expect(chunks.map(([, rows]) => (JSON.parse(rows as string) as unknown[]).length)).toEqual([5000, 5000, 2000]);
+    const keys = priceRows().map((r) => `${r.station_id}/${r.fuel_type}`);
+    expect(keys).toEqual([...keys].sort());
+    expect(keys.slice(0, 2)).toEqual(["uuid-94000/B7", "uuid-94000/E5"]);
+  });
+
+  it("remembers the stations of successful batches only, for the EV sweeps", async () => {
+    const stations = Array.from({ length: 600 }, (_, i) => ({ ...makeStation(`ev${i}`), stationType: "ev_charger" as const }));
+    scraper.mockStations = stations;
+    scraper.mockPrices = [];
+    mockExecuteRawUnsafe.mockRejectedValueOnce(new Error("batch failed")).mockResolvedValue(0);
+    mockQueryRawUnsafe.mockResolvedValue([]);
+
+    await scraper.run();
+
+    const listed = (scraper as unknown as { lastRunExternalIds: string[] }).lastRunExternalIds;
+    expect(listed).toEqual(stations.slice(500).map((s) => s.externalId));
+  });
+
   it("always disconnects even on error", async () => {
     scraper.shouldThrow = true;
 
@@ -543,5 +660,59 @@ describe("maxSanePowerKw", () => {
   it("returns null when no value is valid", () => {
     expect(maxSanePowerKw([])).toBeNull();
     expect(maxSanePowerKw([null, undefined, 0, 5000])).toBeNull();
+  });
+});
+
+describe("dedupePrices", () => {
+  const at = (iso: string) => new Date(iso);
+
+  it("keeps the first emitted price on a tie", () => {
+    const kept = dedupePrices([makePrice("s1", "B7", 1.45), makePrice("s1", "B7", 1.65), makePrice("s2", "B7", 1.5)]);
+    expect(kept.map((p) => [p.stationExternalId, p.price])).toEqual([
+      ["s1", 1.45],
+      ["s2", 1.5],
+    ]);
+  });
+
+  it("keeps the newest upstream date, and counts an undated price as newest", () => {
+    const old = { ...makePrice("s1", "EV", 0.5), reportedAt: at("2026-10-01T00:00:00Z") };
+    const newer = { ...makePrice("s1", "EV", 0.6), reportedAt: at("2026-10-02T00:00:00Z") };
+    const undated = makePrice("s1", "EV", 0.7);
+    expect(dedupePrices([old, newer]).map((p) => p.price)).toEqual([0.6]);
+    expect(dedupePrices([newer, old]).map((p) => p.price)).toEqual([0.6]);
+    expect(dedupePrices([old, undated]).map((p) => p.price)).toEqual([0.7]);
+    expect(dedupePrices([undated, newer]).map((p) => p.price)).toEqual([0.7]);
+  });
+
+  it("treats different fuels of one station as different prices", () => {
+    expect(dedupePrices([makePrice("s1", "B7"), makePrice("s1", "E5")])).toHaveLength(2);
+  });
+});
+
+describe("write-on-change SQL", () => {
+  // The INSERT must read the pre-filtered rows. Reading the raw input and
+  // relying on ON CONFLICT ... WHERE would still lock, dirty and WAL-log
+  // every unchanged row.
+  it("inserts only rows that differ from the database", () => {
+    for (const sql of [stationUpsertSql(false), stationUpsertSql(true), PRICE_UPSERT_SQL]) {
+      expect(sql).toMatch(/changed AS \([\s\S]*IS DISTINCT FROM[\s\S]*\)\s*INSERT INTO/);
+      expect(sql).toMatch(/FROM changed\s+ORDER BY/);
+    }
+  });
+
+  it("compares every column a station upsert writes", () => {
+    const sql = stationUpsertSql(true);
+    for (const col of ["name", "brand", "address", "city", "province", "station_type", "geom", "max_power_kw"]) {
+      expect(sql).toContain(`s.${col}`);
+      expect(sql).toMatch(new RegExp(`${col}\\s+= EXCLUDED\\.${col}`));
+    }
+    expect(stationUpsertSql(false)).not.toContain("max_power_kw");
+  });
+
+  it("compares every column a price upsert writes", () => {
+    for (const col of ["price", "currency", "ev_fees", "reported_at"]) {
+      expect(PRICE_UPSERT_SQL).toContain(`fp.${col}`);
+      expect(PRICE_UPSERT_SQL).toMatch(new RegExp(`${col}\\s+= EXCLUDED\\.${col}`));
+    }
   });
 });

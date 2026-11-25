@@ -19,7 +19,7 @@ A scraper declares two names and implements one method. The base class does ever
 | Record | Fields |
 | --- | --- |
 | `RawStation` | `externalId`, `name`, `brand` (or `null`), `address`, `city`, `province` (or `null`), `latitude`, `longitude`, `stationType` (`"fuel"`, `"ev_charger"` or `"both"`) |
-| `RawFuelPrice` | `stationExternalId` (matches a station's `externalId` in the same result), `fuelType` (one of the [fuel type codes](../reference/fuel-types.md)), `price` (per litre, in local currency; per kWh for `EV`), `currency` (ISO 4217). Optional: `evFees` (`EV` only, written to [`ev_fees`](../reference/data-model.md#ev_fees)) and `reportedAt` (when the upstream last vouched for the price) |
+| `RawFuelPrice` | `stationExternalId` (matches a station's `externalId` in the same result), `fuelType` (one of the [fuel type codes](../reference/fuel-types.md)), `price` (per litre, in local currency; per kWh for `EV`), `currency` (ISO 4217). Optional: `evFees` (`EV` only, written to [`ev_fees`](../reference/data-model.md#ev_fees)) and `reportedAt` (when the upstream last vouched for the price; leave it unset when the upstream gives no date) |
 
 The `externalId` is the source's own id for the station, usually with a short prefix such as `ocm-` or `se-bp-`. Together with `country` it identifies a station across runs. [Data model](../reference/data-model.md) explains both columns in full.
 
@@ -50,10 +50,10 @@ sequenceDiagram
         R-->>S: Error "Aborted destructive replace", nothing written
     else At least one station
         loop Every 500 stations
-            R->>DB: INSERT ... ON CONFLICT (external_id, country) DO UPDATE
+            R->>DB: Upsert the new and changed stations only
         end
         R->>DB: Look up station ids for this country
-        R->>DB: One transaction: delete this source's prices, insert the new ones
+        R->>DB: One transaction: upsert changed prices, delete vanished ones, date the run
         alt Every station batch succeeded
             R->>DB: Delete this country's fuel stations that have no price at all
         else A station batch failed
@@ -93,6 +93,8 @@ The per-currency bands live in the `PRICE_BANDS` table in [`base.ts`](https://gi
 
 The table also holds bands for EUR, GBP and CHF, but a run uses the two environment variables for those three currencies instead. If `PUMPERLY_PRICE_MIN` or `PUMPERLY_PRICE_MAX` is not a number, the default is used, so a typo cannot switch the check off.
 
+The table holds one price per station, fuel and source. When a fetch lists one fuel twice for the same station, the run keeps one: the newest by `reportedAt`, where a price without a date counts as newest, and otherwise the first listed. It logs how many it dropped, once per run. Italy, for example, lists self-service and served prices for the same fuel.
+
 After the price filter, a station of type `fuel` with no valid price left is dropped from this run. EV chargers are kept, priced or not.
 
 ### 2. The empty-fetch guard
@@ -103,25 +105,28 @@ This guard exists because an upstream can answer `HTTP 200` with an empty or bro
 
 ### 3. Upsert stations
 
-The run writes stations in batches of 500. Each batch is one `INSERT ... ON CONFLICT (external_id, country) DO UPDATE` statement. A new station is inserted. A known station gets its name, brand, address, city, province, type and position overwritten, and `updated_at` set to now. The position is stored as a PostGIS point built with `ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`.
+The run writes stations in batches of 500. Each batch is one statement that receives the batch as a single `jsonb` parameter. The statement first compares every station with the stored row, column by column. Only a new station, or one whose name, brand, address, city, province, type, position or power differs, reaches the `INSERT ... ON CONFLICT (external_id, country) DO UPDATE`. A changed station gets its columns overwritten and `updated_at` set to now. An unchanged one is not written at all, so `updated_at` means "last changed", not "last seen". The position is stored as a PostGIS point built with `ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`.
+
+The comparison happens before the `INSERT` on purpose. An `ON CONFLICT DO UPDATE ... WHERE` clause that skips identical rows still locks every row it checks, and that lock alone writes each row's page to the write-ahead log.
 
 A batch that fails is recorded as an error (`Station batch 500-1000: ...`) and the run moves on to the next batch. The failed batch matters again in step 5.
 
 !!! warning "Duplicate ids in one fetch break a whole batch"
     PostgreSQL rejects an `INSERT ... ON CONFLICT DO UPDATE` that hits the same row twice in one statement. If `fetch()` returns two stations with the same `externalId` and they land in the same batch, every station in that batch (up to 500) is lost for the run, and the orphan cleanup is skipped. De-duplicate by id inside `fetch()`.
 
-### 4. Replace this source's prices
+### 4. Update this source's prices
 
 The run looks up the database id of every station in the country, then maps each price to its station by `externalId`. A price whose station is not in the database is skipped.
 
-Then one transaction replaces the prices:
+Then one transaction brings the source's prices up to date:
 
-1. Delete every price row whose `source` is this scraper's source and whose station is in this scraper's country.
-2. Insert the new prices in batches of 2,000. Each row gets `reported_at` set to the current time, unless the scraper passed its own `reportedAt`.
+1. Upsert the prices in chunks of 5,000, on the key `(station_id, fuel_type, source)`. As for stations, only a new price, or one whose price, currency, fees or upstream date differs, is written. `reported_at` is the scraper's `reportedAt`, or `null` when it passed none.
+2. Delete every price row of this source and country that the run did not list.
+3. Record the run in `scrape_runs`: the time this transaction started, for this country and source. A price with a `null` `reported_at` is shown with this time.
 
-Because it is a single transaction, readers see either the old set or the new set, never a mix. The transaction may run for up to 120 seconds. If it fails, it rolls back and the old prices stay.
+Because it is a single transaction, readers see either the old set or the new set, never a mix. The transaction may run for up to 120 seconds. If it fails, it rolls back, the old prices stay, and `scrape_runs` keeps the previous run's time. The rows that end up in the table are the same as if the run had deleted every price and inserted the new list, but a run that changes nothing writes one row, its `scrape_runs` entry.
 
-The delete is scoped by country as well as by source. That matters where one source name serves several countries. The Netherlands, Belgium and Luxembourg scrapers all use the source `anwb`, and none of them can delete the others' prices.
+The update and the delete are scoped by country as well as by source. That matters where one source name serves several countries. The Netherlands, Belgium and Luxembourg scrapers all use the source `anwb`, and none of them can delete the others' prices.
 
 The delete touches only this scraper's own source. This run never touches prices written under any other source name. That is what makes it safe for two sources to cover one country, as in Australia. It is also why a retired source needs its own cleanup, described in [Handing a country over to a new source](#handing-a-country-over-to-a-new-source).
 
@@ -136,9 +141,9 @@ WHERE country = $1
   AND NOT EXISTS (SELECT 1 FROM fuel_prices fp WHERE fp.station_id = stations.id)
 ```
 
-This is how a station disappears from the map when its source stops listing it. Step 4 removes its old prices, no new ones arrive, and step 5 removes the station.
+This is how a station disappears from the map when its source stops listing it. Step 4 deletes its prices, and step 5 removes the station.
 
-The cleanup runs only when every station batch in step 3 succeeded. If a batch failed, the stations in it may not have been written this run, and their prices were already replaced in step 4. Deleting orphans then could remove stations that are only missing because of the failure. So the run records `Skipped orphan cleanup: one or more station batches failed` and leaves them alone.
+The cleanup runs only when every station batch in step 3 succeeded. If a batch failed, the stations in it may not have been written this run, and their prices were already updated in step 4. Deleting orphans then could remove stations that are only missing because of the failure. So the run records `Skipped orphan cleanup: one or more station batches failed` and leaves them alone.
 
 !!! note "EV chargers are never cleaned up by the base class"
     The cleanup only deletes rows with `station_type = 'fuel'`. An EV charger that its source stops listing stays in the table. A scraper that needs to remove EV rows does it in its own `run()` override, as the Mapa REVE, BNetzA and OCPDB scrapers do. The German ones share `BaseScraper.sweepEvRows()`. See [EV charging sources](ev-sources.md).
@@ -150,8 +155,11 @@ The cleanup runs only when every station batch in step 3 succeeded. If a batch f
 | Field | Meaning |
 | --- | --- |
 | `country`, `source` | The scraper's two names. |
-| `stationsUpserted` | Stations sent in batches that succeeded. |
-| `pricesUpserted` | Price rows inserted. |
+| `stationsUpserted` | Stations the run vouched for: those sent in batches that succeeded, changed or not. |
+| `pricesUpserted` | Prices the run vouched for, one per station, fuel and source, changed or not. |
+| `stationsChanged` | Stations actually written: new ones and changed ones. |
+| `pricesChanged` | Prices actually written: new ones and changed ones. |
+| `pricesRemoved` | Prices of this source and country deleted because the run no longer listed them. |
 | `durationMs` | Wall time of the whole run. |
 | `errors` | Every problem the run recorded. An empty list means a clean run. |
 
@@ -161,10 +169,10 @@ The cleanup runs only when every station batch in step 3 succeeded. If a batch f
 | --- | --- | --- |
 | `fetch()` threw: HTTP error, timeout, unexpected shape | Unchanged. The last good prices stay. | `Fatal: <message>` |
 | `fetch()` returned nothing usable | Unchanged. | `Aborted destructive replace: ...` |
-| A station batch failed | Other batches written. Prices replaced for stations the database knows. No orphan cleanup. | `Station batch ...` and `Skipped orphan cleanup: ...` |
-| The price transaction failed | Stations updated. Prices rolled back to the previous set. No orphan cleanup. | `Fatal: <message>` |
+| A station batch failed | Other batches written. Prices updated for stations the database knows. No orphan cleanup. | `Station batch ...` and `Skipped orphan cleanup: ...` |
+| The price transaction failed | Stations updated. Prices rolled back to the previous set, `scrape_runs` unchanged. No orphan cleanup. | `Fatal: <message>` |
 
-When a source is down or blocks Pumperly, its prices therefore stay at their last good values rather than vanishing. `reported_at` records when Pumperly wrote each price, so the statistics menu, which shows the newest `reported_at` per country, makes a stalled country visible. [Coverage and status](coverage.md) lists the sources that are currently down.
+When a source is down or blocks Pumperly, its prices therefore stay at their last good values rather than vanishing. Its `scrape_runs` time stops moving too, so the age of its prices keeps growing on the map, and the statistics menu, which shows the newest price date per country, makes a stalled country visible. [Coverage and status](coverage.md) lists the sources that are currently down.
 
 ## The scheduler
 
@@ -210,6 +218,8 @@ Scrapers do not all start at once. The first run of each key waits 10 seconds, p
 
 If a run is still going when the next tick arrives, that tick is skipped with the log line `previous run still in progress — skipping this tick`. The next tick tries again. This guard lives in memory, per key, inside one process.
 
+Two runs of the same source can still overlap across processes, for example a hand run with `npm run scraper:run` next to the scheduler. Each statement writes its rows in key order, so the two runs wait for each other on the upserts. A deadlock is still possible where one run deletes a price the other just wrote. PostgreSQL then cancels one transaction, that run ends with `Fatal: ...`, nothing of it is written, and the next run repairs it.
+
 !!! warning "Run one replica"
     Every app process runs its own scheduler. Two replicas scrape every country twice, and their runs can overlap on the same rows. The Helm chart defaults to one replica and the `Recreate` update strategy for this reason. See [Run on Kubernetes with Helm](../getting-started/kubernetes.md).
 
@@ -221,10 +231,12 @@ Each key logs its schedule at start-up and one summary line per run. The scraper
 [scraper] SE: scraping every 12h
 [bensinpriser] Fetching data for SE ...
 [bensinpriser] Fetched 1350 stations, 3400 price rows (dropped 150 with no prices)
-[bensinpriser] Upserted 1200 stations
-[bensinpriser] Inserted 3400 prices
-[scraper] SE: OK — 1200 stations, 3400 prices in 4.2s
+[bensinpriser] Stations: 1200 current, 3 written
+[bensinpriser] Prices: 3400 current, 41 written, 2 removed
+[scraper] SE: OK — 1200 stations (3 written), 3400 prices (41 written, 2 removed) in 4.2s
 ```
+
+"Current" counts what the run listed. "Written" counts the rows it inserted or changed, and "removed" the prices it deleted. On a run where the upstream changed little, written is a small share of current. A source whose written count stays at its current count on every run is sending data that differs each time, such as a rebuilt name or jittering coordinates.
 
 The numbers above are examples. A run with problems ends in `N error(s)` instead of `OK`. A fatal error, an aborted replace and a skipped cleanup are also logged under the source name. A failed station batch is not logged on its own: it shows only in that count and in the result's `errors`.
 
@@ -278,7 +290,7 @@ The EV scrapers use variations of the same idea, because EV rows are never remov
 | --- | --- | --- |
 | Sweden, `bensinpriser` | Prices of the retired sources, then Swedish fuel stations left without a price | Error-free run and at least 200 stations |
 | Mapa REVE, `EV_ES_REVE` | Spanish OpenChargeMap chargers (`ocm-` ids) | Error-free run and the local REVE rows reach a share of the registry, 95% by default (`PUMPERLY_REVE_CUTOVER_RATIO`) |
-| BNetzA, `EV_DE_BNETZA` | German OpenChargeMap and OCPDB chargers, and its own chargers that left the register | Error-free run and at least `PUMPERLY_BNETZA_MIN_STATIONS` rows (default 10,000) refreshed by this run |
-| OCPDB, `EV_DE_OCPDB` | German OpenChargeMap and BNetzA chargers, and its own chargers that left the database | Error-free run and at least `PUMPERLY_OCPDB_MIN_STATIONS` rows (default 10,000) refreshed by this run |
+| BNetzA, `EV_DE_BNETZA` | German OpenChargeMap and OCPDB chargers, and its own chargers that left the register | Error-free run and at least `PUMPERLY_BNETZA_MIN_STATIONS` of the chargers this run listed (default 10,000) found in the database |
+| OCPDB, `EV_DE_OCPDB` | German OpenChargeMap and BNetzA chargers, and its own chargers that left the database | Error-free run and at least `PUMPERLY_OCPDB_MIN_STATIONS` of the chargers this run listed (default 10,000) found in the database |
 
 [EV charging sources](ev-sources.md) describes the EV handovers in detail. [Adding a country](adding-a-country.md) covers when a new scraper needs this pattern.

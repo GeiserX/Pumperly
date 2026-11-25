@@ -146,7 +146,7 @@ export class ExamplelandScraper extends BaseScraper {
 
 These two values decide which rows the scraper owns, so they must not change once the scraper ships.
 
-- **`source`** is a short lowercase name with underscores, such as `miteco`, `cma` or `fuelo_pl`. Every price row the scraper writes carries it, and each run replaces exactly the rows with this name in this country. Renaming it later leaves the old rows behind for good.
+- **`source`** is a short lowercase name with underscores, such as `miteco`, `cma` or `fuelo_pl`. Every price row the scraper writes carries it, and each run updates and deletes only the rows with this name in this country. Renaming it later leaves the old rows behind for good.
 - **`externalId`** comes from the source's own station id, with a short prefix naming the source, such as `xx-ex-`. It must be the same for the same station on every run, or each run creates new stations. It must also be unique within the country across all sources, because the database keys stations on `(external_id, country)` and prices find their station by `external_id`. The prefix is what keeps two sources apart.
 - Build an id from coordinates only when the source has no id at all. Round them to a fixed number of decimals. A station whose coordinates are corrected then becomes a new station, and the old one is removed by the orphan cleanup.
 

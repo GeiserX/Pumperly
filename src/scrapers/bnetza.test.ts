@@ -450,7 +450,8 @@ describe("BNetzAScraper cleanup", () => {
     results?: Array<Array<{ count: bigint }>>;
     client?: ReturnType<typeof stubPrisma>;
     errors?: string[];
-    durationMs?: number;
+    /** External ids the stubbed run() listed. */
+    listed?: string[];
   }) {
     const { PrismaClient } = await import("../generated/prisma/client");
     const { BaseScraper } = await import("./base");
@@ -459,16 +460,24 @@ describe("BNetzAScraper cleanup", () => {
     vi.mocked(PrismaClient).mockImplementation(function () {
       return stub.client;
     } as never);
-    vi.spyOn(BaseScraper.prototype, "run").mockResolvedValue({
-      country: "DE",
-      source: "bnetza",
-      stationsUpserted: 74223,
-      pricesUpserted: 0,
-      durationMs: opts.durationMs ?? 30_000,
-      errors: opts.errors ?? [],
+    vi.spyOn(BaseScraper.prototype, "run").mockImplementation(async function (this: unknown) {
+      (this as { lastRunExternalIds: string[] }).lastRunExternalIds = opts.listed ?? LISTED;
+      return {
+        country: "DE",
+        source: "bnetza",
+        stationsUpserted: 74223,
+        pricesUpserted: 0,
+        stationsChanged: 0,
+        pricesChanged: 0,
+        pricesRemoved: 0,
+        durationMs: 30_000,
+        errors: opts.errors ?? [],
+      };
     });
     return stub;
   }
+
+  const LISTED = ["bnetza-a", "bnetza-b"];
 
   it("prunes stale rows and retires OpenChargeMap once the floor is cleared", async () => {
     const stub = await setup({
@@ -481,17 +490,19 @@ describe("BNetzAScraper cleanup", () => {
     expect(result.errors).toEqual([]);
     expect(stub.queries).toHaveLength(3);
 
-    // The floor counts only rows this run refreshed, using the same cutoff as
-    // the stale sweep, so rows left over from an earlier run cannot clear it.
+    // The floor counts only the rows this run listed, so rows left over from
+    // an earlier run cannot clear it.
     expect(stub.queries[0].sql).toMatch(/count\(\*\)/);
-    expect(stub.queries[0].sql).toMatch(/updated_at >= NOW\(\) - make_interval/);
-    expect(stub.queries[0].params).toEqual([30 + 300, "DE", "bnetza-%"]);
+    expect(stub.queries[0].sql).toMatch(/FILTER \(WHERE external_id IN \(SELECT jsonb_array_elements_text\(\$3::jsonb\)\)\)/);
+    expect(stub.queries[0].params).toEqual(["DE", "bnetza-%", JSON.stringify(LISTED)]);
 
-    // Stale sweep: scoped to this source, and cut off by a duration measured
-    // back from the DB clock so app/DB clock skew cannot delete fresh rows.
+    // Stale sweep: scoped to this source, and keyed on the run's set of ids,
+    // never on updated_at. An unchanged charger is not rewritten any more, so
+    // its updated_at is old, and a time cutoff would delete it.
     expect(stub.queries[1].sql).toMatch(/DELETE FROM stations/);
-    expect(stub.queries[1].sql).toMatch(/updated_at < NOW\(\) - make_interval/);
-    expect(stub.queries[1].params).toEqual([30 + 300, "DE", "bnetza-%"]); // run duration + margin
+    expect(stub.queries[1].sql).toMatch(/external_id NOT IN \(SELECT jsonb_array_elements_text\(\$3::jsonb\)\)/);
+    expect(stub.queries[1].params).toEqual(["DE", "bnetza-%", JSON.stringify(LISTED)]);
+    for (const q of stub.queries) expect(q.sql).not.toMatch(/updated_at/);
 
     // Retirement: the other German EV sources' chargers, which nothing else
     // removes once BNetzA is the chosen source.
@@ -503,22 +514,23 @@ describe("BNetzAScraper cleanup", () => {
   it("leaves yesterday's rows alone when a degraded fetch refreshed too few of them", async () => {
     // 74,000 rows from yesterday's run plus 42 from today's degraded fetch.
     // Counting them together would clear the floor and delete the 74,000.
-    const rowAgesSeconds = [...Array<number>(74_000).fill(86_400), ...Array<number>(42).fill(5)];
+    const listed = Array.from({ length: 42 }, (_, i) => `bnetza-new-${i}`);
+    const dbIds = [...Array.from({ length: 74_000 }, (_, i) => `bnetza-old-${i}`), ...listed];
     const queries: Array<{ sql: string; params: unknown[] }> = [];
     const client = {
       $queryRawUnsafe: vi.fn(async (sql: string, ...params: unknown[]) => {
         queries.push({ sql, params });
         if (/DELETE/.test(sql)) throw new Error("sweep ran against a degraded fetch");
-        // Answer the count the way Postgres would: apply the freshness window
-        // if the statement has one, otherwise count every row.
-        const window = /updated_at >= NOW\(\) - make_interval/.test(sql)
-          ? Number(params[0])
-          : Infinity;
-        return [{ count: BigInt(rowAgesSeconds.filter((age) => age <= window).length) }];
+        // Answer the count the way Postgres would: keep only the run's ids if
+        // the statement filters on them, otherwise count every row.
+        const set = /jsonb_array_elements_text\(\$3::jsonb\)/.test(sql)
+          ? new Set(JSON.parse(String(params[2])) as string[])
+          : null;
+        return [{ count: BigInt(dbIds.filter((id) => !set || set.has(id)).length) }];
       }),
       $disconnect: vi.fn(async () => {}),
     };
-    await setup({ client: { queries, client } });
+    await setup({ client: { queries, client }, listed });
     const { BNetzAScraper } = await import("./bnetza");
 
     const result = await new BNetzAScraper().run();
@@ -603,6 +615,9 @@ describe("BNetzAScraper cleanup", () => {
       source: "bnetza",
       stationsUpserted: 74223,
       pricesUpserted: 0,
+      stationsChanged: 0,
+      pricesChanged: 0,
+      pricesRemoved: 0,
       durationMs: 1000,
       errors: [],
     });

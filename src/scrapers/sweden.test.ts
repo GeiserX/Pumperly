@@ -244,6 +244,9 @@ describe("SwedenScraper handover cleanup", () => {
       country: "SE",
       source: "bensinpriser",
       pricesUpserted: 0,
+      stationsChanged: 0,
+      pricesChanged: 0,
+      pricesRemoved: 0,
       durationMs: 1,
       ...result,
     });

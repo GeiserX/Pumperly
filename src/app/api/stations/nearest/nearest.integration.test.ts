@@ -10,6 +10,7 @@ const hasDocker = process.env.SKIP_INTEGRATION !== "1";
 const d = hasDocker ? describe : describe.skip;
 
 const ORIGIN = { lat: 52.37, lon: 4.89 };
+const RUN_AT = "2026-11-20T08:00:00.000Z";
 const KM_PER_DEG_LON = 111.32 * Math.cos((ORIGIN.lat * Math.PI) / 180);
 
 const STATIONS = [
@@ -57,8 +58,17 @@ d("stations/nearest GET handler against PostGIS (integration)", () => {
         fuel_type VARCHAR NOT NULL,
         price DECIMAL(6,3) NOT NULL,
         currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
-        reported_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        reported_at TIMESTAMPTZ,
+        source VARCHAR(50) NOT NULL DEFAULT 'test',
         ev_fees JSONB
+      )
+    `);
+    await client.query(`
+      CREATE TABLE scrape_runs (
+        country VARCHAR(2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        last_success_at TIMESTAMPTZ NOT NULL,
+        PRIMARY KEY (country, source)
       )
     `);
 
@@ -74,6 +84,10 @@ d("stations/nearest GET handler against PostGIS (integration)", () => {
         [row.rows[0].id],
       );
     }
+
+    // The scrapers store NULL for prices the upstream does not date; the
+    // source's last successful run dates them.
+    await client.query(`INSERT INTO scrape_runs VALUES ('NL', 'test', $1::timestamptz)`, [RUN_AT]);
 
     process.env.DATABASE_URL = container.getConnectionUri();
     vi.resetModules();
@@ -92,8 +106,9 @@ d("stations/nearest GET handler against PostGIS (integration)", () => {
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      features: Array<{ properties: { name: string; distanceKm: number } }>;
+      features: Array<{ properties: { name: string; distanceKm: number; reportedAt?: string } }>;
     };
+    for (const f of body.features) expect(f.properties.reportedAt).toBe(RUN_AT);
 
     expect(body.features.map((f) => f.properties.name)).toEqual(["East 0.8 km", "North 1.0 km", "East 9 km"]);
     for (const f of body.features) {

@@ -18,8 +18,16 @@ type TransactionClient = Omit<
 export interface ScraperResult {
   country: string;
   source: string;
+  /** Stations this run vouched for: the ones sent in batches that succeeded. */
   stationsUpserted: number;
+  /** Prices this run vouched for: one per station, fuel and source. */
   pricesUpserted: number;
+  /** Stations actually written: new ones, or ones whose data changed. */
+  stationsChanged: number;
+  /** Prices actually written: new ones, or ones whose value or date changed. */
+  pricesChanged: number;
+  /** Prices of this source and country the upstream no longer lists. */
+  pricesRemoved: number;
   durationMs: number;
   errors: string[];
 }
@@ -70,7 +78,10 @@ export interface RawFuelPrice {
   currency: string; // ISO 4217
   /** EV only: fees on top of the per-kWh price. */
   evFees?: EvFees;
-  /** When the upstream last vouched for this price. Unset = now. */
+  /**
+   * When the upstream last vouched for this price. Unset: the row is stored
+   * with a NULL reported_at and dated by this source's last successful run.
+   */
   reportedAt?: Date;
 }
 
@@ -79,20 +90,149 @@ export function isPlausibleEvPrice(price: number, currency: string): boolean {
   return currency === "EUR" && price >= 0.1 && price <= 2;
 }
 
-// A sweep deletes rows not touched within the run plus this margin.
-const SWEEP_MARGIN_SECONDS = 300;
-
 export interface EvSweepOptions {
   /** externalId prefix this scraper writes, e.g. "bnetza-". */
   ownPrefix: string;
   /** Prefixes of the sources this one replaces in the same country. */
   retirePrefixes: string[];
-  /** Fewer rows refreshed by this run than this, and nothing is deleted. */
+  /** Fewer of this run's stations found in the database than this, and nothing is deleted. */
   minStations: number;
-  runDurationMs: number;
   /** For the log lines, e.g. "the register". */
   label: string;
 }
+
+// ---------------------------------------------------------------------------
+// Write-on-change SQL
+// ---------------------------------------------------------------------------
+// A run sends its whole set, but only rows whose content differs from the
+// database reach the INSERT. The pre-filter matters: a plain
+// `ON CONFLICT DO UPDATE ... WHERE ... IS DISTINCT FROM` still locks, and so
+// dirties and logs, every conflicting row even when nothing changed.
+// Rows travel as one jsonb parameter per statement, which keeps clear of the
+// 65,535 bind-parameter limit. Each INSERT takes its rows in key order, so two
+// runs of the same source lock rows in the same order and cannot deadlock on
+// the upsert.
+
+/** Upsert of one station batch ($1 rows as jsonb, $2 country). */
+export function stationUpsertSql(withPower: boolean): string {
+  const power = (sql: string) => (withPower ? sql : "");
+  return `
+    WITH inc AS (
+      SELECT * FROM jsonb_to_recordset($1::jsonb) AS t(
+        external_id text, name text, brand text, address text, city text, province text,
+        station_type text, lon float8, lat float8${power(", max_power_kw smallint")})
+    ),
+    src AS (
+      SELECT inc.*, ST_SetSRID(ST_MakePoint(inc.lon, inc.lat), 4326) AS geom FROM inc
+    ),
+    changed AS (
+      SELECT src.* FROM src
+      LEFT JOIN stations s ON s.external_id = src.external_id AND s.country = $2
+      WHERE s.id IS NULL
+         OR (s.name, s.brand, s.address, s.city, s.province, s.station_type, s.geom${power(", s.max_power_kw")})
+            IS DISTINCT FROM
+            (src.name, src.brand, src.address, src.city, src.province, src.station_type::varchar(20), src.geom${power(", src.max_power_kw")})
+    )
+    INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, ${power("max_power_kw, ")}created_at, updated_at)
+    SELECT external_id, $2, name, brand, address, city, province, station_type, geom, ${power("max_power_kw, ")}NOW(), NOW()
+    FROM changed
+    ORDER BY external_id COLLATE "C"
+    ON CONFLICT (external_id, country) DO UPDATE SET
+      name         = EXCLUDED.name,
+      brand        = EXCLUDED.brand,
+      address      = EXCLUDED.address,
+      city         = EXCLUDED.city,
+      province     = EXCLUDED.province,
+      station_type = EXCLUDED.station_type,
+      geom         = EXCLUDED.geom,${power("\n      max_power_kw = EXCLUDED.max_power_kw,")}
+      updated_at   = NOW()
+  `;
+}
+
+/** Upsert of one price chunk ($1 rows as jsonb, $2 source). */
+export const PRICE_UPSERT_SQL = `
+  WITH inc AS (
+    SELECT * FROM jsonb_to_recordset($1::jsonb) AS t(
+      station_id uuid, fuel_type text, price numeric, currency text, ev_fees jsonb, reported_at timestamptz)
+  ),
+  changed AS (
+    SELECT inc.* FROM inc
+    LEFT JOIN fuel_prices fp
+      ON fp.station_id = inc.station_id AND fp.fuel_type = inc.fuel_type AND fp.source = $2
+    WHERE fp.id IS NULL
+       OR (fp.price, fp.currency, fp.ev_fees, fp.reported_at)
+          IS DISTINCT FROM
+          (inc.price::numeric(10,3), inc.currency::varchar(3), inc.ev_fees, inc.reported_at)
+  )
+  INSERT INTO fuel_prices (station_id, fuel_type, price, currency, source, ev_fees, reported_at)
+  SELECT station_id, fuel_type, price, currency, $2, ev_fees, reported_at
+  FROM changed
+  ORDER BY station_id, fuel_type COLLATE "C"
+  ON CONFLICT (station_id, fuel_type, source) DO UPDATE SET
+    price       = EXCLUDED.price,
+    currency    = EXCLUDED.currency,
+    ev_fees     = EXCLUDED.ev_fees,
+    reported_at = EXCLUDED.reported_at
+`;
+
+/**
+ * Delete the prices of this source and country the run did not list
+ * ($1 source, $2 country, $3 every (station_id, fuel_type) of the run as jsonb).
+ * Together with the upsert this leaves exactly the rows a full replace would.
+ *
+ * NOT IN, not NOT EXISTS, on purpose: Postgres guesses 100 rows for any
+ * jsonb_to_recordset, and on a table without statistics (a new install) it
+ * planned NOT EXISTS as a nested loop that rescans the whole list for every
+ * price: 100 s for 15k prices. NOT IN is never turned into a join; it runs
+ * as one hashed subplan whatever the estimates. No NULLs on either side.
+ */
+export const PRICE_REMOVE_SQL = `
+  DELETE FROM fuel_prices fp
+  USING stations s
+  WHERE fp.station_id = s.id
+    AND s.country = $2
+    AND fp.source = $1
+    AND (fp.station_id, fp.fuel_type::text) NOT IN (
+      SELECT k.station_id, k.fuel_type
+      FROM jsonb_to_recordset($3::jsonb) AS k(station_id uuid, fuel_type text)
+    )
+`;
+
+/**
+ * Date this run ($1 country, $2 source). Prices with a NULL reported_at show
+ * this time. NOW() is the transaction start, so it commits with the prices.
+ */
+export const SCRAPE_RUN_SQL = `
+  INSERT INTO scrape_runs (country, source, last_success_at)
+  VALUES ($1, $2, NOW())
+  ON CONFLICT (country, source) DO UPDATE SET last_success_at = EXCLUDED.last_success_at
+`;
+
+/**
+ * Keep one price per station and fuel. The kept one is the one the readers
+ * would show if both were stored: the newest reportedAt, where an undated
+ * price counts as newest (it is dated by this run), and on a tie the first
+ * emitted.
+ */
+export function dedupePrices(prices: RawFuelPrice[]): RawFuelPrice[] {
+  const rank = (p: RawFuelPrice) => (p.reportedAt ? p.reportedAt.getTime() : Infinity);
+  const at = new Map<string, number>();
+  const kept: RawFuelPrice[] = [];
+  for (const p of prices) {
+    const key = `${p.stationExternalId}\u0000${p.fuelType}`;
+    const i = at.get(key);
+    if (i === undefined) {
+      at.set(key, kept.length);
+      kept.push(p);
+    } else if (rank(p) > rank(kept[i])) {
+      kept[i] = p;
+    }
+  }
+  return kept;
+}
+
+/** Code-point order, the same as Postgres's COLLATE "C". */
+const byCodePoint = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 // ---------------------------------------------------------------------------
 // Per-currency price validation bands
@@ -159,17 +299,40 @@ export abstract class BaseScraper {
   // ---------------------------------------------------------------------------
 
   /**
+   * External ids of the stations the last run() wrote or confirmed, i.e. the
+   * ones in station batches that succeeded. The EV sweeps use it to tell a
+   * charger that left the upstream from one that is simply unchanged.
+   */
+  protected lastRunExternalIds: string[] = [];
+
+  /**
    * Run the full scrape-and-persist pipeline.
    *
    * 1. Fetch upstream data via the country-specific `fetch()`.
-   * 2. Batch-upsert stations (Prisma + raw SQL for PostGIS geom).
-   * 3. Batch-upsert prices (delete-old-then-insert in a transaction).
+   * 2. Batch-upsert stations, writing only new or changed ones.
+   * 3. In one transaction: upsert the changed prices, delete the ones the
+   *    upstream no longer lists, and record the run in scrape_runs.
    */
   async run(): Promise<ScraperResult> {
     const start = Date.now();
     const errors: string[] = [];
     let stationsUpserted = 0;
     let pricesUpserted = 0;
+    let stationsChanged = 0;
+    let pricesChanged = 0;
+    let pricesRemoved = 0;
+    this.lastRunExternalIds = [];
+    const result = (): ScraperResult => ({
+      country: this.country,
+      source: this.source,
+      stationsUpserted,
+      pricesUpserted,
+      stationsChanged,
+      pricesChanged,
+      pricesRemoved,
+      durationMs: Date.now() - start,
+      errors,
+    });
 
     const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
     const prisma = new PrismaClient({ adapter });
@@ -214,6 +377,15 @@ export abstract class BaseScraper {
         console.log(`[${this.source}] Filtered out ${badPrices} invalid prices`);
       }
 
+      // The table holds one price per station, fuel and source. Some sources
+      // list a fuel twice for a station (Italy's self-service and served
+      // prices, France's E85 mapped to E10); keep the one readers showed.
+      const uniquePrices = dedupePrices(validPrices);
+      const duplicatePrices = validPrices.length - uniquePrices.length;
+      if (duplicatePrices > 0) {
+        console.log(`[${this.source}] Kept one of several prices for the same station and fuel: dropped ${duplicatePrices}`);
+      }
+
       // ------------------------------------------------------------------
       // 0b. Drop fuel-only stations that have no valid prices (keep EV chargers)
       // ------------------------------------------------------------------
@@ -240,25 +412,21 @@ export abstract class BaseScraper {
         const msg = `Aborted destructive replace: fetch returned 0 stations / ${validPrices.length} valid prices`;
         errors.push(msg);
         console.error(`[${this.source}] ${msg}`);
-        return {
-          country: this.country,
-          source: this.source,
-          stationsUpserted,
-          pricesUpserted,
-          durationMs: Date.now() - start,
-          errors,
-        };
+        return result();
       }
 
       // ------------------------------------------------------------------
-      // 1. Upsert stations in batches
+      // 1. Upsert stations in batches. Only new or changed stations are
+      //    written; an unchanged one keeps its row and its updated_at.
       // ------------------------------------------------------------------
       const STATION_BATCH = 500;
       let stationBatchFailed = false;
       for (let i = 0; i < filteredStations.length; i += STATION_BATCH) {
         const batch = filteredStations.slice(i, i + STATION_BATCH);
         try {
-          stationsUpserted += await this.upsertStationBatch(prisma, batch);
+          stationsChanged += await this.upsertStationBatch(prisma, batch);
+          stationsUpserted += batch.length;
+          for (const s of batch) this.lastRunExternalIds.push(s.externalId);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           errors.push(`Station batch ${i}-${i + batch.length}: ${msg}`);
@@ -266,14 +434,16 @@ export abstract class BaseScraper {
         }
       }
 
-      console.log(`[${this.source}] Upserted ${stationsUpserted} stations`);
+      console.log(`[${this.source}] Stations: ${stationsUpserted} current, ${stationsChanged} written`);
 
       // ------------------------------------------------------------------
-      // 2. Upsert prices — one atomic replace per scrape run.
-      //    We delete all prices for this source/country then insert fresh
-      //    ones inside a transaction so queries never see partial data.
+      // 2. Prices, in one transaction so readers never see a half-written
+      //    run: upsert the ones that changed, delete the ones the upstream
+      //    no longer lists, and date the run in scrape_runs. Scoped by
+      //    country, so scrapers sharing a source name (like "anwb" for
+      //    NL/BE/LU) don't touch each other's rows.
       // ------------------------------------------------------------------
-      const PRICE_BATCH = 2000;
+      const PRICE_CHUNK = 5000;
 
       // Build a lookup: externalId -> stationId (UUID)
       const stationRows: Array<{ id: string; external_id: string }> =
@@ -283,46 +453,46 @@ export abstract class BaseScraper {
         );
       const extToId = new Map(stationRows.map((r) => [r.external_id, r.id]));
 
-      // Resolve prices
-      const resolvedPrices = validPrices.flatMap((p) => {
-        const stationId = extToId.get(p.stationExternalId);
-        if (!stationId) return [];
-        return [
-          {
-            stationId,
-            fuelType: p.fuelType,
-            price: p.price,
-            currency: p.currency,
-            source: this.source,
-            evFees: p.evFees,
-            reportedAt: p.reportedAt,
-          },
-        ];
-      });
+      // Resolve prices, as the rows the SQL reads from jsonb. Sorted by key,
+      // so the chunks of two concurrent runs lock rows in the same order.
+      const resolvedPrices = uniquePrices
+        .flatMap((p) => {
+          const stationId = extToId.get(p.stationExternalId);
+          if (!stationId) return [];
+          return [
+            {
+              station_id: stationId,
+              fuel_type: p.fuelType as string,
+              price: p.price,
+              currency: p.currency,
+              ev_fees: p.evFees ?? null,
+              reported_at: p.reportedAt ? p.reportedAt.toISOString() : null,
+            },
+          ];
+        })
+        .sort((a, b) => byCodePoint(a.station_id, b.station_id) || byCodePoint(a.fuel_type, b.fuel_type));
+      pricesUpserted = resolvedPrices.length;
+      const keys = JSON.stringify(resolvedPrices.map((p) => ({ station_id: p.station_id, fuel_type: p.fuel_type })));
 
-      await prisma.$transaction(
+      const written = await prisma.$transaction(
         async (tx: TransactionClient) => {
-          // Delete existing prices from this source + country
-          // (scoped by country so scrapers sharing a source name
-          //  like "anwb" for NL/BE/LU don't wipe each other's data)
-          await tx.$executeRawUnsafe(
-            `DELETE FROM fuel_prices WHERE source = $1
-             AND station_id IN (SELECT id FROM stations WHERE country = $2)`,
-            this.source,
-            this.country,
-          );
-
-          // Insert in batches
-          for (let i = 0; i < resolvedPrices.length; i += PRICE_BATCH) {
-            const batch = resolvedPrices.slice(i, i + PRICE_BATCH);
-            const inserted = await this.insertPriceBatch(tx, batch);
-            pricesUpserted += inserted;
+          let changed = 0;
+          for (let i = 0; i < resolvedPrices.length; i += PRICE_CHUNK) {
+            const chunk = resolvedPrices.slice(i, i + PRICE_CHUNK);
+            changed += Number(await tx.$executeRawUnsafe(PRICE_UPSERT_SQL, JSON.stringify(chunk), this.source)) || 0;
           }
+          const removed = Number(await tx.$executeRawUnsafe(PRICE_REMOVE_SQL, this.source, this.country, keys)) || 0;
+          await tx.$executeRawUnsafe(SCRAPE_RUN_SQL, this.country, this.source);
+          return { changed, removed };
         },
         { timeout: 120_000 },
       );
+      pricesChanged = written.changed;
+      pricesRemoved = written.removed;
 
-      console.log(`[${this.source}] Inserted ${pricesUpserted} prices`);
+      console.log(
+        `[${this.source}] Prices: ${pricesUpserted} current, ${pricesChanged} written, ${pricesRemoved} removed`,
+      );
 
       // ------------------------------------------------------------------
       // 3. Clean up orphaned fuel stations (no prices from any source)
@@ -360,14 +530,7 @@ export abstract class BaseScraper {
       await prisma.$disconnect();
     }
 
-    return {
-      country: this.country,
-      source: this.source,
-      stationsUpserted,
-      pricesUpserted,
-      durationMs: Date.now() - start,
-      errors,
-    };
+    return result();
   }
 
   // ---------------------------------------------------------------------------
@@ -375,8 +538,9 @@ export abstract class BaseScraper {
   // ---------------------------------------------------------------------------
 
   /**
-   * Upsert a batch of stations using a single multi-row INSERT ... ON CONFLICT.
-   * Also updates the `geom` column via ST_SetSRID(ST_MakePoint(lon, lat), 4326).
+   * Upsert a batch of stations in one statement, writing only the new ones
+   * and the ones whose data differs from the database (stationUpsertSql).
+   * Returns how many rows it wrote.
    */
   private async upsertStationBatch(
     prisma: PrismaClient,
@@ -385,112 +549,23 @@ export abstract class BaseScraper {
     if (batch.length === 0) return 0;
 
     // Only charger batches write max_power_kw: fuel stations never have a
-    // power, so fuel scrapers keep working on a database without the column.
+    // power, so fuel batches leave the column alone.
     const withPower = batch.some((s) => s.stationType !== "fuel");
-    const perRow = withPower ? 11 : 10;
+    const rows = batch.map((s) => ({
+      external_id: s.externalId,
+      name: s.name,
+      brand: s.brand,
+      address: s.address,
+      city: s.city,
+      province: s.province,
+      station_type: s.stationType,
+      lon: s.longitude,
+      lat: s.latitude,
+      ...(withPower ? { max_power_kw: s.maxPowerKw ?? null } : {}),
+    }));
 
-    // Build parameterised VALUES list.
-    // Each station needs 10 params: externalId, country, name, brand,
-    // address, city, province, stationType, longitude, latitude,
-    // plus maxPowerKw for charger batches.
-    const params: unknown[] = [];
-    const valueClauses: string[] = [];
-
-    for (let i = 0; i < batch.length; i++) {
-      const s = batch[i];
-      const offset = i * perRow;
-      valueClauses.push(
-        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, ` +
-          `$${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, ` +
-          `ST_SetSRID(ST_MakePoint($${offset + 9}, $${offset + 10}), 4326), ` +
-          (withPower ? `$${offset + 11}::smallint, ` : "") +
-          `NOW(), NOW())`,
-      );
-      params.push(
-        s.externalId,
-        this.country,
-        s.name,
-        s.brand,
-        s.address,
-        s.city,
-        s.province,
-        s.stationType,
-        s.longitude,
-        s.latitude,
-      );
-      if (withPower) params.push(s.maxPowerKw ?? null);
-    }
-
-    const sql = `
-      INSERT INTO stations (external_id, country, name, brand, address, city, province, station_type, geom, ${withPower ? "max_power_kw, " : ""}created_at, updated_at)
-      VALUES ${valueClauses.join(",\n")}
-      ON CONFLICT (external_id, country)
-      DO UPDATE SET
-        name         = EXCLUDED.name,
-        brand        = EXCLUDED.brand,
-        address      = EXCLUDED.address,
-        city         = EXCLUDED.city,
-        province     = EXCLUDED.province,
-        station_type = EXCLUDED.station_type,
-        geom         = EXCLUDED.geom,${withPower ? "\n        max_power_kw = EXCLUDED.max_power_kw," : ""}
-        updated_at   = NOW()
-    `;
-
-    await prisma.$executeRawUnsafe(sql, ...params);
-    return batch.length;
-  }
-
-  /**
-   * Insert a batch of price rows using a single multi-row INSERT.
-   */
-  private async insertPriceBatch(
-    tx: TransactionClient,
-    batch: Array<{
-      stationId: string;
-      fuelType: string;
-      price: number;
-      currency: string;
-      source: string;
-      evFees?: EvFees;
-      reportedAt?: Date;
-    }>,
-  ): Promise<number> {
-    if (batch.length === 0) return 0;
-
-    // Like max_power_kw: only batches that carry fees write ev_fees, so fuel
-    // scrapers keep working on a database without the column.
-    const withFees = batch.some((p) => p.evFees != null);
-    // Only batches that carry an upstream timestamp bind one; the rest keep NOW().
-    const withReported = batch.some((p) => p.reportedAt != null);
-    const perRow = 5 + (withFees ? 1 : 0) + (withReported ? 1 : 0);
-
-    // Each price needs 5 params: stationId, fuelType, price, currency, source,
-    // plus evFees and reportedAt for batches that carry them.
-    const params: unknown[] = [];
-    const valueClauses: string[] = [];
-
-    for (let i = 0; i < batch.length; i++) {
-      const p = batch[i];
-      const offset = i * perRow;
-      let n = offset + 5;
-      const reported = withReported ? `COALESCE($${++n}::timestamptz, NOW())` : "NOW()";
-      valueClauses.push(
-        `($${offset + 1}::uuid, $${offset + 2}, $${offset + 3}, $${offset + 4}, ${reported}, $${offset + 5}` +
-          (withFees ? `, $${++n}::jsonb` : "") +
-          `)`,
-      );
-      params.push(p.stationId, p.fuelType, p.price, p.currency, p.source);
-      if (withReported) params.push(p.reportedAt ? p.reportedAt.toISOString() : null);
-      if (withFees) params.push(p.evFees ? JSON.stringify(p.evFees) : null);
-    }
-
-    const sql = `
-      INSERT INTO fuel_prices (station_id, fuel_type, price, currency, reported_at, source${withFees ? ", ev_fees" : ""})
-      VALUES ${valueClauses.join(",\n")}
-    `;
-
-    await tx.$executeRawUnsafe(sql, ...params);
-    return batch.length;
+    const written = await prisma.$executeRawUnsafe(stationUpsertSql(withPower), JSON.stringify(rows), this.country);
+    return Number(written) || 0;
   }
 
   // ---------------------------------------------------------------------------
@@ -501,43 +576,43 @@ export abstract class BaseScraper {
    * Take out the EV rows nothing else will. `run()` only orphan-cleans
    * price-less `fuel` stations, so EV rows accumulate forever:
    *
-   *   1. Own rows this run didn't touch: chargers that left the upstream, or
-   *      whose derived ID churned because coordinates were corrected.
+   *   1. Own rows the last run did not list: chargers that left the upstream,
+   *      or whose derived ID churned because coordinates were corrected.
    *   2. The rows of the sources this one replaces (`retirePrefixes`). A
    *      country is served by exactly one EV source at a time, so once this
    *      one has landed those are pure duplicates.
    *
-   * Both are gated on a DB-counted floor rather than on the `stationsUpserted`
-   * the pipeline reports, because that figure is `batch.length` regardless of
-   * what the database did. The count covers only rows this run touched:
-   * yesterday's 74k rows must not vouch for a degraded fetch that refreshed 42
-   * of them.
+   * "Listed" is the set of external ids the last run() sent in station
+   * batches that succeeded (`lastRunExternalIds`), not a timestamp: an
+   * unchanged charger is no longer rewritten, so its updated_at stays old.
+   *
+   * Both deletes are gated on a DB-counted floor: how many of this run's ids
+   * the database actually holds. Yesterday's 74k rows cannot vouch for a
+   * degraded fetch that listed 42; only the 42 count.
    */
   protected async sweepEvRows(opts: EvSweepOptions): Promise<void> {
     const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
     const prisma = new PrismaClient({ adapter });
     try {
-      // Cutoff expressed as a duration back from the database clock rather than
-      // as an app-side timestamp, so clock skew between app and DB cannot make
-      // this delete rows that were just written. The same cutoff separates
-      // "refreshed by this run" from "stale", so a row is always on exactly
-      // one side of it.
-      const staleSeconds = opts.runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
       const own = `${opts.ownPrefix}%`;
+      const listed = JSON.stringify(this.lastRunExternalIds);
 
+      // Both statements test membership through a subplan Postgres hashes
+      // once (an IN inside FILTER, a NOT IN), never a join it might plan as
+      // a nested loop over the list. See PRICE_REMOVE_SQL.
       const counts: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
-        `SELECT count(*) FROM stations
-         WHERE country = $2 AND station_type = 'ev_charger'
-           AND external_id LIKE $3
-           AND updated_at >= NOW() - make_interval(secs => $1::float8)`,
-        staleSeconds,
+        `SELECT count(*) FILTER (WHERE external_id IN (SELECT jsonb_array_elements_text($3::jsonb))) AS count
+         FROM stations
+         WHERE country = $1 AND station_type = 'ev_charger'
+           AND external_id LIKE $2`,
         this.country,
         own,
+        listed,
       );
       const refreshed = Number(counts[0]?.count ?? 0);
       if (refreshed < opts.minStations) {
         console.warn(
-          `[${this.source}] Only ${refreshed} station(s) refreshed by this run ` +
+          `[${this.source}] Only ${refreshed} station(s) listed by this run ` +
             `(floor ${opts.minStations}) — skipping cleanup`,
         );
         return;
@@ -546,15 +621,15 @@ export abstract class BaseScraper {
       const stale: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
         `WITH deleted AS (
            DELETE FROM stations
-           WHERE country = $2
+           WHERE country = $1
              AND station_type = 'ev_charger'
-             AND external_id LIKE $3
-             AND updated_at < NOW() - make_interval(secs => $1::float8)
+             AND external_id LIKE $2
+             AND external_id NOT IN (SELECT jsonb_array_elements_text($3::jsonb))
            RETURNING id
          ) SELECT count(*) FROM deleted`,
-        staleSeconds,
         this.country,
         own,
+        listed,
       );
       const staleCount = Number(stale[0]?.count ?? 0);
       if (staleCount > 0) {
@@ -578,7 +653,7 @@ export abstract class BaseScraper {
         console.log(
           `[${this.source}] Retired ${retiredCount} superseded row(s) ` +
             `(${opts.retirePrefixes.join(", ")}) for ${this.country} ` +
-            `(${refreshed} ${opts.label} stations refreshed this run)`,
+            `(${refreshed} ${opts.label} stations listed this run)`,
         );
       }
     } finally {

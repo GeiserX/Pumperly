@@ -116,13 +116,13 @@ Returns how many stations and price rows the database holds, per country, plus t
 | Field | Type | Meaning |
 |---|---|---|
 | `totals.stations` | number | All stations, fuel and EV. |
-| `totals.prices` | number | All rows in `fuel_prices`. |
+| `totals.prices` | number | All rows in `fuel_prices`: one per station, fuel and source. |
 | `countries[]` | array | One object per country present in the database, most stations first. |
 | `countries[].code` | string | Country code. |
 | `countries[].name` | string | Country name, or the code if Pumperly has no name for it. |
 | `countries[].stations` | number | Stations in that country, EV chargers included. |
 | `countries[].prices` | number | Price rows for that country's stations. |
-| `countries[].lastUpdate` | string or `null` | ISO 8601 time of the newest price row. `null` when the country has no prices, as with EV-only coverage. |
+| `countries[].lastUpdate` | string or `null` | ISO 8601 time of the newest price, dated as `reportedAt` is below. `null` when the country has no prices, as with EV-only coverage. |
 | `config` | object | `defaultCountry`, `enabledCountries` (a plain list of codes), `defaultFuel`, `center` and `zoom`. |
 
 `countries` lists every country with rows in the database, enabled or not. A country you disable keeps its rows until something deletes them.
@@ -451,7 +451,7 @@ curl -sN -X POST http://localhost:3000/api/route-detour \
 | `fuelType` | yes | The fuel code you asked for. |
 | `currency` | yes | ISO 4217 code of `price`. `EUR` on unpriced EV chargers, where it carries no meaning. |
 | `price` | no | Latest price for `fuelType`, in `currency`. Per kWh for `EV`. Absent on unpriced EV chargers. |
-| `reportedAt` | no | ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers. |
+| `reportedAt` | no | ISO 8601 time the price was last confirmed: the last successful run of its source in that country, whether or not the price changed. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers. |
 | `powerKw` | no | EV chargers only: highest single-connector power in kW. Absent when the source publishes none. |
 | `evFees` | no | EV chargers only: fees on top of `price`, in the price's currency. Shaped like the [`ev_fees`](data-model.md#ev_fees) column. Absent when there are none. |
 | `distanceKm` | only `/api/stations/nearest` | Approximate distance from the query point. |

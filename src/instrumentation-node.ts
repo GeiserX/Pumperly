@@ -308,7 +308,11 @@ export async function registerNode() {
         const scraper = scraperFactories[code]();
         const result = await scraper.run();
         const status = result.errors.length === 0 ? "OK" : `${result.errors.length} error(s)`;
-        console.log(`[scraper] ${code}: ${status} — ${result.stationsUpserted} stations, ${result.pricesUpserted} prices in ${(result.durationMs / 1000).toFixed(1)}s`);
+        console.log(
+          `[scraper] ${code}: ${status} — ${result.stationsUpserted} stations (${result.stationsChanged} written), ` +
+            `${result.pricesUpserted} prices (${result.pricesChanged} written, ${result.pricesRemoved} removed) ` +
+            `in ${(result.durationMs / 1000).toFixed(1)}s`,
+        );
       } catch (err) {
         console.error(`[scraper] ${code}: fatal error —`, err);
       } finally {

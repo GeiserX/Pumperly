@@ -78,15 +78,15 @@ Every scraper goes through the same steps, in [`src/scrapers/base.ts`](https://g
 | 2 | `[miteco] Filtered out <n> invalid prices` | Prices outside the plausible range were dropped. See [Price band rejections](#price-band-rejections). Only written when `n` is above 0. |
 | 3 | `[miteco] Fetched <n> stations, <n> price rows (dropped <n> with no prices)` | What the source returned. Fuel stations left with no valid price are dropped. Charging stations are always kept. |
 | 4 | `[miteco] Aborted destructive replace: fetch returned 0 stations / <n> valid prices` | Nothing usable came back, so the run stops without changing the database. See [The empty-fetch guard](#the-empty-fetch-guard). |
-| 5 | `[miteco] Upserted <n> stations` | Stations were inserted or updated. |
-| 6 | `[miteco] Inserted <n> prices` | The source's prices for this country were replaced in one transaction. |
+| 5 | `[miteco] Stations: <n> current, <n> written` | The source listed `current` stations. Only `written` of them were new or changed and got inserted or updated. |
+| 6 | `[miteco] Prices: <n> current, <n> written, <n> removed` | The source's prices for this country were brought up to date in one transaction: `written` new or changed, `removed` no longer listed. The run's time was recorded in `scrape_runs`. |
 | 7 | `[miteco] Cleaned up <n> stations with no prices` | Fuel stations in the country that no source prices any more were deleted. |
 | 7 | `[miteco] Skipped orphan cleanup: one or more station batches failed (would have deleted unwritten stations)` | A station write failed, so the cleanup did not run. The run reports an error. |
 | any | `[miteco] Fatal error: <message>` | The run stopped. The message says why, often an HTTP status from the source. |
 
 ### What a failed run leaves behind
 
-A failed run does not empty the map. When the fetch fails, the scraper stops before it touches the database. The source's last good prices stay, with the time they were scraped. The price replacement runs in one transaction, so readers never see a half-written country.
+A failed run does not empty the map. When the fetch fails, the scraper stops before it touches the database. The source's last good prices stay, dated by the last good run. The price update runs in one transaction, so readers never see a half-written country.
 
 The cost is stale data. The prices on the map keep the age of the last good run, and `lastUpdate` in `/api/stats` stops moving. A source that keeps failing leaves its country frozen until it works again or you turn it off.
 
@@ -223,10 +223,10 @@ Once the registry reaches 95% of its reported total, the Open Charge Map rows fo
 
 ### The German charging registry keeps old rows
 
-The BNetzA scraper only prunes rows the register no longer lists, and only retires Open Charge Map's German rows, after a healthy run. A run that refreshed fewer stations than `PUMPERLY_BNETZA_MIN_STATIONS`, 10,000 by default, skips that cleanup:
+The BNetzA scraper only prunes rows the register no longer lists, and only retires Open Charge Map's German rows, after a healthy run. A run that listed fewer stations than `PUMPERLY_BNETZA_MIN_STATIONS`, 10,000 by default, skips that cleanup:
 
 ```text
-[bnetza] Only <n> station(s) refreshed by this run (floor 10000) — skipping cleanup
+[bnetza] Only <n> station(s) listed by this run (floor 10000) — skipping cleanup
 ```
 
 This protects the map from a bad download. The next healthy run does the cleanup.
@@ -297,8 +297,8 @@ The tool prints each scraper's log lines, then a summary per source:
 ```text
 === Summary ===
   [miteco] ES: OK in <s>s
-    Stations upserted: <n>
-    Prices inserted:   <n>
+    Stations: <n> current, <n> written
+    Prices:   <n> current, <n> written, <n> removed
 ```
 
 A source with errors shows `ERRORS` and lists them. The tool exits with status 0 when every source succeeded and 1 when any failed, so a script can check it.

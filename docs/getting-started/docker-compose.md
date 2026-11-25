@@ -96,7 +96,7 @@ docker compose -f docker/docker-compose.yml logs migrate
 
 On a database whose schema was built by hand with no history, `migrate` checks that `0_init` is complete (both tables and the `geom` column), records it as applied, the same as `prisma migrate resolve --applied 0_init`, and runs the later migrations, which are written to be safe to run again. It refuses to start, and so does the app, on a partial schema with no history and on a history row Prisma left unfinished; resolve that one with `npx prisma migrate resolve`. If a migration fails, `migrate` exits with an error, prints the failing statement, and the app does not start.
 
-The migrations enable the PostGIS extension and create two tables, `stations` and `fuel_prices`. The `stations` table has a `geom` column that holds each station's position, with two spatial indexes on it. See [Data model](../reference/data-model.md).
+The migrations enable the PostGIS extension and create three tables: `stations`, `fuel_prices` and `scrape_runs`. The `stations` table has a `geom` column that holds each station's position, with two spatial indexes on it. See [Data model](../reference/data-model.md).
 
 !!! danger "Do not use `prisma db push` to create the schema"
     `prisma db push` builds tables from `prisma/schema.prisma`. That file does not declare the `geom` column, because Prisma has no type for it. Every scraper writes `geom` and the map's queries read it, so on a schema made by `db push` every station insert fails.

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { latestPriceSql } from "@/lib/price-sql";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { fuelTypeEnum } from "@/types/fuel";
 import type { EvFees, StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
@@ -127,12 +128,7 @@ export async function POST(request: NextRequest) {
           FROM stations s
           CROSS JOIN route r
           LEFT JOIN LATERAL (
-            SELECT price, currency, reported_at, ev_fees
-            FROM fuel_prices
-            WHERE station_id = s.id
-              AND fuel_type = 'EV'
-            ORDER BY reported_at DESC NULLS LAST
-            LIMIT 1
+            ${latestPriceSql("'EV'", true)}
           ) fp ON true
           WHERE s.station_type IN ('ev_charger', 'both')
             AND s.geom && ST_Expand(r.g::geometry, $2, $3)
@@ -159,9 +155,7 @@ export async function POST(request: NextRequest) {
             ST_Distance(s.geom::geography, r.g::geography)::float AS distance_m
           FROM route r, stations s
           JOIN LATERAL (
-            SELECT price, currency, reported_at FROM fuel_prices
-            WHERE station_id = s.id AND fuel_type = $5
-            ORDER BY reported_at DESC NULLS LAST LIMIT 1
+            ${latestPriceSql("$5", false)}
           ) fp ON true
           WHERE s.geom && ST_Expand(r.g::geometry, $2, $3)
             AND ST_DWithin(s.geom::geography, r.g::geography, $4)

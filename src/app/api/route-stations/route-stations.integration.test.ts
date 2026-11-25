@@ -17,6 +17,7 @@ const d = hasDocker ? describe : describe.skip;
 // Corridor constants mirror route.ts. DEG_PAD is DERIVED from CORRIDOR_METERS so
 // the test and prod bbox-pad math can't silently disagree.
 const CORRIDOR_KM = 5;
+const RUN_AT = "2026-11-20T08:00:00.000Z";
 const CORRIDOR_METERS = CORRIDOR_KM * 1000;
 const DEG_PAD = (CORRIDOR_METERS / 1000 / 111.32) * 1.2;
 
@@ -95,7 +96,16 @@ d("route-stations POST handler against PostGIS (integration)", () => {
         fuel_type VARCHAR NOT NULL,
         price DECIMAL(6,3) NOT NULL,
         currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
-        reported_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        reported_at TIMESTAMPTZ,
+        source VARCHAR(50) NOT NULL DEFAULT 'test'
+      )
+    `);
+    await client.query(`
+      CREATE TABLE scrape_runs (
+        country VARCHAR(2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        last_success_at TIMESTAMPTZ NOT NULL,
+        PRIMARY KEY (country, source)
       )
     `);
 
@@ -127,6 +137,9 @@ d("route-stations POST handler against PostGIS (integration)", () => {
       [outCorridor.rows[0].id],
     );
 
+    // Undated prices: the source's last successful run dates them.
+    await client.query(`INSERT INTO scrape_runs VALUES ('ES', 'test', $1::timestamptz)`, [RUN_AT]);
+
     // Point @/lib/db at the container BEFORE importing ./route, then reset the
     // module graph and lazy-import so the Prisma client picks up DATABASE_URL.
     // Mirrors the lazy-import pattern in route-detour.test.ts.
@@ -153,7 +166,7 @@ d("route-stations POST handler against PostGIS (integration)", () => {
 
     const collection = (await res.json()) as {
       type: string;
-      features: Array<{ properties: { name: string; routeFraction: number; price?: number } }>;
+      features: Array<{ properties: { name: string; routeFraction: number; price?: number; reportedAt?: string } }>;
     };
     expect(collection.type).toBe("FeatureCollection");
     expect(collection.features).toHaveLength(1);
@@ -161,6 +174,7 @@ d("route-stations POST handler against PostGIS (integration)", () => {
     const f = collection.features[0];
     expect(f.properties.name).toBe("Repsol Centro");
     expect(f.properties.price).toBe(1.589);
+    expect(f.properties.reportedAt).toBe(RUN_AT);
     // route_fraction lands strictly inside the route (0,1).
     expect(f.properties.routeFraction).toBeGreaterThan(0);
     expect(f.properties.routeFraction).toBeLessThan(1);

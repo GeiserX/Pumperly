@@ -732,7 +732,6 @@ export class OcpdbScraper extends BaseScraper {
         ownPrefix: "ocpdb-",
         retirePrefixes: otherGermanyEvPrefixes("ocpdb-"),
         minStations: MIN_STATIONS,
-        runDurationMs: result.durationMs,
         label: "OCPDB",
       });
     } catch (err) {

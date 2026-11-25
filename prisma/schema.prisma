@@ -36,13 +36,26 @@ model FuelPrice {
   fuelType   String   @map("fuel_type") @db.VarChar(20)
   price      Decimal  @db.Decimal(10, 3)
   currency   String   @default("EUR") @db.VarChar(3)
-  reportedAt DateTime @default(now()) @map("reported_at") @db.Timestamptz
+  /// When the upstream dated the price. NULL: dated by its source's last
+  /// successful run in the station's country (ScrapeRun.lastSuccessAt).
+  reportedAt DateTime? @map("reported_at") @db.Timestamptz
   source     String   @db.VarChar(50)
   /// EV only: fees on top of the per-kWh price, shaped as EvFees (src/types/station.ts).
   evFees     Json?    @map("ev_fees")
 
   station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
 
-  @@index([stationId, fuelType, reportedAt(sort: Desc)])
+  @@unique([stationId, fuelType, source])
   @@map("fuel_prices")
+}
+
+/// When each source last finished a successful run in each country. Written in
+/// the same transaction as that run's prices.
+model ScrapeRun {
+  country       String   @db.VarChar(2)
+  source        String   @db.VarChar(50)
+  lastSuccessAt DateTime @map("last_success_at") @db.Timestamptz
+
+  @@id([country, source])
+  @@map("scrape_runs")
 }

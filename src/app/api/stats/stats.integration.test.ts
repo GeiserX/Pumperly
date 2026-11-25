@@ -13,12 +13,15 @@ const OLD_STATS_SQL = `
     s.country,
     COUNT(DISTINCT s.id)::int AS stations,
     COUNT(fp.id)::int AS prices,
-    MAX(fp.reported_at) AS last_update
+    MAX(COALESCE(fp.reported_at, sr.last_success_at)) AS last_update
   FROM stations s
   LEFT JOIN fuel_prices fp ON fp.station_id = s.id
+  LEFT JOIN scrape_runs sr ON sr.country = s.country AND sr.source = fp.source
   GROUP BY s.country
   ORDER BY stations DESC, s.country
 `;
+
+const PT_RUN_AT = "2026-11-20T08:00:00.000Z";
 
 d("stats GET handler (integration)", () => {
   let container: StartedPostgreSqlContainer;
@@ -41,7 +44,16 @@ d("stats GET handler (integration)", () => {
         id BIGSERIAL PRIMARY KEY,
         station_id UUID NOT NULL REFERENCES stations(id),
         fuel_type VARCHAR NOT NULL,
-        reported_at TIMESTAMPTZ NOT NULL
+        reported_at TIMESTAMPTZ,
+        source VARCHAR(50) NOT NULL DEFAULT 'test'
+      )
+    `);
+    await client.query(`
+      CREATE TABLE scrape_runs (
+        country VARCHAR(2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        last_success_at TIMESTAMPTZ NOT NULL,
+        PRIMARY KEY (country, source)
       )
     `);
     // ES: 30 stations, 3 prices each. DE: 50 stations, 1 price on every
@@ -69,6 +81,24 @@ d("stats GET handler (integration)", () => {
         [country, pricesEach],
       );
     }
+
+    // PT: undated prices from "marked", dated by its run marker, plus one
+    // older dated price. An EV-only source with a newer marker and no price
+    // rows must not move PT's last update.
+    await client.query(
+      `INSERT INTO stations (external_id, country) SELECT 'PT-' || g, 'PT' FROM generate_series(1, 5) g`,
+    );
+    await client.query(
+      `INSERT INTO fuel_prices (station_id, fuel_type, source) SELECT id, 'E5', 'marked' FROM stations WHERE country = 'PT'`,
+    );
+    await client.query(
+      `INSERT INTO fuel_prices (station_id, fuel_type, source, reported_at)
+       SELECT id, 'B7', 'dated', TIMESTAMPTZ '2026-10-01 00:00:00+00' FROM stations WHERE external_id = 'PT-1'`,
+    );
+    await client.query(
+      `INSERT INTO scrape_runs VALUES ('PT', 'marked', $1::timestamptz), ('PT', 'evonly', '2026-11-24T00:00:00Z')`,
+      [PT_RUN_AT],
+    );
 
     process.env.DATABASE_URL = container.getConnectionUri();
     delete (globalThis as { prisma?: unknown }).prisma;
@@ -104,7 +134,8 @@ d("stats GET handler (integration)", () => {
       .toEqual(expected);
     expect(body.countries.find((c) => c.code === "US")).toMatchObject({ stations: 20, prices: 0, lastUpdate: null });
     expect(body.countries.find((c) => c.code === "DE")).toMatchObject({ stations: 50, prices: 25 });
-    expect(body.totals).toEqual({ stations: 120, prices: 90 + 25 + 20 + 10 });
+    expect(body.countries.find((c) => c.code === "PT")).toMatchObject({ stations: 5, prices: 6, lastUpdate: PT_RUN_AT });
+    expect(body.totals).toEqual({ stations: 125, prices: 90 + 25 + 20 + 10 + 6 });
   });
 
   it("leaves work_mem unchanged for the rest of the session", async () => {

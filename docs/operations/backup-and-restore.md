@@ -4,12 +4,13 @@ This page covers what to back up in a Pumperly install, how to dump and restore 
 
 ## What holds state
 
-Pumperly keeps its data in one PostgreSQL database with the PostGIS extension. PostGIS adds the spatial types and indexes the map queries rely on. The database holds two tables of its own:
+Pumperly keeps its data in one PostgreSQL database with the PostGIS extension. PostGIS adds the spatial types and indexes the map queries rely on. The database holds three tables of its own:
 
 | Table | What it holds |
 |-------|---------------|
 | `stations` | One row per fuel station or charging location, with its position in the `geom` column |
-| `fuel_prices` | The current prices per station and fuel, with the source and the time of the scrape |
+| `fuel_prices` | The current prices per station and fuel, with the source, and the upstream's date where the source gives one |
+| `scrape_runs` | When each source last finished a successful run in each country. Prices with no date of their own are shown with this time. |
 
 A database built with `prisma migrate deploy` also has `_prisma_migrations`, the list of applied migrations. See [Data model](../reference/data-model.md) for the columns.
 
@@ -80,7 +81,7 @@ Check that the dump is readable before you rely on it. This lists its contents a
 pg_restore --list pumperly-2026-01-01.dump | head
 ```
 
-The list should include the `stations` and `fuel_prices` tables.
+The list should include the `stations`, `fuel_prices` and `scrape_runs` tables.
 
 ## Restore
 

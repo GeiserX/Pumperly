@@ -117,10 +117,10 @@ An error saying the relation does not exist means the database has no history. P
 
     ```bash
     docker compose -f docker/docker-compose.yml exec -T db \
-      psql -v ON_ERROR_STOP=1 -U pumperly -d pumperly < prisma/migrations/<migration-folder>/migration.sql
+      psql -v ON_ERROR_STOP=1 --single-transaction -U pumperly -d pumperly < prisma/migrations/<migration-folder>/migration.sql
     ```
 
-    `ON_ERROR_STOP=1` makes `psql` stop at the first error instead of carrying on.
+    `ON_ERROR_STOP=1` makes `psql` stop at the first error instead of carrying on. `--single-transaction` runs the whole file as one transaction, so a failed migration leaves nothing half applied. Some migrations need it: `LOCK TABLE` only works inside a transaction.
 
     To start keeping a history instead, first confirm that `stations` has a `geom` column (`\d stations` in `psql`). Then, from a checkout of the new release tag with `DATABASE_URL` set as in the other tab, mark the first migration as already applied and let `migrate deploy` take over:
 
@@ -135,6 +135,38 @@ An error saying the relation does not exist means the database has no history. P
     A migration that builds an index takes a lock that blocks writes to that table until it finishes. On a large `stations` table that can stall the scrapers. When a migration file offers a `CREATE INDEX CONCURRENTLY` variant in its comments, run that variant first with `psql`. If the migration's own statement uses `IF NOT EXISTS`, it then finds the index and does nothing.
 
 Pumperly ships no down migrations. To go back to an older release after a migration ran, restore the backup you took before upgrading. See [Backing up the database](backup-and-restore.md).
+
+### The write-on-change migration { #write-on-change }
+
+The migration `20261125000000_write_on_change` comes with scrapers that write a station or a price only when it changed. Before it, every run rewrote every row of its country. What it changes:
+
+- `fuel_prices` gets a unique index on `(station_id, fuel_type, source)`. The migration first deletes the extra rows where a source had stored one fuel twice for one station. It keeps the row the map showed. Italy and France had the most, so the price counts per country in the statistics menu drop once.
+- `fuel_prices.reported_at` may now be `null`. `null` means "as recent as the source's last successful run", which the new `scrape_runs` table records. See [Data model](../reference/data-model.md#scrape_runs).
+- The first run of each source after the upgrade writes each of its prices once more, to clear `reported_at`. Runs after that write only what changed.
+
+Apply it before the new image starts. The new scrapers need the unique index: without it, every price run fails with `there is no unique or exclusion constraint matching the ON CONFLICT specification`, and the prices stay at their last values until you migrate.
+
+The other way round also breaks. A release from before this migration, running on the migrated database, fails its price runs for every source that lists a fuel twice, and its readers show no date for `null` rows. To go back to such a release, restore your backup, or undo the schema change first:
+
+```sql
+BEGIN;
+UPDATE fuel_prices fp SET reported_at = sr.last_success_at
+FROM stations s, scrape_runs sr
+WHERE fp.reported_at IS NULL AND s.id = fp.station_id
+  AND sr.country = s.country AND sr.source = fp.source;
+UPDATE fuel_prices SET reported_at = now() WHERE reported_at IS NULL;
+ALTER TABLE fuel_prices ALTER COLUMN reported_at SET DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE fuel_prices ALTER COLUMN reported_at SET NOT NULL;
+DROP INDEX fuel_prices_station_id_fuel_type_source_key;
+CREATE INDEX fuel_prices_station_id_fuel_type_reported_at_idx
+  ON fuel_prices (station_id, fuel_type, reported_at DESC);
+ALTER TABLE fuel_prices RESET (fillfactor);
+DROP TABLE scrape_runs;
+DELETE FROM _prisma_migrations WHERE migration_name = '20261125000000_write_on_change';
+COMMIT;
+```
+
+The rows the migration folded together do not come back. The old scrapers write them again on their next run.
 
 ## Upgrade a Docker Compose install
 

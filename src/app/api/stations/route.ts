@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { latestPriceSql } from "@/lib/price-sql";
 import { fuelTypeEnum } from "@/types/fuel";
 import type { EvFees, StationsGeoJSONCollection, StationGeoJSON } from "@/types/station";
 
@@ -88,12 +89,7 @@ export async function GET(request: NextRequest) {
             s.max_power_kw::int AS max_power_kw
           FROM stations s
           LEFT JOIN LATERAL (
-            SELECT price, currency, reported_at, ev_fees
-            FROM fuel_prices
-            WHERE station_id = s.id
-              AND fuel_type = 'EV'
-            ORDER BY reported_at DESC NULLS LAST
-            LIMIT 1
+            ${latestPriceSql("'EV'", true)}
           ) fp ON true
           WHERE s.station_type IN ('ev_charger', 'both')
             AND ST_Within(
@@ -125,12 +121,7 @@ export async function GET(request: NextRequest) {
             fp.reported_at
           FROM stations s
           JOIN LATERAL (
-            SELECT price, currency, reported_at
-            FROM fuel_prices
-            WHERE station_id = s.id
-              AND fuel_type = $5
-            ORDER BY reported_at DESC NULLS LAST
-            LIMIT 1
+            ${latestPriceSql("$5", false)}
           ) fp ON true
           WHERE ST_Within(
             s.geom,
