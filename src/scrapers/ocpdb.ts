@@ -105,7 +105,8 @@ async function getJson<T>(url: string, what: string, parse: (body: unknown) => T
       if (++failures >= 2) throw err;
       continue;
     }
-    await res.body?.cancel();
+    // Best effort: a body that already errored must not skip the retry.
+    await res.body?.cancel().catch(() => {});
     if (limited === RATE_LIMIT_RETRIES) throw new Error(`OCPDB HTTP 429 for ${what}`);
     limited++;
     console.warn(`[ocpdb] DE: HTTP 429 for ${what}, retrying in ${(RATE_LIMIT_WAIT_MS * limited) / 1000} s`);

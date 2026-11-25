@@ -784,6 +784,35 @@ describe("OcpdbScraper.fetch", () => {
     }
   });
 
+  it("still retries a 429 whose body cannot be cancelled", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      const urls = stubApi();
+      const pages = vi.mocked(fetch).getMockImplementation()!;
+      let limited = 1;
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (String(input).includes("/tariffs?") && limited-- > 0) {
+          urls.push(String(input));
+          // A body that already errored, e.g. after a connection reset.
+          const body = { cancel: () => Promise.reject(new TypeError("stream errored")) };
+          return { ok: false, status: 429, body, json: async () => ({}) } as unknown as Response;
+        }
+        return pages(input, init);
+      });
+      const { OcpdbScraper } = await import("./ocpdb");
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const run = new OcpdbScraper().fetch();
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      await expect(run).resolves.toBeDefined();
+      expect(urls.filter((u) => u.includes("/tariffs?"))).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("retries a page whose envelope does not parse", async () => {
     const urls = stubApi();
     const pages = vi.mocked(fetch).getMockImplementation()!;
