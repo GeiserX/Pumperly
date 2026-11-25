@@ -34,7 +34,7 @@ The rest of the stack lives elsewhere:
 
 Most of the database refills on its own. The scrapers run inside the app. The first one starts 10 seconds after boot, and the others follow 5 seconds apart. On an empty database with the schema in place, the map fills as each source finishes its first run. See [Countries and scrape schedule](<https://geiserx.github.io/Pumperly/configuration/countries-and-schedule/index.md>).
 
-Each scrape replaces a source's prices in full. Pumperly keeps no price history, so an old dump holds nothing that a fresh scrape would not replace.
+Each scrape brings a source's prices back to the current set. Pumperly keeps no price history, so an old dump holds nothing that a fresh scrape would not replace.
 
 A backup still saves you from three losses:
 

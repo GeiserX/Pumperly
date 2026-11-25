@@ -106,8 +106,8 @@ The log shows the choice at start-up:
 
 Each official source deletes the other sources' rows for its country once it has taken over:
 
-- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it refreshed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ocpdb_min_stations>) stations.
-- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it refreshed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_bnetza_min_stations>) stations.
+- **OCPDB** is read in full every 6 hours. Its first healthy run replaces the whole country and deletes the Open Charge Map and BNetzA rows. "Healthy" means it listed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_ocpdb_min_stations>) stations.
+- **BNetzA** arrives as one daily file. Its first healthy run replaces the whole country and deletes the Open Charge Map and OCPDB rows. "Healthy" means it listed at least [`PUMPERLY_BNETZA_MIN_STATIONS`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_bnetza_min_stations>) stations.
 - **REVE** fills in over many hourly runs. Open Charge Map's Spanish rows stay on the map until REVE holds [`PUMPERLY_REVE_CUTOVER_RATIO`](<https://geiserx.github.io/Pumperly/reference/environment-variables/index.md#pumperly_reve_cutover_ratio>) of the registry, 95% by default. Until then, expect two pins on many Spanish chargers. [API keys](<https://geiserx.github.io/Pumperly/configuration/api-keys/index.md#mapa-reve-spain>) has the timing.
 
 > [!WARNING]

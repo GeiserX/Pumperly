@@ -1354,6 +1354,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#write-on-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scrapers write only what changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#upgrade-a-docker-compose-install" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1991,6 +2002,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#write-on-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scrapers write only what changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#upgrade-a-docker-compose-install" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2234,9 +2256,9 @@
 <div class="tabbed-block">
 <p>Run the SQL of each new migration yourself, oldest folder first. The folder names sort in the order they must run. Run this from a checkout of the new release tag, so the files are on hand:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>db<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>psql<span class="w"> </span>-v<span class="w"> </span><span class="nv">ON_ERROR_STOP</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>&lt;<span class="w"> </span>prisma/migrations/&lt;migration-folder&gt;/migration.sql
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>psql<span class="w"> </span>-1<span class="w"> </span>-v<span class="w"> </span><span class="nv">ON_ERROR_STOP</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>-U<span class="w"> </span>pumperly<span class="w"> </span>-d<span class="w"> </span>pumperly<span class="w"> </span>-f<span class="w"> </span>-<span class="w"> </span>&lt;<span class="w"> </span>prisma/migrations/&lt;migration-folder&gt;/migration.sql
 </code></pre></div>
-<p><code>ON_ERROR_STOP=1</code> makes <code>psql</code> stop at the first error instead of carrying on.</p>
+<p><code>ON_ERROR_STOP=1</code> makes <code>psql</code> stop at the first error instead of carrying on. <code>-1</code> runs the whole file as one transaction, as the migration runner does (<code>psql</code> accepts <code>-1</code> only with <code>-f</code> or <code>-c</code>, so <code>-f -</code> reads the file from standard input): a failed migration then leaves nothing half applied, and its <code>SET LOCAL</code> settings take effect.</p>
 <p>To start keeping a history instead, first confirm that <code>stations</code> has a <code>geom</code> column (<code>\d stations</code> in <code>psql</code>). Then, from a checkout of the new release tag with <code>DATABASE_URL</code> set as in the other tab, mark the first migration as already applied and let <code>migrate deploy</code> take over:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>resolve<span class="w"> </span>--applied<span class="w"> </span>0_init
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>npx<span class="w"> </span>prisma<span class="w"> </span>migrate<span class="w"> </span>deploy
@@ -2250,6 +2272,27 @@
 <p>A migration that builds an index takes a lock that blocks writes to that table until it finishes. On a large <code>stations</code> table that can stall the scrapers. When a migration file offers a <code>CREATE INDEX CONCURRENTLY</code> variant in its comments, run that variant first with <code>psql</code>. If the migration's own statement uses <code>IF NOT EXISTS</code>, it then finds the index and does nothing.</p>
 </div>
 <p>Pumperly ships no down migrations. To go back to an older release after a migration ran, restore the backup you took before upgrading. See <a href="../backup-and-restore/">Backing up the database</a>.</p>
+<h2 id="write-on-change">Scrapers write only what changed<a class="headerlink" href="#write-on-change" title="Permanent link">&para;</a></h2>
+<p>From the release that adds the migration <code>20261125000000_write_on_change</code>, a scraper run writes only the stations and prices that changed. Before, every run deleted and reinserted every price of its source and rewrote every station, even when nothing had changed. On a full install that was millions of row writes a day, with the WAL, dead rows and autovacuum work that come with them.</p>
+<p>What to know when you upgrade:</p>
+<ul>
+<li><strong>The migration is required.</strong> It adds the <code>price_sources</code> table and swaps a <code>fuel_prices</code> index. The compose <code>migrate</code> service and the Helm <code>databaseInit</code> init container apply it. Without it, every price write fails with <code>relation "price_sources" does not exist</code>, and prices stop at their last values.</li>
+<li><strong>The migration waits at most 10 seconds for its lock.</strong> Dropping the old index needs an exclusive lock on <code>fuel_prices</code>. If a scraper of the old release holds a price transaction, the migration stops with <code>canceling statement due to lock timeout</code> and changes nothing. Run it again: <code>docker compose up -d</code> again, or let the pod restart. While the migration waits for that lock, new reads of <code>fuel_prices</code> queue behind it, so on Helm the running pod can answer price requests up to 10 seconds late during the upgrade.</li>
+<li><strong>Two columns change meaning for your own SQL.</strong> <code>stations.updated_at</code> is now when the station's data last changed, not when a run last saw it. <code>fuel_prices.reported_at</code> is when the price value was stored. When a source last confirmed its prices is in <code>price_sources.confirmed_at</code>. A source that sends its own price times, such as OCPDB, is the exception. There <code>reported_at</code> holds the upstream time and <code>confirmed_at</code> stays NULL. So neither column tells you when Pumperly stored the row or when the source last ran. The app and the API show <code>GREATEST(reported_at, confirmed_at)</code>, so what they show does not change. <a href="../../reference/data-model/#reading-the-newest-price">Data model</a> has the query.</li>
+<li><strong>Price counts drop once.</strong> A source that lists one fuel twice for a station now keeps one price: the newest, else the first one listed. In practice that is the price the map already showed: on a production instance it matched for all 30,402 such pairs in Italy. The first run of each source removes the extra rows, so the per-country price counts in <code>/api/stats</code> drop, by about 40,000 rows on a full install, most of them in Italy. France and Norway no longer file E85 as E10. About 10 French stations sell only E85, so they leave the map.</li>
+<li><strong>Going back works.</strong> The older release runs on the new schema unchanged. Its map shows each price's last change time instead of its last confirmation until each source has run once.</li>
+<li><strong>The bundled database compresses its WAL.</strong> The compose file and the Helm chart now start PostGIS with <code>wal_compression=lz4</code> (Helm: <code>postgis.extraArgs</code>). It needs PostgreSQL 15 or later built with lz4, and costs a little CPU. The Helm chart adds it only to its own <code>postgis/postgis</code> image at major 15 or later, so a release that overrides <code>postgis.image</code> keeps its old arguments. If you run your own image without lz4 in compose, PostgreSQL refuses to start: remove the setting from the compose file. Do that only after a clean shutdown: WAL written with lz4 needs an lz4 build to replay, so after a crash let an lz4 image finish recovery first.</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Fewer disk writes on your own host</p>
+<p>These settings cut writes further, but each depends on your storage and on the risk you accept, so Pumperly does not set them:</p>
+<ul>
+<li><code>checkpoint_timeout = 15min</code>: fewer full-page images in the WAL, at the cost of a longer crash recovery.</li>
+<li><code>full_page_writes = off</code>: safe only on a copy-on-write filesystem with atomic 8 kB writes, such as ZFS. On ext4, XFS or NFS a crash can corrupt pages.</li>
+<li>On ZFS, a dataset for the data directory with <code>recordsize=16K</code> (or <code>8K</code>), <code>compression=lz4</code> and <code>atime=off</code>.</li>
+<li><code>synchronous_commit = off</code>: a crash can lose the last second of writes. Scraped data comes back with the next run, but decide for yourself.</li>
+</ul>
+</div>
 <h2 id="upgrade-a-docker-compose-install">Upgrade a Docker Compose install<a class="headerlink" href="#upgrade-a-docker-compose-install" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Read the <a href="https://github.com/GeiserX/Pumperly/releases">release notes</a> for every release between yours and the new one.</li>

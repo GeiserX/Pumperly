@@ -9,7 +9,7 @@ Pumperly has no dedicated health endpoint, and the Docker image declares no heal
 | Endpoint | What it proves |
 | --- | --- |
 | `GET /api/config` | The web server answers. It reads configuration only and never touches the database. The Helm chart's startup, liveness and readiness probes call it. |
-| `GET /api/stats` | The database answers. It returns, per country, the station count, the price count and `lastUpdate`, the time of the newest price. It answers HTTP 500 when the query fails. |
+| `GET /api/stats` | The database answers. It returns, per country, the station count, the price count and `lastUpdate`, the time a source last confirmed a price there. It answers HTTP 500 when the query fails. |
 
 A green probe does not prove that the data is current, or that the map draws. Watch `lastUpdate` per country in `/api/stats`. A country whose `lastUpdate` stops moving has a source that fails. Look at the map itself after every upgrade, as described in [Checks after an upgrade](<https://geiserx.github.io/Pumperly/operations/upgrading/index.md#after-an-upgrade>).
 
@@ -74,15 +74,15 @@ Every scraper goes through the same steps, in [`src/scrapers/base.ts`](<https://
 | 2 | `[miteco] Filtered out <n> invalid prices` | Prices outside the plausible range were dropped. See [Price band rejections](<#price-band-rejections>). Only written when `n` is above 0. |
 | 3 | `[miteco] Fetched <n> stations, <n> price rows (dropped <n> with no prices)` | What the source returned. Fuel stations left with no valid price are dropped. Charging stations are always kept. |
 | 4 | `[miteco] Aborted destructive replace: fetch returned 0 stations / <n> valid prices` | Nothing usable came back, so the run stops without changing the database. See [The empty-fetch guard](<#the-empty-fetch-guard>). |
-| 5 | `[miteco] Upserted <n> stations` | Stations were inserted or updated. |
-| 6 | `[miteco] Inserted <n> prices` | The source's prices for this country were replaced in one transaction. |
+| 5 | `[miteco] Stations: <n> listed, <n> inserted or changed` | The stations the source listed, and how many rows were actually written. An unchanged station is not written. |
+| 6 | `[miteco] Prices: <n> listed, <n> changed, <n> new, <n> removed` | The source's prices for this country were synced in one transaction. Only changed, new and removed rows are written. |
 | 7 | `[miteco] Cleaned up <n> stations with no prices` | Fuel stations in the country that no source prices any more were deleted. |
 | 7 | `[miteco] Skipped orphan cleanup: one or more station batches failed (would have deleted unwritten stations)` | A station write failed, so the cleanup did not run. The run reports an error. |
 | any | `[miteco] Fatal error: <message>` | The run stopped. The message says why, often an HTTP status from the source. |
 
 ### What a failed run leaves behind
 
-A failed run does not empty the map. When the fetch fails, the scraper stops before it touches the database. The source's last good prices stay, with the time they were scraped. The price replacement runs in one transaction, so readers never see a half-written country.
+A failed run does not empty the map. When the fetch fails, the scraper stops before it touches the database. The source's last good prices stay, with the time they were last confirmed. The price sync runs in one transaction, so readers never see a half-written country.
 
 The cost is stale data. The prices on the map keep the age of the last good run, and `lastUpdate` in `/api/stats` stops moving. A source that keeps failing leaves its country frozen until it works again or you turn it off.
 
@@ -143,7 +143,7 @@ The guard fires when no station survives the filters. That happens when:
 - a keyed source skipped its fetch because the key is missing, or
 - every price fell outside the price band, so every fuel station was dropped.
 
-The guard only catches an empty result. A source that returns fewer stations than usual still replaces its prices, and fuel stations it no longer lists lose their prices and are cleaned up.
+The guard only catches an empty result. A source that returns fewer stations than usual still syncs its prices, and fuel stations it no longer lists lose their prices and are cleaned up.
 
 ### Price band rejections
 
@@ -219,10 +219,10 @@ Once the registry reaches 95% of its reported total, the Open Charge Map rows fo
 
 ### The German charging registry keeps old rows
 
-The BNetzA scraper only prunes rows the register no longer lists, and only retires Open Charge Map's German rows, after a healthy run. A run that refreshed fewer stations than `PUMPERLY_BNETZA_MIN_STATIONS`, 10,000 by default, skips that cleanup:
+The BNetzA scraper only prunes rows the register no longer lists, and only retires Open Charge Map's German rows, after a healthy run. A run that listed fewer stations than `PUMPERLY_BNETZA_MIN_STATIONS`, 10,000 by default, skips that cleanup:
 
 ```
-[bnetza] Only <n> station(s) refreshed by this run (floor 10000) — skipping cleanup
+[bnetza] Only <n> station(s) listed by this run (floor 10000) — skipping cleanup
 ```
 
 This protects the map from a bad download. The next healthy run does the cleanup.
@@ -294,7 +294,7 @@ The tool prints each scraper's log lines, then a summary per source:
 === Summary ===
   [miteco] ES: OK in <s>s
     Stations upserted: <n>
-    Prices inserted:   <n>
+    Prices synced:     <n>
 ```
 
 A source with errors shows `ERRORS` and lists them. The tool exits with status 0 when every source succeeded and 1 when any failed, so a script can check it.

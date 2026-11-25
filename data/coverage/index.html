@@ -2551,7 +2551,7 @@
     B -- No --&gt; C[Run fails, error logged]
     C --&gt; D[Nothing written.&lt;br&gt;Last prices stay on the map]
     B -- Yes --&gt; E[Prices checked against&lt;br&gt;plausible ranges]
-    E --&gt; F[Stations upserted.&lt;br&gt;This source's prices replaced in one transaction]</code></pre>
+    E --&gt; F[Stations upserted.&lt;br&gt;This source's prices synced in one transaction]</code></pre>
 <p>A source that returns an answer with no stations in it is treated as a failure too, so an empty reply can never wipe a country. <a href="../how-scrapers-work/">How scrapers work</a> explains the full run, and <a href="../../operations/troubleshooting/">Monitoring and troubleshooting</a> covers reading the logs.</p>
 
 

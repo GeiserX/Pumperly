@@ -2388,7 +2388,7 @@
 <tr>
 <td><code>countries[].lastUpdate</code></td>
 <td>string or <code>null</code></td>
-<td>ISO 8601 time of the newest price row. <code>null</code> when the country has no prices, as with EV-only coverage.</td>
+<td>ISO 8601 time a source last confirmed a price in this country: the newest <code>GREATEST(reported_at, confirmed_at)</code> (see <a href="../data-model/#price_sources">Data model</a>). <code>null</code> when the country has no prices, as with EV-only coverage.</td>
 </tr>
 <tr>
 <td><code>config</code></td>
@@ -2442,7 +2442,7 @@
 </table>
 <p><strong>What it selects:</strong></p>
 <ul>
-<li>For a fuel other than <code>EV</code>, a station is returned only if it has at least one price for that fuel. The price shown is the newest one by <code>reported_at</code>.</li>
+<li>For a fuel other than <code>EV</code>, a station is returned only if it has at least one price for that fuel. The price shown is the newest one by its <code>reportedAt</code>.</li>
 <li>For <code>EV</code>, it returns every station whose type is <code>ev_charger</code> or <code>both</code>, priced or not. A charger with an <code>EV</code> price row carries its newest <code>price</code> per kWh, its <code>currency</code>, <code>reportedAt</code> and any <code>evFees</code>. Unpriced chargers have no <code>price</code> and no <code>reportedAt</code>, and their <code>currency</code> is <code>EUR</code> and means nothing.</li>
 </ul>
 <p><strong>Limit:</strong> at most 20,000 features. The query has no <code>ORDER BY</code>, so a box with more stations returns an arbitrary 20,000. Nothing in the response says it was cut. The server logs <code>[stations] result truncated at 20000</code>. Ask for a smaller box if you need them all.</p>
@@ -2963,7 +2963,7 @@
 <tr>
 <td><code>reportedAt</code></td>
 <td>no</td>
-<td>ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers.</td>
+<td>ISO 8601 time Pumperly's scraper last confirmed the price: the later of when the value was stored and when its source's last successful run saw it unchanged. It is not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers.</td>
 </tr>
 <tr>
 <td><code>powerKw</code></td>

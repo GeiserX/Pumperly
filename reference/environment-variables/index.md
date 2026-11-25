@@ -54,6 +54,9 @@ services:
     image: postgis/postgis:17-3.4
     container_name: pumperly-db
     restart: unless-stopped
+    # Compress full-page images in the WAL (Postgres 15+). It cuts WAL volume
+    # on any filesystem for a little CPU, and changes nothing else.
+    command: ["postgres", "-c", "wal_compression=lz4"]
     ports:
       - "5433:5432"
     environment:
@@ -165,8 +168,8 @@ Feature pages: [EV charging sources](<https://geiserx.github.io/Pumperly/data/ev
 | --- | --- | --- | --- |
 | `PUMPERLY_EV_ENABLED` | on | `src/instrumentation-node.ts` | Only the exact value `0` turns off every EV charger scraper, including REVE, BNetzA and OCPDB. Any other value leaves them on. It does not depend on whether an Open Charge Map key is set. |
 | `PUMPERLY_DE_EV_SOURCE` | `ocpdb` | `src/scrapers/germany-ev-source.ts` | Which source supplies German chargers, in any case: `ocpdb` for the Open ChargePoint Database, with prices; `bnetza` for the BNetzA Ladesäulenregister; `ocm` for Open Charge Map. Anything else picks OCPDB. Only one ever runs. |
-| `PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | `src/scrapers/bnetza.ts` | Stations a BNetzA run must refresh before it deletes chargers that left the register and retires the Open Charge Map and OCPDB German rows. A safety floor: a damaged download cannot empty the map. A value below 1 or not a number means the default. |
-| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | `src/scrapers/ocpdb.ts` | Stations an OCPDB run must refresh before it deletes chargers that left the database and retires the Open Charge Map and BNetzA German rows. Same safety floor as BNetzA's. A value below 1 or not a number means the default. |
+| `PUMPERLY_BNETZA_MIN_STATIONS` | `10000` | `src/scrapers/bnetza.ts` | Stations a BNetzA run must list, and the database must hold, before it deletes chargers that left the register and retires the Open Charge Map and OCPDB German rows. A safety floor: a damaged download cannot empty the map. A value below 1 or not a number means the default. |
+| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | `src/scrapers/ocpdb.ts` | Stations an OCPDB run must list, and the database must hold, before it deletes chargers that left the database and retires the Open Charge Map and BNetzA German rows. Same safety floor as BNetzA's. A value below 1 or not a number means the default. |
 | `PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS` | `3` | `src/scrapers/ocpdb.ts` | Days an OCPDB operator feed may go without refreshing before its tariffs are ignored, so its chargers show unpriced instead of with old prices. Feeds OCPDB marks as failed are always ignored. A value of 0 or less, or not a number, means the default. |
 | `PUMPERLY_REVE_PAGES_PER_RUN` | `4` | `src/scrapers/reve.ts` | Pages of 100 locations each REVE run fetches. Values above 5 are lowered to 5, the API's hourly limit. A value below 1 or not a number means the default. |
 | `PUMPERLY_REVE_CUTOVER_RATIO` | `0.95` | `src/scrapers/reve.ts` | Share of the REVE registry that must be stored before Open Charge Map's Spanish rows are deleted. Must be above 0 and at most 1. Anything else means the default. |

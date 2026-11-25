@@ -39,6 +39,9 @@ services:
     image: postgis/postgis:17-3.4
     container_name: pumperly-db
     restart: unless-stopped
+    # Compress full-page images in the WAL (Postgres 15+). It cuts WAL volume
+    # on any filesystem for a little CPU, and changes nothing else.
+    command: ["postgres", "-c", "wal_compression=lz4"]
     ports:
       - "5433:5432"
     environment:

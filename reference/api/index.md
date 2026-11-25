@@ -125,7 +125,7 @@ Returns how many stations and price rows the database holds, per country, plus t
 | `countries[].name` | string | Country name, or the code if Pumperly has no name for it. |
 | `countries[].stations` | number | Stations in that country, EV chargers included. |
 | `countries[].prices` | number | Price rows for that country's stations. |
-| `countries[].lastUpdate` | string or `null` | ISO 8601 time of the newest price row. `null` when the country has no prices, as with EV-only coverage. |
+| `countries[].lastUpdate` | string or `null` | ISO 8601 time a source last confirmed a price in this country: the newest `GREATEST(reported_at, confirmed_at)` (see [Data model](<https://geiserx.github.io/Pumperly/reference/data-model/index.md#price_sources>)). `null` when the country has no prices, as with EV-only coverage. |
 | `config` | object | `defaultCountry`, `enabledCountries` (a plain list of codes), `defaultFuel`, `center` and `zoom`. |
 
 `countries` lists every country with rows in the database, enabled or not. A country you disable keeps its rows until something deletes them.
@@ -167,7 +167,7 @@ Returns the stations inside a rectangle that sell one fuel, each with its latest
 
 **What it selects:**
 
-- For a fuel other than `EV`, a station is returned only if it has at least one price for that fuel. The price shown is the newest one by `reported_at`.
+- For a fuel other than `EV`, a station is returned only if it has at least one price for that fuel. The price shown is the newest one by its `reportedAt`.
 - For `EV`, it returns every station whose type is `ev_charger` or `both`, priced or not. A charger with an `EV` price row carries its newest `price` per kWh, its `currency`, `reportedAt` and any `evFees`. Unpriced chargers have no `price` and no `reportedAt`, and their `currency` is `EUR` and means nothing.
 
 **Limit:** at most 20,000 features. The query has no `ORDER BY`, so a box with more stations returns an arbitrary 20,000. Nothing in the response says it was cut. The server logs `[stations] result truncated at 20000`. Ask for a smaller box if you need them all.
@@ -460,7 +460,7 @@ curl -sN -X POST http://localhost:3000/api/route-detour \
 | `fuelType` | yes | The fuel code you asked for. |
 | `currency` | yes | ISO 4217 code of `price`. `EUR` on unpriced EV chargers, where it carries no meaning. |
 | `price` | no | Latest price for `fuelType`, in `currency`. Per kWh for `EV`. Absent on unpriced EV chargers. |
-| `reportedAt` | no | ISO 8601 time the price was stored. This is when Pumperly's scraper wrote it, not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers. |
+| `reportedAt` | no | ISO 8601 time Pumperly's scraper last confirmed the price: the later of when the value was stored and when its source's last successful run saw it unchanged. It is not a time the source published. For OCPDB prices it is when the operator feed last refreshed. Absent on unpriced EV chargers. |
 | `powerKw` | no | EV chargers only: highest single-connector power in kW. Absent when the source publishes none. |
 | `evFees` | no | EV chargers only: fees on top of `price`, in the price's currency. Shaped like the [`ev_fees`](<https://geiserx.github.io/Pumperly/reference/data-model/index.md#ev_fees>) column. Absent when there are none. |
 | `distanceKm` | only `/api/stations/nearest` | Approximate distance from the query point. |

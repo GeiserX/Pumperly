@@ -2153,7 +2153,7 @@
     loop every 5 seconds, from 10 s after boot
         App-&gt;&gt;Src: first scrape of the next scraper
         Src--&gt;&gt;App: stations and prices
-        App-&gt;&gt;DB: upsert stations, replace prices
+        App-&gt;&gt;DB: upsert changed stations, sync prices
     end
     Note over V: tile build and address import, hours
     App--&gt;&gt;V: routing and search work once they answer</code></pre>
@@ -2252,8 +2252,8 @@
 <p>Each scrape downloads the source, checks the data and writes it. A healthy Spanish run logs lines like these, with real counts in place of <code>N</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[miteco] Fetching data for ES ...
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[miteco] Fetched N stations, N price rows
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>[miteco] Upserted N stations
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>[miteco] Inserted N prices
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>[miteco] Stations: N listed, N inserted or changed
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>[miteco] Prices: N listed, N changed, N new, N removed
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>[scraper] ES: OK — N stations, N prices in N.Ns
 </code></pre></div>
 <p>The name in the first brackets is the source, not the country. The last line is the scheduler's summary. <code>OK</code> means no errors; otherwise it shows the error count, such as <code>1 error(s)</code>.</p>
@@ -2262,7 +2262,7 @@
 <li>drops prices outside the plausible range for their currency, and logs <code>Filtered out N invalid prices</code>;</li>
 <li>drops fuel stations left with no price;</li>
 <li>aborts without touching the database if the source returned no stations at all, so an empty answer never wipes a country;</li>
-<li>replaces the source's prices for that country in one transaction, so the map never shows half an update;</li>
+<li>writes only the stations and prices that changed, and syncs the source's prices for that country in one transaction, so the map never shows half an update;</li>
 <li>deletes fuel stations that no longer have any price.</li>
 </ul>
 <p><a href="../../data/how-scrapers-work/">How scrapers work</a> covers each step.</p>

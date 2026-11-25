@@ -2822,7 +2822,7 @@
 <p>A charger can have several tariffs. The pin shows one:</p>
 <ol>
 <li><strong>Only ad-hoc tariffs count.</strong> Tariffs for contract customers, and links with no audience, are skipped.</li>
-<li><strong>Only tariffs from healthy feeds count.</strong> A feed that OCPDB marks as failed, or that has not refreshed in <a href="../../reference/environment-variables/#pumperly_ocpdb_max_feed_age_days"><code>PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS</code></a> days, has its tariffs ignored, and its chargers show unpriced. The price's <code>reported_at</code> is when its feed last refreshed.</li>
+<li><strong>Only tariffs from healthy feeds count.</strong> A feed that OCPDB marks as failed, or that has not refreshed in <a href="../../reference/environment-variables/#pumperly_ocpdb_max_feed_age_days"><code>PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS</code></a> days, has its tariffs ignored, and its chargers show unpriced. The price's <code>reported_at</code> is when its feed last refreshed, so a feed refresh rewrites every price of that feed even when no tariff changed.</li>
 <li><strong>Prices are gross.</strong> Ad-hoc charging is a consumer price, and German law requires it shown with VAT. A price marked net gets the VAT rate it lists, or 19 % when it lists none. A price with no tax data is read as gross.</li>
 <li><strong>Prices outside EUR 0.10 to 2.00 per kWh are dropped</strong> before the cheapest is picked, so a bogus 0.00 cannot hide a real price.</li>
 <li><strong>The cheapest at the pin's top power wins,</strong> with the session fee spread over a 30 kWh session, so a low rate cannot hide a large fee. The price shown is the one paid at the kW shown next to it. When no charger at the top power has a price, the cheapest of the same class stands in (DC from 50 kW, AC below). A DC pin never shows an AC rate: it stays unpriced instead.</li>
@@ -2837,9 +2837,9 @@
 <h3 id="ocpdb-feed-health">When the feed health is unavailable<a class="headerlink" href="#ocpdb-feed-health" title="Permanent link">&para;</a></h3>
 <p>Without the feed-health endpoint, no tariff can be vouched for, and a run without prices would delete the current ones. So when that request fails twice, the whole run fails and writes nothing. The stations and prices from the last good run stay until the next run.</p>
 <h3 id="ocpdb-cleanup">Cleanup after each run<a class="headerlink" href="#ocpdb-cleanup" title="Permanent link">&para;</a></h3>
-<p>Cleanup works as for <a href="#bnetza-cleanup">BNetzA</a>. After a run with no errors, if the run refreshed at least <a href="../../reference/environment-variables/#pumperly_ocpdb_min_stations"><code>PUMPERLY_OCPDB_MIN_STATIONS</code></a> stations, the scraper deletes:</p>
+<p>Cleanup works as for <a href="#bnetza-cleanup">BNetzA</a>. After a run with no errors, if the run listed at least <a href="../../reference/environment-variables/#pumperly_ocpdb_min_stations"><code>PUMPERLY_OCPDB_MIN_STATIONS</code></a> stations, the scraper deletes:</p>
 <ol>
-<li><strong>OCPDB stations the run did not refresh.</strong> These left the database, or their anchor's coordinates changed, which changes the id.</li>
+<li><strong>OCPDB stations the run did not list.</strong> These left the database, or their anchor's coordinates changed, which changes the id. A station written during the run, or within 5 minutes before it, is kept: another run of the same scraper can have listed it.</li>
 <li><strong>Every German Open Charge Map and BNetzA charger.</strong> Once OCPDB has landed, those rows are duplicates.</li>
 </ol>
 <table>
@@ -2854,7 +2854,7 @@
 <tr>
 <td><code>PUMPERLY_OCPDB_MIN_STATIONS</code></td>
 <td><code>10000</code></td>
-<td>Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default.</td>
+<td>Stations a run must list, counting unchanged stations the database already holds, before either deletion runs. A value below 1 or not a number falls back to the default.</td>
 </tr>
 <tr>
 <td><code>PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS</code></td>
@@ -2936,9 +2936,9 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[bnetza] DE: &lt;rows&gt; rows → &lt;stations&gt; stations (merged &lt;n&gt;, skipped &lt;n&gt; not operational, &lt;n&gt; out of bounds, &lt;n&gt; malformed)
 </code></pre></div>
 <h3 id="bnetza-cleanup">Cleanup after each run<a class="headerlink" href="#bnetza-cleanup" title="Permanent link">&para;</a></h3>
-<p>The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run refreshed. If the count reaches the safety floor, it makes two deletions:</p>
+<p>The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run listed and the database holds. If the count reaches the safety floor, it makes two deletions:</p>
 <ol>
-<li><strong>BNetzA stations the run did not refresh.</strong> These left the register, or their operator corrected the coordinates, which changes the id.</li>
+<li><strong>BNetzA stations the run did not list.</strong> These left the register, or their operator corrected the coordinates, which changes the id. A station written during the run, or within 5 minutes before it, is kept: another run of the same scraper can have listed it.</li>
 <li><strong>Every German Open Charge Map and OCPDB charger.</strong> Once BNetzA has landed, those rows are duplicates.</li>
 </ol>
 <table>
@@ -2953,11 +2953,11 @@
 <tr>
 <td><code>PUMPERLY_BNETZA_MIN_STATIONS</code></td>
 <td><code>10000</code></td>
-<td>Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default.</td>
+<td>Stations a run must list before either deletion runs. A value below 1 or not a number falls back to the default.</td>
 </tr>
 </tbody>
 </table>
-<p>The floor counts only rows this run wrote, not rows already in the database. A broken download that refreshes a handful of stations can therefore never delete the rest, and never retires the other sources on its strength.</p>
+<p>The floor counts only rows this run listed, not every row already in the database. A broken download that lists a handful of stations can therefore never delete the rest, and never retires the other sources on its strength. The check uses the run's own list of ids, not <code>updated_at</code>: a station that did not change is not rewritten, so its <code>updated_at</code> stays old.</p>
 <h2 id="switching-back">Switching a source back<a class="headerlink" href="#switching-back" title="Permanent link">&para;</a></h2>
 <p>Open Charge Map deletes nothing when it takes over. Official sources delete Open Charge Map's rows, and OCPDB and BNetzA delete each other's, but nothing deletes the official rows once their scraper stops running and Open Charge Map runs instead. If you switch Spain or Germany back to Open Charge Map, the official pins stay, and Open Charge Map adds its own next to them.</p>
 <p>Rolling back to a Pumperly release from before OCPDB has the same effect in Germany. That release's BNetzA scraper does not know the <code>ocpdb-</code> rows, so it leaves them in place and adds its own pins next to them, and every German charger shows twice.</p>

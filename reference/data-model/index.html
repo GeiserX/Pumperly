@@ -1539,6 +1539,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#price_sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>price_sources</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#indexes-and-constraints" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1924,6 +1935,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#price_sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>price_sources</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#indexes-and-constraints" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2009,11 +2031,12 @@
 
 
 <h1 id="data-model">Data model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h1>
-<p>This page describes the database Pumperly stores its data in: the two tables, their columns and indexes, and what the <code>external_id</code> and <code>source</code> columns mean. It is for contributors writing scrapers and for operators who query their own database.</p>
-<p>Pumperly uses PostgreSQL with the <a href="https://postgis.net">PostGIS</a> extension. <strong>PostGIS</strong> adds geographic types and functions, so the database itself can answer "which stations are inside this box" or "within 5 km of this route". Everything Pumperly shows lives in two tables:</p>
+<p>This page describes the database Pumperly stores its data in: the tables, their columns and indexes, and what the <code>external_id</code> and <code>source</code> columns mean. It is for contributors writing scrapers and for operators who query their own database.</p>
+<p>Pumperly uses PostgreSQL with the <a href="https://postgis.net">PostGIS</a> extension. <strong>PostGIS</strong> adds geographic types and functions, so the database itself can answer "which stations are inside this box" or "within 5 km of this route". Everything Pumperly shows lives in two tables, plus a small third one:</p>
 <ul>
 <li><code>stations</code>: one row per fuel station or EV charger.</li>
 <li><code>fuel_prices</code>: one row per price, pointing at a station.</li>
+<li><code>price_sources</code>: when each source last confirmed its prices in each country.</li>
 </ul>
 <pre class="mermaid"><code>erDiagram
     stations ||--o{ fuel_prices : "has prices"
@@ -2041,6 +2064,11 @@
         timestamptz reported_at
         varchar source
         jsonb ev_fees
+    }
+    price_sources {
+        varchar country PK
+        varchar source PK
+        timestamptz confirmed_at
     }</code></pre>
 <p>There are no user tables. Pumperly has no accounts, and the database holds nothing about visitors.</p>
 <h2 id="where-the-schema-is-defined">Where the schema is defined<a class="headerlink" href="#where-the-schema-is-defined" title="Permanent link">&para;</a></h2>
@@ -2085,7 +2113,7 @@
 <p>Scrapers insert stations and prices with SQL, not through the Prisma client. Their station insert sets <code>geom</code> and leaves <code>id</code> to the database default. A database therefore needs the <code>geom</code> column and the <code>id</code> default from the migrations, or every scraper insert fails. The map and route queries also rely on the GiST indexes to stay fast. Tools that build the tables from <code>schema.prisma</code> alone, such as <code>prisma db push</code>, create none of these.</p>
 </div>
 <p>The shipped files, included here word for word:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:6"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><input id="__tabbed_1_6" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">schema.prisma</label><label for="__tabbed_1_2">Initial migration</label><label for="__tabbed_1_3">Geography index migration</label><label for="__tabbed_1_4">Price column migration</label><label for="__tabbed_1_5">Charger power migration</label><label for="__tabbed_1_6">EV fees migration</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:7"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><input id="__tabbed_1_6" name="__tabbed_1" type="radio" /><input id="__tabbed_1_7" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">schema.prisma</label><label for="__tabbed_1_2">Initial migration</label><label for="__tabbed_1_3">Geography index migration</label><label for="__tabbed_1_4">Price column migration</label><label for="__tabbed_1_5">Charger power migration</label><label for="__tabbed_1_6">EV fees migration</label><label for="__tabbed_1_7">Write-on-change migration</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>generator client {
@@ -2133,9 +2161,21 @@
 <a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>
 <a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>  station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
 <a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
-<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>  @@index([stationId, fuelType, reportedAt(sort: Desc)])
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>  @@index([stationId, fuelType])
 <a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>  @@map("fuel_prices")
 <a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>}
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a>/// When each source last confirmed its prices in a country. Readers show
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>/// GREATEST(fuel_prices.reported_at, confirmed_at). NULL: the source's rows
+<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>/// carry their own upstream time.
+<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>model PriceSource {
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>  country     String    @db.VarChar(2)
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>  source      String    @db.VarChar(50)
+<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz
+<a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>
+<a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>  @@id([country, source])
+<a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a>  @@map("price_sources")
+<a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a>}
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -2217,6 +2257,38 @@
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">-- scraper, shaped as EvFees (src/types/station.ts), in the price's currency.</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">-- Nullable and metadata-only, like max_power_kw: fuel rows keep NULL.</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="ss">"fuel_prices"</span><span class="w"> </span><span class="k">ADD</span><span class="w"> </span><span class="k">COLUMN</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="ss">"ev_fees"</span><span class="w"> </span><span class="n">JSONB</span><span class="p">;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">-- Scraper runs now write only the prices and stations that changed, so an</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">-- unchanged run costs reads, not row rewrites (see src/scrapers/base.ts).</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">--</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">-- Fail fast instead of queueing the API behind this migration: DROP INDEX</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1">-- needs an exclusive lock on fuel_prices, and a scraper transaction of the</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1">-- release being replaced can hold its lock for up to 120 s. On timeout the</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1">-- migration rolls back whole, and the next migrate run (or pod start) retries.</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="k">SET</span><span class="w"> </span><span class="k">LOCAL</span><span class="w"> </span><span class="n">lock_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'10s'</span><span class="p">;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1">-- When each source last confirmed its prices in each country. Readers show</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="c1">-- GREATEST(fuel_prices.reported_at, confirmed_at), so a price that did not</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="c1">-- change still reads as fresh. NULL means the source's rows carry their own</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="c1">-- upstream time (OCPDB). No backfill: with every marker NULL, readers return</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="c1">-- exactly what they returned before.</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="ss">"price_sources"</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">    </span><span class="ss">"country"</span><span class="w"> </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">    </span><span class="ss">"source"</span><span class="w"> </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="ss">"confirmed_at"</span><span class="w"> </span><span class="n">TIMESTAMPTZ</span><span class="p">,</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">    </span><span class="k">CONSTRAINT</span><span class="w"> </span><span class="ss">"price_sources_pkey"</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="ss">"country"</span><span class="p">,</span><span class="w"> </span><span class="ss">"source"</span><span class="p">)</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="p">);</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="c1">-- A changed price also moves reported_at. With reported_at in the index,</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="c1">-- that update could never be HOT (heap-only, no index write). Readers look up</span>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="c1">-- one (station, fuel) at a time, 1-2 rows, so they need no index order.</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="c1">-- Not unique on purpose: a rollback to the previous release, which deletes</span>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="c1">-- and reinserts every price, keeps working.</span>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="ss">"fuel_prices_station_id_fuel_type_idx"</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="ss">"fuel_prices"</span><span class="p">(</span><span class="ss">"station_id"</span><span class="p">,</span><span class="w"> </span><span class="ss">"fuel_type"</span><span class="p">);</span>
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="k">DROP</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="ss">"fuel_prices_station_id_fuel_type_reported_at_idx"</span><span class="p">;</span>
 </code></pre></div>
 </div>
 </div>
@@ -2309,7 +2381,7 @@
 <td><code>updated_at</code></td>
 <td><code>timestamptz</code></td>
 <td>No</td>
-<td>When a scraper run last wrote this station. Every successful upsert sets it to the current time, even when nothing changed.</td>
+<td>When a scraper run last changed this station's name, brand, address, city, province, type, position or power. A run that lists the station unchanged does not write the row, so this is not "last seen".</td>
 </tr>
 </tbody>
 </table>
@@ -2387,7 +2459,7 @@
 <td><code>reported_at</code></td>
 <td><code>timestamptz</code></td>
 <td>No</td>
-<td>When Pumperly wrote the price, not when the source last changed it. The OCPDB scraper is the exception: it writes when the tariff's operator feed last refreshed.</td>
+<td>When Pumperly first stored this price value: a run rewrites the row only when the price, currency or fees changed. The OCPDB scraper is the exception: it writes when the tariff's operator feed last refreshed. The time the app shows is the later of this and <a href="#price_sources"><code>price_sources.confirmed_at</code></a>.</td>
 </tr>
 <tr>
 <td><code>source</code></td>
@@ -2432,7 +2504,40 @@
 </tr>
 </tbody>
 </table>
-<p>Nothing stops two rows for the same station and fuel. Readers take the newest one by <code>reported_at</code>. The example query <a href="#reading-the-newest-price">below</a> shows the pattern.</p>
+<p>A run keeps one row per station, fuel and source. When a source lists one fuel twice for a station (Italy's self-service and served prices, for example), the run keeps the row with the newest upstream time, else the first one listed. That is the row readers showed when every listed row was stored. The database does not enforce it, so rows from two sources, or from a source that no longer runs, can sit side by side. Readers take the newest one by <code>GREATEST(reported_at, confirmed_at)</code>. The example query <a href="#reading-the-newest-price">below</a> shows the pattern.</p>
+<h2 id="price_sources"><code>price_sources</code><a class="headerlink" href="#price_sources" title="Permanent link">&para;</a></h2>
+<p>One row per country and price source. Each successful price write of a run sets it, in the same transaction as the prices.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Null</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>country</code></td>
+<td><code>varchar(2)</code></td>
+<td>No</td>
+<td>The scraper's country.</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td><code>varchar(50)</code></td>
+<td>No</td>
+<td>The <code>source</code> of the price rows.</td>
+</tr>
+<tr>
+<td><code>confirmed_at</code></td>
+<td><code>timestamptz</code></td>
+<td>Yes</td>
+<td>When the source last confirmed its prices for this country, changed or not. <code>null</code> when the source dates its own rows (OCPDB): those keep the upstream time in <code>reported_at</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>A run that finds no change writes only this row. Readers show <code>GREATEST(fuel_prices.reported_at, price_sources.confirmed_at)</code>, so a price that has not changed in a week still reads as confirmed by the last run. When a source fails, <code>confirmed_at</code> stops moving, and its prices age on the map as before.</p>
 <h2 id="indexes-and-constraints">Indexes and constraints<a class="headerlink" href="#indexes-and-constraints" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2469,9 +2574,14 @@
 <td>Primary key.</td>
 </tr>
 <tr>
-<td><code>fuel_prices_station_id_fuel_type_reported_at_idx</code></td>
-<td><code>fuel_prices (station_id, fuel_type, reported_at DESC)</code></td>
-<td>Finding the newest price of one fuel at one station.</td>
+<td><code>fuel_prices_station_id_fuel_type_idx</code></td>
+<td><code>fuel_prices (station_id, fuel_type)</code></td>
+<td>Finding the price of one fuel at one station. It leaves out <code>reported_at</code>, so no column a price update changes is indexed. Such an update can then stay on the same heap page with no index write (a HOT update), when that page has free space. PostgreSQL does not guarantee it.</td>
+</tr>
+<tr>
+<td><code>price_sources_pkey</code></td>
+<td><code>price_sources (country, source)</code></td>
+<td>Primary key, and the join from each price row to its source's <code>confirmed_at</code>.</td>
 </tr>
 <tr>
 <td><code>fuel_prices_station_id_fkey</code></td>
@@ -2531,7 +2641,7 @@
 <p><code>stations</code> has no <code>source</code> column. For EV chargers, most of which have no prices, the <code>external_id</code> prefix is the only record of where a row came from. That is how the EV scrapers find the rows of the sources they replace: Mapa REVE deletes <code>external_id LIKE 'ocm-%'</code> in Spain, and OCPDB and BNetzA each delete the other German prefixes among <code>ocm-</code>, <code>bnetza-</code> and <code>ocpdb-</code>.</p>
 <h2 id="source"><code>source</code><a class="headerlink" href="#source" title="Permanent link">&para;</a></h2>
 <p><code>source</code> is the name of the scraper that wrote a price row, such as <code>miteco</code>, <code>cma</code>, <code>fuelo_pl</code> or <code>bensinpriser</code>. It lives on <code>fuel_prices</code> only.</p>
-<p>Every scraper run replaces exactly the price rows that carry its own <code>source</code> for stations in its own country. It never touches another source's rows. Two consequences:</p>
+<p>Every scraper run brings the price rows that carry its own <code>source</code>, for stations in its own country, to exactly the set the upstream listed. It never touches another source's rows. Two consequences:</p>
 <ul>
 <li>One source name can serve several countries. The Netherlands, Belgium and Luxembourg scrapers all write <code>anwb</code>, and none of them deletes the others' prices, because the replace is limited to one country.</li>
 <li>When a source is retired, its rows stay until something deletes them. The replacement scraper has to do that itself. <a href="../../data/how-scrapers-work/#handing-a-country-over-to-a-new-source">How scrapers work</a> shows the pattern.</li>
@@ -2553,14 +2663,34 @@
 <td>Its prices inserted</td>
 </tr>
 <tr>
-<td>A source lists a known station again</td>
-<td>Name, brand, address, city, province, type and position overwritten, <code>updated_at</code> set to now</td>
-<td>This source's rows deleted and inserted fresh, with a new <code>reported_at</code></td>
+<td>A source lists a known station again, unchanged</td>
+<td>Not written</td>
+<td>Not written. <code>price_sources.confirmed_at</code> moves to the time of the run.</td>
+</tr>
+<tr>
+<td>A source lists a known station with new data</td>
+<td>Changed columns overwritten, <code>updated_at</code> set to now</td>
+<td>Changed prices updated in place, with a new <code>reported_at</code>. New fuels inserted.</td>
+</tr>
+<tr>
+<td>A dated source (OCPDB) gives a row a new upstream time, same price</td>
+<td>Not written</td>
+<td>Row updated with the new <code>reported_at</code></td>
+</tr>
+<tr>
+<td>A run gives a time to some rows and none to others</td>
+<td>Not written</td>
+<td>Every undated row is updated with the time of the run, changed or not, as before write-on-change. <code>confirmed_at</code> stays <code>null</code>.</td>
 </tr>
 <tr>
 <td>A source stops listing a fuel station</td>
 <td>Deleted at the end of the run, once no source has a price for it</td>
 <td>Its rows from this source deleted</td>
+</tr>
+<tr>
+<td>A source stops listing one fuel at a station</td>
+<td>Unchanged</td>
+<td>That row deleted</td>
 </tr>
 <tr>
 <td>A source stops listing an EV charger</td>
@@ -2580,26 +2710,27 @@
 </tbody>
 </table>
 <p>The full sequence, including the guards that stop a bad run from deleting data, is in <a href="../../data/how-scrapers-work/">How scrapers work</a>.</p>
-<p>Prices are replaced, not appended. The database holds the current price per station, fuel and source, not a price history.</p>
+<p>Prices are updated in place, not appended. The database holds the current price per station, fuel and source, not a price history.</p>
 <h2 id="reading-the-newest-price">Reading the newest price<a class="headerlink" href="#reading-the-newest-price" title="Permanent link">&para;</a></h2>
 <p>To query the data yourself, join each station to its newest price for one fuel. This is the pattern the app's own station endpoints use:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">brand</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">reported_at</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span><span class="w"> </span><span class="n">s</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">JOIN</span><span class="w"> </span><span class="k">LATERAL</span><span class="w"> </span><span class="p">(</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">SELECT</span><span class="w"> </span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">reported_at</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">fuel_prices</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">WHERE</span><span class="w"> </span><span class="n">station_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="k">AND</span><span class="w"> </span><span class="n">fuel_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'B7'</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">reported_at</span><span class="w"> </span><span class="k">DESC</span><span class="w"> </span><span class="n">NULLS</span><span class="w"> </span><span class="k">LAST</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">1</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="p">)</span><span class="w"> </span><span class="n">fp</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">true</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">ST_DWithin</span><span class="p">(</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="n">s</span><span class="p">.</span><span class="n">geom</span><span class="p">::</span><span class="n">geography</span><span class="p">,</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">.</span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">.</span><span class="mi">42</span><span class="p">),</span><span class="w"> </span><span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span><span class="p">,</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="mi">5000</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="p">)</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">brand</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">reported_at</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span><span class="w"> </span><span class="n">s</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">JOIN</span><span class="w"> </span><span class="k">LATERAL</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="k">SELECT</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">currency</span><span class="p">,</span><span class="w"> </span><span class="n">GREATEST</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">reported_at</span><span class="p">,</span><span class="w"> </span><span class="n">ps</span><span class="p">.</span><span class="n">confirmed_at</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">reported_at</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">fuel_prices</span><span class="w"> </span><span class="n">p</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="k">LEFT</span><span class="w"> </span><span class="k">JOIN</span><span class="w"> </span><span class="n">price_sources</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">ps</span><span class="p">.</span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">country</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">ps</span><span class="p">.</span><span class="k">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="k">source</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="k">WHERE</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">station_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="k">AND</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">fuel_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'B7'</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="k">DESC</span><span class="w"> </span><span class="n">NULLS</span><span class="w"> </span><span class="k">LAST</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">  </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="p">)</span><span class="w"> </span><span class="n">fp</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">true</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">ST_DWithin</span><span class="p">(</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">  </span><span class="n">s</span><span class="p">.</span><span class="n">geom</span><span class="p">::</span><span class="n">geography</span><span class="p">,</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">  </span><span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">.</span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">.</span><span class="mi">42</span><span class="p">),</span><span class="w"> </span><span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span><span class="p">,</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">  </span><span class="mi">5000</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="p">)</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">price</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
 </code></pre></div>
 <p>This lists the ten cheapest diesel prices within 5 km of a point. <code>ST_MakePoint</code> takes longitude first. The lateral subquery can use the <code>fuel_prices</code> index, and the <code>ST_DWithin</code> on <code>geom::geography</code> can use the geography index.</p>
 <p>For the same data over HTTP, see the <a href="../api/">HTTP API</a>.</p>

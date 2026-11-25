@@ -2280,7 +2280,7 @@
 </tr>
 <tr>
 <td><code>GET /api/stats</code></td>
-<td>The database answers. It returns, per country, the station count, the price count and <code>lastUpdate</code>, the time of the newest price. It answers HTTP 500 when the query fails.</td>
+<td>The database answers. It returns, per country, the station count, the price count and <code>lastUpdate</code>, the time a source last confirmed a price there. It answers HTTP 500 when the query fails.</td>
 </tr>
 </tbody>
 </table>
@@ -2388,13 +2388,13 @@
 </tr>
 <tr>
 <td>5</td>
-<td><code>[miteco] Upserted &lt;n&gt; stations</code></td>
-<td>Stations were inserted or updated.</td>
+<td><code>[miteco] Stations: &lt;n&gt; listed, &lt;n&gt; inserted or changed</code></td>
+<td>The stations the source listed, and how many rows were actually written. An unchanged station is not written.</td>
 </tr>
 <tr>
 <td>6</td>
-<td><code>[miteco] Inserted &lt;n&gt; prices</code></td>
-<td>The source's prices for this country were replaced in one transaction.</td>
+<td><code>[miteco] Prices: &lt;n&gt; listed, &lt;n&gt; changed, &lt;n&gt; new, &lt;n&gt; removed</code></td>
+<td>The source's prices for this country were synced in one transaction. Only changed, new and removed rows are written.</td>
 </tr>
 <tr>
 <td>7</td>
@@ -2414,7 +2414,7 @@
 </tbody>
 </table>
 <h3 id="what-a-failed-run-leaves-behind">What a failed run leaves behind<a class="headerlink" href="#what-a-failed-run-leaves-behind" title="Permanent link">&para;</a></h3>
-<p>A failed run does not empty the map. When the fetch fails, the scraper stops before it touches the database. The source's last good prices stay, with the time they were scraped. The price replacement runs in one transaction, so readers never see a half-written country.</p>
+<p>A failed run does not empty the map. When the fetch fails, the scraper stops before it touches the database. The source's last good prices stay, with the time they were last confirmed. The price sync runs in one transaction, so readers never see a half-written country.</p>
 <p>The cost is stale data. The prices on the map keep the age of the last good run, and <code>lastUpdate</code> in <code>/api/stats</code> stops moving. A source that keeps failing leaves its country frozen until it works again or you turn it off.</p>
 <h2 id="common-scraper-failures">Common scraper failures<a class="headerlink" href="#common-scraper-failures" title="Permanent link">&para;</a></h2>
 <h3 id="the-source-answers-403">The source answers 403<a class="headerlink" href="#the-source-answers-403" title="Permanent link">&para;</a></h3>
@@ -2495,7 +2495,7 @@
 <li>a keyed source skipped its fetch because the key is missing, or</li>
 <li>every price fell outside the price band, so every fuel station was dropped.</li>
 </ul>
-<p>The guard only catches an empty result. A source that returns fewer stations than usual still replaces its prices, and fuel stations it no longer lists lose their prices and are cleaned up.</p>
+<p>The guard only catches an empty result. A source that returns fewer stations than usual still syncs its prices, and fuel stations it no longer lists lose their prices and are cleaned up.</p>
 <h3 id="price-band-rejections">Price band rejections<a class="headerlink" href="#price-band-rejections" title="Permanent link">&para;</a></h3>
 <p>Before it writes anything, the scraper drops prices that cannot be real per-litre prices. Placeholder values and wrong units are the usual cause. The log says how many:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>[miteco] Filtered out &lt;n&gt; invalid prices
@@ -2643,8 +2643,8 @@
 </code></pre></div>
 <p>Once the registry reaches 95% of its reported total, the Open Charge Map rows for Spain are removed. <a href="../../reference/environment-variables/#pumperly_reve_cutover_ratio"><code>PUMPERLY_REVE_CUTOVER_RATIO</code></a> sets that share, <code>0.95</code> by default. See <a href="../../data/ev-sources/">EV charging sources</a>.</p>
 <h3 id="the-german-charging-registry-keeps-old-rows">The German charging registry keeps old rows<a class="headerlink" href="#the-german-charging-registry-keeps-old-rows" title="Permanent link">&para;</a></h3>
-<p>The BNetzA scraper only prunes rows the register no longer lists, and only retires Open Charge Map's German rows, after a healthy run. A run that refreshed fewer stations than <code>PUMPERLY_BNETZA_MIN_STATIONS</code>, 10,000 by default, skips that cleanup:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>[bnetza] Only &lt;n&gt; station(s) refreshed by this run (floor 10000) — skipping cleanup
+<p>The BNetzA scraper only prunes rows the register no longer lists, and only retires Open Charge Map's German rows, after a healthy run. A run that listed fewer stations than <code>PUMPERLY_BNETZA_MIN_STATIONS</code>, 10,000 by default, skips that cleanup:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>[bnetza] Only &lt;n&gt; station(s) listed by this run (floor 10000) — skipping cleanup
 </code></pre></div>
 <p>This protects the map from a bad download. The next healthy run does the cleanup.</p>
 <h2 id="valhalla-or-photon-is-not-ready">Valhalla or Photon is not ready<a class="headerlink" href="#valhalla-or-photon-is-not-ready" title="Permanent link">&para;</a></h2>
@@ -2738,7 +2738,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Summary ===
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  [miteco] ES: OK in &lt;s&gt;s
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>    Stations upserted: &lt;n&gt;
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    Prices inserted:   &lt;n&gt;
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    Prices synced:     &lt;n&gt;
 </code></pre></div>
 <p>A source with errors shows <code>ERRORS</code> and lists them. The tool exits with status 0 when every source succeeded and 1 when any failed, so a script can check it.</p>
 <p>The tool's keys differ from the scheduler's in a few places:</p>

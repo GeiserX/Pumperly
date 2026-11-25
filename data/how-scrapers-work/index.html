@@ -1065,10 +1065,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-replace-this-sources-prices" class="md-nav__link">
+  <a href="#sync-prices" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Replace this source's prices
+        4. Sync this source's prices
       </span>
     </span>
   </a>
@@ -2024,10 +2024,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-replace-this-sources-prices" class="md-nav__link">
+  <a href="#sync-prices" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Replace this source's prices
+        4. Sync this source's prices
       </span>
     </span>
   </a>
@@ -2242,7 +2242,7 @@
 </tr>
 <tr>
 <td><code>RawFuelPrice</code></td>
-<td><code>stationExternalId</code> (matches a station's <code>externalId</code> in the same result), <code>fuelType</code> (one of the <a href="../../reference/fuel-types/">fuel type codes</a>), <code>price</code> (per litre, in local currency; per kWh for <code>EV</code>), <code>currency</code> (ISO 4217). Optional: <code>evFees</code> (<code>EV</code> only, written to <a href="../../reference/data-model/#ev_fees"><code>ev_fees</code></a>) and <code>reportedAt</code> (when the upstream last vouched for the price)</td>
+<td><code>stationExternalId</code> (matches a station's <code>externalId</code> in the same result), <code>fuelType</code> (one of the <a href="../../reference/fuel-types/">fuel type codes</a>), <code>price</code> (per litre, in local currency; per kWh for <code>EV</code>), <code>currency</code> (ISO 4217). Optional: <code>evFees</code> (<code>EV</code> only, written to <a href="../../reference/data-model/#ev_fees"><code>ev_fees</code></a>) and <code>reportedAt</code> (when the upstream last vouched for the price; set it on every row of a source or on none, see <a href="#sync-prices">step 4</a>)</td>
 </tr>
 </tbody>
 </table>
@@ -2272,7 +2272,7 @@
             R-&gt;&gt;DB: INSERT ... ON CONFLICT (external_id, country) DO UPDATE
         end
         R-&gt;&gt;DB: Look up station ids for this country
-        R-&gt;&gt;DB: One transaction: delete this source's prices, insert the new ones
+        R-&gt;&gt;DB: One transaction: write only the prices that changed, mark the source confirmed
         alt Every station batch succeeded
             R-&gt;&gt;DB: Delete this country's fuel stations that have no price at all
         else A station batch failed
@@ -2406,22 +2406,29 @@
 <p>If no station is left after filtering, the run stops here. It records the error <code>Aborted destructive replace: fetch returned 0 stations / N valid prices</code> and writes nothing.</p>
 <p>This guard exists because an upstream can answer <code>HTTP 200</code> with an empty or broken body that still parses. Without the guard, the next step would delete every price the source had and put nothing back, and the cleanup after it would then delete the country's stations.</p>
 <h3 id="3-upsert-stations">3. Upsert stations<a class="headerlink" href="#3-upsert-stations" title="Permanent link">&para;</a></h3>
-<p>The run writes stations in batches of 500. Each batch is one <code>INSERT ... ON CONFLICT (external_id, country) DO UPDATE</code> statement. A new station is inserted. A known station gets its name, brand, address, city, province, type and position overwritten, and <code>updated_at</code> set to now. The position is stored as a PostGIS point built with <code>ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)</code>.</p>
+<p>The run writes stations in batches of 500. Each batch is one <code>INSERT ... ON CONFLICT (external_id, country) DO UPDATE</code> statement, which first drops the stations whose stored row already matches. A new station is inserted. A known station whose name, brand, address, city, province, type, position or power changed gets those overwritten, and <code>updated_at</code> set to now. A known station that did not change is not written at all, so a run that finds nothing new costs reads, not writes. The position is stored as a PostGIS point built with <code>ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)</code>, and compared exactly.</p>
 <p>A batch that fails is recorded as an error (<code>Station batch 500-1000: ...</code>) and the run moves on to the next batch. The failed batch matters again in step 5.</p>
 <div class="admonition warning">
 <p class="admonition-title">Duplicate ids in one fetch break a whole batch</p>
 <p>PostgreSQL rejects an <code>INSERT ... ON CONFLICT DO UPDATE</code> that hits the same row twice in one statement. If <code>fetch()</code> returns two stations with the same <code>externalId</code> and they land in the same batch, every station in that batch (up to 500) is lost for the run, and the orphan cleanup is skipped. De-duplicate by id inside <code>fetch()</code>.</p>
 </div>
-<h3 id="4-replace-this-sources-prices">4. Replace this source's prices<a class="headerlink" href="#4-replace-this-sources-prices" title="Permanent link">&para;</a></h3>
-<p>The run looks up the database id of every station in the country, then maps each price to its station by <code>externalId</code>. A price whose station is not in the database is skipped.</p>
-<p>Then one transaction replaces the prices:</p>
+<h3 id="sync-prices">4. Sync this source's prices<a class="headerlink" href="#sync-prices" title="Permanent link">&para;</a></h3>
+<p>The run looks up the database id of every station in the country, then maps each price to its station by <code>externalId</code>. A price whose station is not in the database is skipped. When the source lists one fuel twice for one station, the run keeps one row, with its own fees and time: the one with the newest upstream time, else the first one the source lists. That is the row the map showed before the run kept only one. The run logs <code>Collapsed N duplicate price rows (kept the newest, then the first listed)</code>. The price plays no part, because the lowest row of a pair is often a placeholder such as 1.000 or a stale entry.</p>
+<p>Then one transaction brings the stored prices to the run's set, writing only what changed:</p>
 <ol>
-<li>Delete every price row whose <code>source</code> is this scraper's source and whose station is in this scraper's country.</li>
-<li>Insert the new prices in batches of 2,000. Each row gets <code>reported_at</code> set to the current time, unless the scraper passed its own <code>reportedAt</code>.</li>
+<li>Take a lock for this source and country, so a manual run and a scheduled run of the same source wait for each other.</li>
+<li>In one statement, compare the run's prices with the stored rows of this source in this country:<ul>
+<li>delete the rows whose station and fuel the source no longer lists, and any extra row of one station and fuel;</li>
+<li>update the rows whose price, currency or fees changed, or whose scraper <code>reportedAt</code> moved, setting <code>reported_at</code> to now (or to that <code>reportedAt</code>). A dated feed that refreshes every timestamp at once therefore rewrites all its rows, even when no price changed;</li>
+<li>insert the station and fuel pairs that are new.</li>
+</ul>
+</li>
+<li>Set <code>price_sources.confirmed_at</code> for this country and source to now. A source that passes its own <code>reportedAt</code> gets <code>null</code> there, and its rows keep the upstream time.</li>
 </ol>
-<p>Because it is a single transaction, readers see either the old set or the new set, never a mix. The transaction may run for up to 120 seconds. If it fails, it rolls back and the old prices stay.</p>
-<p>The delete is scoped by country as well as by source. That matters where one source name serves several countries. The Netherlands, Belgium and Luxembourg scrapers all use the source <code>anwb</code>, and none of them can delete the others' prices.</p>
-<p>The delete touches only this scraper's own source. This run never touches prices written under any other source name. That is what makes it safe for two sources to cover one country, as in Australia. It is also why a retired source needs its own cleanup, described in <a href="#handing-a-country-over-to-a-new-source">Handing a country over to a new source</a>.</p>
+<p>An unchanged price is not written. The app shows the later of <code>reported_at</code> and <code>confirmed_at</code>, so it still reads as confirmed by this run. A source should set <code>reportedAt</code> on every row or on none: in a run that mixes both, the undated rows are dated now, and so rewritten, on every run.</p>
+<p>Because it is a single transaction, readers see either the old set or the new set, never a mix. The transaction may run for up to 120 seconds. If it fails, it rolls back and the old prices and the old <code>confirmed_at</code> stay.</p>
+<p>The sync is scoped by country as well as by source. That matters where one source name serves several countries. The Netherlands, Belgium and Luxembourg scrapers all use the source <code>anwb</code>, and none of them can delete the others' prices.</p>
+<p>The sync touches only this scraper's own source. This run never touches prices written under any other source name. That is what makes it safe for two sources to cover one country, as in Australia. It is also why a retired source needs its own cleanup, described in <a href="#handing-a-country-over-to-a-new-source">Handing a country over to a new source</a>.</p>
 <h3 id="5-clean-up-orphaned-stations">5. Clean up orphaned stations<a class="headerlink" href="#5-clean-up-orphaned-stations" title="Permanent link">&para;</a></h3>
 <p>A fuel station with no price left from any source is an <strong>orphan</strong>. The last step deletes the country's orphans:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">stations</span>
@@ -2430,7 +2437,7 @@
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">fuel_prices</span><span class="w"> </span><span class="n">fp</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">fp</span><span class="p">.</span><span class="n">station_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stations</span><span class="p">.</span><span class="n">id</span><span class="p">)</span>
 </code></pre></div>
 <p>This is how a station disappears from the map when its source stops listing it. Step 4 removes its old prices, no new ones arrive, and step 5 removes the station.</p>
-<p>The cleanup runs only when every station batch in step 3 succeeded. If a batch failed, the stations in it may not have been written this run, and their prices were already replaced in step 4. Deleting orphans then could remove stations that are only missing because of the failure. So the run records <code>Skipped orphan cleanup: one or more station batches failed</code> and leaves them alone.</p>
+<p>The cleanup runs only when every station batch in step 3 succeeded. If a batch failed, the stations in it may not have been written this run, and their prices were already synced in step 4. Deleting orphans then could remove stations that are only missing because of the failure. So the run records <code>Skipped orphan cleanup: one or more station batches failed</code> and leaves them alone.</p>
 <div class="admonition note">
 <p class="admonition-title">EV chargers are never cleaned up by the base class</p>
 <p>The cleanup only deletes rows with <code>station_type = 'fuel'</code>. An EV charger that its source stops listing stays in the table. A scraper that needs to remove EV rows does it in its own <code>run()</code> override, as the Mapa REVE, BNetzA and OCPDB scrapers do. The German ones share <code>BaseScraper.sweepEvRows()</code>. See <a href="../ev-sources/">EV charging sources</a>.</p>
@@ -2451,11 +2458,11 @@
 </tr>
 <tr>
 <td><code>stationsUpserted</code></td>
-<td>Stations sent in batches that succeeded.</td>
+<td>Stations sent in batches that succeeded, written or unchanged.</td>
 </tr>
 <tr>
 <td><code>pricesUpserted</code></td>
-<td>Price rows inserted.</td>
+<td>Prices the run holds for this source after duplicates collapse, written or unchanged. The log line says how many rows were actually changed, new and removed.</td>
 </tr>
 <tr>
 <td><code>durationMs</code></td>
@@ -2489,7 +2496,7 @@
 </tr>
 <tr>
 <td>A station batch failed</td>
-<td>Other batches written. Prices replaced for stations the database knows. No orphan cleanup.</td>
+<td>Other batches written. Prices synced for stations the database knows. No orphan cleanup.</td>
 <td><code>Station batch ...</code> and <code>Skipped orphan cleanup: ...</code></td>
 </tr>
 <tr>
@@ -2499,7 +2506,7 @@
 </tr>
 </tbody>
 </table>
-<p>When a source is down or blocks Pumperly, its prices therefore stay at their last good values rather than vanishing. <code>reported_at</code> records when Pumperly wrote each price, so the statistics menu, which shows the newest <code>reported_at</code> per country, makes a stalled country visible. <a href="../coverage/">Coverage and status</a> lists the sources that are currently down.</p>
+<p>When a source is down or blocks Pumperly, its prices therefore stay at their last good values rather than vanishing. <code>price_sources.confirmed_at</code> moves only with a successful price write, so the statistics menu, which shows the newest price time per country, makes a stalled country visible. <a href="../coverage/">Coverage and status</a> lists the sources that are currently down.</p>
 <h2 id="the-scheduler">The scheduler<a class="headerlink" href="#the-scheduler" title="Permanent link">&para;</a></h2>
 <p>Scrapers run inside the web app. There is no separate worker. Next.js calls <code>register()</code> in <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation.ts"><code>src/instrumentation.ts</code></a> once when the server starts. In the Node.js runtime it loads <a href="https://github.com/GeiserX/Pumperly/blob/main/src/instrumentation-node.ts"><code>src/instrumentation-node.ts</code></a> and calls <code>registerNode()</code>, which builds the list of scrapers to run and starts a timer for each. Keeping the scheduler in its own module keeps the scrapers out of the Edge bundle.</p>
 <h3 id="scraper-keys">Scraper keys<a class="headerlink" href="#scraper-keys" title="Permanent link">&para;</a></h3>
@@ -2573,8 +2580,8 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>[scraper] SE: scraping every 12h
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>[bensinpriser] Fetching data for SE ...
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>[bensinpriser] Fetched 1350 stations, 3400 price rows (dropped 150 with no prices)
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>[bensinpriser] Upserted 1200 stations
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>[bensinpriser] Inserted 3400 prices
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>[bensinpriser] Stations: 1200 listed, 3 inserted or changed
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>[bensinpriser] Prices: 3400 listed, 212 changed, 4 new, 2 removed
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>[scraper] SE: OK — 1200 stations, 3400 prices in 4.2s
 </code></pre></div>
 <p>The numbers above are examples. A run with problems ends in <code>N error(s)</code> instead of <code>OK</code>. A fatal error, an aborted replace and a skipped cleanup are also logged under the source name. A failed station batch is not logged on its own: it shows only in that count and in the result's <code>errors</code>.</p>
@@ -2635,12 +2642,12 @@
 <tr>
 <td>BNetzA, <code>EV_DE_BNETZA</code></td>
 <td>German OpenChargeMap and OCPDB chargers, and its own chargers that left the register</td>
-<td>Error-free run and at least <code>PUMPERLY_BNETZA_MIN_STATIONS</code> rows (default 10,000) refreshed by this run</td>
+<td>Error-free run and at least <code>PUMPERLY_BNETZA_MIN_STATIONS</code> stations (default 10,000) listed by this run and present in the database</td>
 </tr>
 <tr>
 <td>OCPDB, <code>EV_DE_OCPDB</code></td>
 <td>German OpenChargeMap and BNetzA chargers, and its own chargers that left the database</td>
-<td>Error-free run and at least <code>PUMPERLY_OCPDB_MIN_STATIONS</code> rows (default 10,000) refreshed by this run</td>
+<td>Error-free run and at least <code>PUMPERLY_OCPDB_MIN_STATIONS</code> stations (default 10,000) listed by this run and present in the database</td>
 </tr>
 </tbody>
 </table>
