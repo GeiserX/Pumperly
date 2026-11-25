@@ -378,6 +378,7 @@ export class BNetzAScraper extends BaseScraper {
         ownPrefix: "bnetza-",
         retirePrefixes: otherGermanyEvPrefixes("bnetza-"),
         minStations: MIN_STATIONS,
+        runDurationMs: result.durationMs,
         label: "the register",
       });
     } catch (err) {

@@ -117,10 +117,10 @@ An error saying the relation does not exist means the database has no history. P
 
     ```bash
     docker compose -f docker/docker-compose.yml exec -T db \
-      psql -v ON_ERROR_STOP=1 -U pumperly -d pumperly < prisma/migrations/<migration-folder>/migration.sql
+      psql -1 -v ON_ERROR_STOP=1 -U pumperly -d pumperly < prisma/migrations/<migration-folder>/migration.sql
     ```
 
-    `ON_ERROR_STOP=1` makes `psql` stop at the first error instead of carrying on.
+    `ON_ERROR_STOP=1` makes `psql` stop at the first error instead of carrying on. `-1` runs the whole file as one transaction, as the migration runner does: a failed migration then leaves nothing half applied, and its `SET LOCAL` settings take effect.
 
     To start keeping a history instead, first confirm that `stations` has a `geom` column (`\d stations` in `psql`). Then, from a checkout of the new release tag with `DATABASE_URL` set as in the other tab, mark the first migration as already applied and let `migrate deploy` take over:
 
@@ -147,7 +147,7 @@ What to know when you upgrade:
 - **Two columns change meaning for your own SQL.** `stations.updated_at` is now when the station's data last changed, not when a run last saw it. `fuel_prices.reported_at` is when the price value was stored. When a source last confirmed its prices is in `price_sources.confirmed_at`. The app and the API show `GREATEST(reported_at, confirmed_at)`, so what they show does not change. [Data model](../reference/data-model.md#reading-the-newest-price) has the query.
 - **Price counts drop once.** A source that lists one fuel twice for a station now keeps one price, the lowest. The first run of each source removes the extra rows, so the per-country price counts in `/api/stats` drop, by about 40,000 rows on a full install, most of them in Italy. France and Norway no longer file E85 as E10. About 10 French stations sell only E85, so they leave the map.
 - **Going back works.** The older release runs on the new schema unchanged. Its map shows each price's last change time instead of its last confirmation until each source has run once.
-- **The bundled database compresses its WAL.** The compose file and the Helm chart now start PostGIS with `wal_compression=lz4` (Helm: `postgis.extraArgs`). It needs PostgreSQL 15 or later and costs a little CPU.
+- **The bundled database compresses its WAL.** The compose file and the Helm chart now start PostGIS with `wal_compression=lz4` (Helm: `postgis.extraArgs`). It needs PostgreSQL 15 or later built with lz4, and costs a little CPU. If you run your own image without lz4, PostgreSQL refuses to start: remove the setting from the compose file, or set `postgis.extraArgs: []`.
 
 !!! tip "Fewer disk writes on your own host"
     These settings cut writes further, but each depends on your storage and on the risk you accept, so Pumperly does not set them:

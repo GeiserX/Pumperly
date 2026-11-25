@@ -85,6 +85,9 @@ export function isPlausibleEvPrice(price: number, currency: string): boolean {
   return currency === "EUR" && price >= 0.1 && price <= 2;
 }
 
+// A sweep never deletes a row written within the run plus this margin.
+const SWEEP_MARGIN_SECONDS = 300;
+
 export interface EvSweepOptions {
   /** externalId prefix this scraper writes, e.g. "bnetza-". */
   ownPrefix: string;
@@ -92,6 +95,8 @@ export interface EvSweepOptions {
   retirePrefixes: string[];
   /** Fewer of this run's stations found in the database than this, and nothing is deleted. */
   minStations: number;
+  /** How long the run took. Rows written within it plus a margin are never swept (see sweepEvRows). */
+  runDurationMs: number;
   /** For the log lines, e.g. "the register". */
   label: string;
 }
@@ -185,8 +190,13 @@ export const PRICE_WORK_MEM_SQL = `SET LOCAL work_mem = '32MB'`;
  *
  * - del: keys the source no longer lists, and legacy duplicate rows of a key.
  * - upd: rows whose price, currency or fees changed, or whose upstream time
- *   moved. No indexed column changes, so these are HOT updates.
+ *   moved. No indexed column changes, so these can be HOT updates when the
+ *   heap page has room.
  * - ins: keys the table does not hold yet.
+ *
+ * Times are statement_timestamp(), not now(): this statement runs after the
+ * source lock, so a run that waited on another never writes an older time
+ * than the one it waited for.
  *
  * The three touch disjoint rows and share one snapshot. round(…, 3) matches
  * the stored numeric(10,3), so float noise never counts as a change. jsonb
@@ -195,7 +205,7 @@ export const PRICE_WORK_MEM_SQL = `SET LOCAL work_mem = '32MB'`;
 export const PRICE_SYNC_SQL = `
   WITH inc AS MATERIALIZED (
     SELECT r.station_id, r.fuel_type, round(r.price, 3)::numeric(10,3) AS price, r.currency, r.ev_fees,
-           COALESCE(r.reported_at, CASE WHEN $4::boolean THEN now() END) AS reported_at
+           COALESCE(r.reported_at, CASE WHEN $4::boolean THEN statement_timestamp() END) AS reported_at
     FROM jsonb_to_recordset($1::jsonb) AS r(
       station_id uuid, fuel_type varchar(20), price numeric, currency varchar(3), ev_fees jsonb, reported_at timestamptz)
   ),
@@ -216,7 +226,7 @@ export const PRICE_SYNC_SQL = `
   ),
   upd AS (
     UPDATE fuel_prices f
-    SET price = i.price, currency = i.currency, ev_fees = i.ev_fees, reported_at = COALESCE(i.reported_at, now())
+    SET price = i.price, currency = i.currency, ev_fees = i.ev_fees, reported_at = COALESCE(i.reported_at, statement_timestamp())
     FROM cur c
     JOIN inc i ON i.station_id = c.station_id AND i.fuel_type = c.fuel_type
     WHERE f.id = c.id AND c.rn = 1
@@ -226,7 +236,7 @@ export const PRICE_SYNC_SQL = `
   ),
   ins AS (
     INSERT INTO fuel_prices (station_id, fuel_type, price, currency, ev_fees, reported_at, source)
-    SELECT i.station_id, i.fuel_type, i.price, i.currency, i.ev_fees, COALESCE(i.reported_at, now()), $2
+    SELECT i.station_id, i.fuel_type, i.price, i.currency, i.ev_fees, COALESCE(i.reported_at, statement_timestamp()), $2
     FROM inc i
     WHERE NOT EXISTS (SELECT 1 FROM cur c WHERE c.station_id = i.station_id AND c.fuel_type = i.fuel_type)
     RETURNING 1
@@ -245,7 +255,7 @@ export const PRICE_SYNC_SQL = `
  */
 export const PRICE_SOURCE_MARK_SQL = `
   INSERT INTO price_sources (country, source, confirmed_at)
-  VALUES ($1, $2, CASE WHEN $3::boolean THEN NULL ELSE now() END)
+  VALUES ($1, $2, CASE WHEN $3::boolean THEN NULL ELSE statement_timestamp() END)
   ON CONFLICT (country, source) DO UPDATE SET confirmed_at = EXCLUDED.confirmed_at
 `;
 
@@ -659,6 +669,11 @@ export abstract class BaseScraper {
    * Both deletes are gated on a DB-counted floor: how many of this run's ids
    * the database holds. Yesterday's 74k rows must not vouch for a degraded
    * fetch that listed 42 of them.
+   *
+   * The own-row delete also skips rows written within this run plus a margin,
+   * measured back from the database clock. A run of the same source that
+   * overlaps this one (a CLI run beside the scheduler) may have just written
+   * a charger this run's older list does not hold.
    */
   protected async sweepEvRows(opts: EvSweepOptions): Promise<void> {
     const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -666,6 +681,7 @@ export abstract class BaseScraper {
     try {
       const own = `${opts.ownPrefix}%`;
       const listed = this.lastRunExternalIds;
+      const recentSeconds = opts.runDurationMs / 1000 + SWEEP_MARGIN_SECONDS;
 
       // unnest() of a bound array: Postgres knows its length, so both
       // statements plan as hash joins, never a nested loop over 74k ids.
@@ -694,11 +710,13 @@ export abstract class BaseScraper {
              AND station_type = 'ev_charger'
              AND external_id LIKE $2
              AND NOT EXISTS (SELECT 1 FROM unnest($3::text[]) AS r(x) WHERE r.x = stations.external_id)
+             AND updated_at < NOW() - make_interval(secs => $4::float8)
            RETURNING id
          ) SELECT count(*) FROM deleted`,
         this.country,
         own,
         listed,
+        recentSeconds,
       );
       const staleCount = Number(stale[0]?.count ?? 0);
       if (staleCount > 0) {

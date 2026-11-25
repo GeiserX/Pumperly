@@ -498,8 +498,9 @@ describe("BNetzAScraper cleanup", () => {
     // Stale sweep: scoped to this source, deletes the own rows the run did not list.
     expect(stub.queries[1].sql).toMatch(/DELETE FROM stations/);
     expect(stub.queries[1].sql).toMatch(/NOT EXISTS \(SELECT 1 FROM unnest\(\$3::text\[\]\)/);
-    expect(stub.queries[1].sql).not.toMatch(/updated_at/);
-    expect(stub.queries[1].params).toEqual(["DE", "bnetza-%", ["bnetza-1", "bnetza-2"]]);
+    // A row another run wrote within this run's window is never swept.
+    expect(stub.queries[1].sql).toMatch(/updated_at < NOW\(\) - make_interval\(secs => \$4::float8\)/);
+    expect(stub.queries[1].params).toEqual(["DE", "bnetza-%", ["bnetza-1", "bnetza-2"], 30 + 300]);
 
     // Retirement: the other German EV sources' chargers, which nothing else
     // removes once BNetzA is the chosen source.

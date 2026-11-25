@@ -257,7 +257,7 @@ Without the feed-health endpoint, no tariff can be vouched for, and a run withou
 
 Cleanup works as for [BNetzA](#bnetza-cleanup). After a run with no errors, if the run listed at least [`PUMPERLY_OCPDB_MIN_STATIONS`](../reference/environment-variables.md#pumperly_ocpdb_min_stations) stations, the scraper deletes:
 
-1. **OCPDB stations the run did not list.** These left the database, or their anchor's coordinates changed, which changes the id.
+1. **OCPDB stations the run did not list.** These left the database, or their anchor's coordinates changed, which changes the id. A station written during the run, or within 5 minutes before it, is kept: another run of the same scraper can have listed it.
 2. **Every German Open Charge Map and BNetzA charger.** Once OCPDB has landed, those rows are duplicates.
 
 | Variable | Default | Effect |
@@ -308,7 +308,7 @@ Each run logs how many rows it read, merged and skipped:
 
 The file arrives complete in one run, so Germany needs no backfill period. After a run with no errors, the scraper counts the BNetzA stations that run listed and the database holds. If the count reaches the safety floor, it makes two deletions:
 
-1. **BNetzA stations the run did not list.** These left the register, or their operator corrected the coordinates, which changes the id.
+1. **BNetzA stations the run did not list.** These left the register, or their operator corrected the coordinates, which changes the id. A station written during the run, or within 5 minutes before it, is kept: another run of the same scraper can have listed it.
 2. **Every German Open Charge Map and OCPDB charger.** Once BNetzA has landed, those rows are duplicates.
 
 | Variable | Default | Effect |

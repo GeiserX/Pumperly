@@ -790,8 +790,9 @@ describe("OcpdbScraper cleanup", () => {
     // Stale sweep: this source only, the own rows the run did not list.
     expect(queries[1].sql).toMatch(/DELETE FROM stations/);
     expect(queries[1].sql).toMatch(/NOT EXISTS \(SELECT 1 FROM unnest\(\$3::text\[\]\)/);
-    expect(queries[1].sql).not.toMatch(/updated_at/);
-    expect(queries[1].params).toEqual(["DE", "ocpdb-%", ["ocpdb-a", "ocpdb-b"]]);
+    // A row another run wrote within this run's window is never swept.
+    expect(queries[1].sql).toMatch(/updated_at < NOW\(\) - make_interval\(secs => \$4::float8\)/);
+    expect(queries[1].params).toEqual(["DE", "ocpdb-%", ["ocpdb-a", "ocpdb-b"], 60 + 300]);
 
     // Retirement: German chargers only, from the two sources OCPDB replaces.
     expect(queries[2].sql).toMatch(/DELETE FROM stations/);

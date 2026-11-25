@@ -37,11 +37,20 @@ class FakeScraper extends BaseScraper {
 /** An EV source with the same sweep BNetzA and OCPDB run. */
 class FakeEvScraper extends FakeScraper {
   floor = 1;
+  /** Runs between the pipeline and the sweep, to stand in for an overlapping run. */
+  beforeSweep: () => Promise<void> = async () => {};
 
   async run() {
     const result = await super.run();
     if (result.errors.length > 0) return result;
-    await this.sweepEvRows({ ownPrefix: "fev-", retirePrefixes: [], minStations: this.floor, label: "the fake feed" });
+    await this.beforeSweep();
+    await this.sweepEvRows({
+      ownPrefix: "fev-",
+      retirePrefixes: [],
+      minStations: this.floor,
+      runDurationMs: result.durationMs,
+      label: "the fake feed",
+    });
     return result;
   }
 }
@@ -75,6 +84,7 @@ d("BaseScraper write-on-change (integration)", () => {
   let container: StartedPostgreSqlContainer;
   let client: Client;
   let url: string;
+  let migrateLog = "";
 
   const migrate = (dir: string) =>
     execFileSync(process.execPath, [resolve(__dirname, "../../docker/migrate.mjs")], {
@@ -138,22 +148,7 @@ d("BaseScraper write-on-change (integration)", () => {
     client = new Client({ connectionString: url });
     await client.connect();
     process.env.DATABASE_URL = url;
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-  });
 
-  afterAll(async () => {
-    vi.restoreAllMocks();
-    await client?.end();
-    await container?.stop();
-  });
-
-  it("ships wal_compression=lz4 support in the database image", async () => {
-    const { rows } = await client.query<{ wal_compression: string }>("SHOW wal_compression");
-    expect(rows[0].wal_compression).toBe("lz4");
-  });
-
-  it("migrates a populated database from the previous release, and the migration runs twice cleanly", async () => {
     // The database as the previous release left it, with its data: delete-and-
     // insert rows, including two prices for one station and fuel.
     const older = mkdtempSync(join(tmpdir(), "pumperly-migrations-"));
@@ -173,7 +168,24 @@ d("BaseScraper write-on-change (integration)", () => {
       SELECT id, 'B7', p, 'EUR', now() - interval '1 hour', 'legacy' FROM stations, (VALUES (1.5), (1.7)) v(p)
       WHERE external_id = 'legacy-1'`);
 
-    expect(migrate(MIGRATIONS)).toContain(`applying ${NEW_MIGRATION}`);
+    migrateLog = migrate(MIGRATIONS);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterAll(async () => {
+    vi.restoreAllMocks();
+    await client?.end();
+    await container?.stop();
+  });
+
+  it("ships wal_compression=lz4 support in the database image", async () => {
+    const { rows } = await client.query<{ wal_compression: string }>("SHOW wal_compression");
+    expect(rows[0].wal_compression).toBe("lz4");
+  });
+
+  it("migrates a populated database from the previous release, and the migration runs twice cleanly", async () => {
+    expect(migrateLog).toContain(`applying ${NEW_MIGRATION}`);
     // Safe to run again over the result (a hand-built schema, a retried pod).
     await client.query("BEGIN");
     await client.query(readFileSync(join(MIGRATIONS, NEW_MIGRATION, "migration.sql"), "utf8"));
@@ -208,6 +220,9 @@ d("BaseScraper write-on-change (integration)", () => {
   });
 
   it("an unchanged run of 3,000 stations writes no row and almost no WAL; one changed price writes one row", async () => {
+    // Leave room in each heap page, so the positive control below can check
+    // that a price update is HOT (it needs space on the same page).
+    await client.query("ALTER TABLE fuel_prices SET (fillfactor = 90)");
     const scraper = new FakeScraper("bulk");
     const data = fuelSet(3000);
     scraper.stations = data.stations;
@@ -414,13 +429,13 @@ d("BaseScraper write-on-change (integration)", () => {
       { stationExternalId: "mx-1", fuelType: "E5", price: 1.6, currency: "EUR" },
     ];
     await scraper.run();
-    await new Promise((r) => setTimeout(r, 20));
-    const start = new Date();
+    await client.query(`UPDATE fuel_prices SET reported_at = '2026-01-01T00:00:00Z' WHERE source = 'mixed' AND fuel_type = 'E5'`);
     await scraper.run();
     expect(await marker("mixed")).toBeNull();
     const view = await shown("mixed");
     expect(view[0].shown.toISOString()).toBe(at.toISOString()); // B7, dated upstream
-    expect(view[1].shown.getTime()).toBeGreaterThanOrEqual(start.getTime() - 1000); // E5, this run
+    // E5, undated: rewritten with this run's time, as before this change.
+    expect(view[1].shown.getTime()).toBeGreaterThan(new Date("2026-01-02T00:00:00Z").getTime());
   });
 
   it("sweeps only the charger the run no longer lists, even when every updated_at is old", async () => {
@@ -453,6 +468,23 @@ d("BaseScraper write-on-change (integration)", () => {
     await scraper.run();
     const still = await client.query(`SELECT count(*)::int AS n FROM stations WHERE external_id LIKE 'fev-%'`);
     expect(still.rows[0].n).toBe(11);
+  });
+
+  it("never sweeps a charger an overlapping run of the same source just wrote", async () => {
+    const scraper = new FakeEvScraper("fake_ev_overlap");
+    scraper.stations = Array.from({ length: 3 }, (_, i) => station(`fev-ov-${i}`, 100 + i, { stationType: "ev_charger" }));
+    // Another run lists a charger this run's list does not hold, and writes it.
+    scraper.beforeSweep = async () => {
+      await client.query(
+        `INSERT INTO stations (external_id, country, name, address, city, station_type, geom, updated_at)
+         VALUES ('fev-ov-new', $1, 'New', 'Street', 'City', 'ev_charger', ST_SetSRID(ST_MakePoint(-3, 40), 4326), now())`,
+        [COUNTRY],
+      );
+    };
+    const result = await scraper.run();
+    expect(result.errors).toEqual([]);
+    const row = await client.query(`SELECT count(*)::int AS n FROM stations WHERE external_id = 'fev-ov-new'`);
+    expect(row.rows[0].n).toBe(1);
   });
 
   it("serialises two concurrent runs of one source, leaving one row per key", async () => {

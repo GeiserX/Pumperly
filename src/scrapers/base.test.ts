@@ -671,7 +671,7 @@ describe("price sync SQL", () => {
   });
 
   it("marks the source NULL when its rows carry an upstream time, now() otherwise", () => {
-    expect(PRICE_SOURCE_MARK_SQL).toContain("CASE WHEN $3::boolean THEN NULL ELSE now() END");
+    expect(PRICE_SOURCE_MARK_SQL).toContain("CASE WHEN $3::boolean THEN NULL ELSE statement_timestamp() END");
     expect(PRICE_SOURCE_MARK_SQL).toContain("ON CONFLICT (country, source) DO UPDATE SET confirmed_at = EXCLUDED.confirmed_at");
   });
 });

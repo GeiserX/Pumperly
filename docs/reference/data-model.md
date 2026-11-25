@@ -188,7 +188,7 @@ A run that finds no change writes only this row. Readers show `GREATEST(fuel_pri
 | `stations_geom_idx` | `stations USING GIST (geom)` | Bounding-box searches on the map (`ST_Within` an envelope), radius searches for the nearest stations, and the fast `&&` pre-filter of the route search. |
 | `stations_geom_geography_idx` | `stations USING GIST ((geom::geography))` | Distance in metres along a route (`ST_DWithin` on `geography`). |
 | `fuel_prices_pkey` | `fuel_prices (id)` | Primary key. |
-| `fuel_prices_station_id_fuel_type_idx` | `fuel_prices (station_id, fuel_type)` | Finding the price of one fuel at one station. It leaves out `reported_at`, so a price change updates the row in place without an index write (a HOT update). |
+| `fuel_prices_station_id_fuel_type_idx` | `fuel_prices (station_id, fuel_type)` | Finding the price of one fuel at one station. It leaves out `reported_at`, so no column a price update changes is indexed. Such an update can then stay on the same heap page with no index write (a HOT update), when that page has free space. PostgreSQL does not guarantee it. |
 | `price_sources_pkey` | `price_sources (country, source)` | Primary key, and the join from each price row to its source's `confirmed_at`. |
 | `fuel_prices_station_id_fkey` | `fuel_prices.station_id` references `stations.id` | `ON DELETE CASCADE` and `ON UPDATE CASCADE`: a deleted station takes its prices with it. |
 
@@ -237,6 +237,8 @@ Only scrapers write to these tables. The app's API routes only read them.
 | A source lists a new station | Row inserted | Its prices inserted |
 | A source lists a known station again, unchanged | Not written | Not written. `price_sources.confirmed_at` moves to the time of the run. |
 | A source lists a known station with new data | Changed columns overwritten, `updated_at` set to now | Changed prices updated in place, with a new `reported_at`. New fuels inserted. |
+| A dated source (OCPDB) gives a row a new upstream time, same price | Not written | Row updated with the new `reported_at` |
+| A run gives a time to some rows and none to others | Not written | Every undated row is updated with the time of the run, changed or not, as before write-on-change. `confirmed_at` stays `null`. |
 | A source stops listing a fuel station | Deleted at the end of the run, once no source has a price for it | Its rows from this source deleted |
 | A source stops listing one fuel at a station | Unchanged | That row deleted |
 | A source stops listing an EV charger | Kept, unless the EV scraper removes it itself | None |
