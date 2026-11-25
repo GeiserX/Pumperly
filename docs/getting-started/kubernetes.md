@@ -165,7 +165,7 @@ With `existingSecret`, your Secret must hold `DATABASE_URL`. With the bundled Po
 | `postgis.auth.password` | `""` (generated) | The password. |
 | `postgis.persistence.size` | `5Gi` | The database volume. |
 | `postgis.resources` | 250m CPU and 512 MiB requested, 4 GiB limit | The PostGIS container. |
-| `postgis.extraArgs` | `["-c", "wal_compression=lz4"]` | Arguments for the postgres server. lz4 compresses the WAL. An image without lz4 refuses to start with it: set `[]`. |
+| `postgis.extraArgs` | `["-c", "wal_compression=lz4"]` | Arguments for the postgres server. lz4 compresses the WAL. An image without lz4 refuses to start with it: set `[]`, but switch only after a clean shutdown, because lz4 WAL needs an lz4 build to replay after a crash. |
 | `externalDatabase.url` | `""` | A full connection string for your own PostGIS. |
 | `externalDatabase.host`, `port`, `user`, `password`, `database` | `""`, `5432` | The same, in parts, used when `url` is empty. |
 | `waitForDatabase.enabled` | `true` | The `wait-for-database` init container. |

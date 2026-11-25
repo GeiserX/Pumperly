@@ -630,6 +630,15 @@ describe("dedupePrices", () => {
     expect(dedupePrices([newer, p(1.7)])).toEqual([p(1.7)]);
     expect(dedupePrices([p(1.7), newer])).toEqual([p(1.7)]);
   });
+
+  it("ranks an undated row at the run's time, so a future-dated row still wins", () => {
+    const run = new Date("2026-11-25T08:00:00Z").getTime();
+    const ahead = p(1.7, { reportedAt: new Date("2026-11-25T09:00:00Z") });
+    const behind = p(1.6, { reportedAt: new Date("2026-11-25T07:00:00Z") });
+    expect(dedupePrices([p(1.5), ahead], run)).toEqual([ahead]);
+    expect(dedupePrices([ahead, p(1.5)], run)).toEqual([ahead]);
+    expect(dedupePrices([behind, p(1.5)], run)).toEqual([p(1.5)]);
+  });
 });
 
 describe("stationUpsertSql", () => {

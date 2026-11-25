@@ -262,7 +262,7 @@ Cleanup works as for [BNetzA](#bnetza-cleanup). After a run with no errors, if t
 
 | Variable | Default | Effect |
 |---|---|---|
-| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | Stations a run must refresh before either deletion runs. A value below 1 or not a number falls back to the default. |
+| `PUMPERLY_OCPDB_MIN_STATIONS` | `10000` | Stations a run must list, counting unchanged stations the database already holds, before either deletion runs. A value below 1 or not a number falls back to the default. |
 | `PUMPERLY_OCPDB_MAX_FEED_AGE_DAYS` | `3` | Days a feed may go without refreshing before its tariffs are ignored. A value of 0 or less, or not a number, falls back to the default. |
 
 ## BNetzA Ladesäulenregister, Germany {#bnetza}

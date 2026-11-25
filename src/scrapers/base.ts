@@ -278,8 +278,8 @@ interface ResolvedPrice {
  * often a placeholder (1.000), a stale entry or another product, so picking
  * it would change what the map shows.
  */
-export function dedupePrices<T extends ResolvedPrice>(prices: T[]): T[] {
-  const time = (p: ResolvedPrice) => p.reportedAt?.getTime() ?? Infinity;
+export function dedupePrices<T extends ResolvedPrice>(prices: T[], runTime: number = Date.now()): T[] {
+  const time = (p: ResolvedPrice) => p.reportedAt?.getTime() ?? runTime;
   const at = new Map<string, number>();
   const kept: T[] = [];
   for (const p of prices) {
@@ -518,12 +518,11 @@ export abstract class BaseScraper {
         ];
       });
 
-      const uniquePrices = dedupePrices(resolvedPrices);
+      const uniquePrices = dedupePrices(resolvedPrices, Date.now());
       const collapsed = resolvedPrices.length - uniquePrices.length;
       if (collapsed > 0) {
         console.log(`[${this.source}] Collapsed ${collapsed} duplicate price rows (kept the newest, then the first listed)`);
       }
-      pricesUpserted = uniquePrices.length;
 
       const dated = uniquePrices.some((p) => p.reportedAt != null);
       const mixed = dated && uniquePrices.some((p) => p.reportedAt == null);
@@ -547,6 +546,8 @@ export abstract class BaseScraper {
         },
         { timeout: 120_000 },
       );
+      // Only after the commit: a rolled-back sync reports 0, not the listed count.
+      pricesUpserted = uniquePrices.length;
 
       console.log(
         `[${this.source}] Prices: ${pricesUpserted} listed, ` +

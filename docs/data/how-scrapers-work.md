@@ -119,7 +119,7 @@ Then one transaction brings the stored prices to the run's set, writing only wha
 1. Take a lock for this source and country, so a manual run and a scheduled run of the same source wait for each other.
 2. In one statement, compare the run's prices with the stored rows of this source in this country:
     - delete the rows whose station and fuel the source no longer lists, and any extra row of one station and fuel;
-    - update the rows whose price, currency or fees changed, setting `reported_at` to now (or to the scraper's `reportedAt`);
+    - update the rows whose price, currency or fees changed, or whose scraper `reportedAt` moved, setting `reported_at` to now (or to that `reportedAt`). A dated feed that refreshes every timestamp at once therefore rewrites all its rows, even when no price changed;
     - insert the station and fuel pairs that are new.
 3. Set `price_sources.confirmed_at` for this country and source to now. A source that passes its own `reportedAt` gets `null` there, and its rows keep the upstream time.
 

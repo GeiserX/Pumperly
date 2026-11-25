@@ -298,7 +298,7 @@ The tool prints each scraper's log lines, then a summary per source:
 === Summary ===
   [miteco] ES: OK in <s>s
     Stations upserted: <n>
-    Prices inserted:   <n>
+    Prices synced:     <n>
 ```
 
 A source with errors shows `ERRORS` and lists them. The tool exits with status 0 when every source succeeded and 1 when any failed, so a script can check it.

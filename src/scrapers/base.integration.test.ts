@@ -142,7 +142,8 @@ d("BaseScraper write-on-change (integration)", () => {
     // The same server setting the compose file and the Helm chart ship; an
     // image without lz4 refuses to start with it.
     container = await new PostgreSqlContainer("postgis/postgis:17-3.4")
-      .withCommand(["postgres", "-c", "wal_compression=lz4"])
+      // autovacuum off keeps background WAL out of the walBytes samples.
+      .withCommand(["postgres", "-c", "wal_compression=lz4", "-c", "autovacuum=off"])
       .start();
     url = container.getConnectionUri();
     client = new Client({ connectionString: url });
