@@ -8,6 +8,16 @@ import type { FuelType } from "../types/station";
 // Returns the 10 nearest stations with prices for each coordinate + fuel type.
 // We use a ~15km grid covering Austria to ensure full coverage.
 // Fuel types: DIE (diesel), SUP (super 95), GAS (super E10)
+//
+// Only the 5 cheapest of the 10 carry a price; the rest come back with
+// `prices: []`. Closed stations are asked for too (`includeClosed=true`), and
+// they keep their price when they rank among the 5. With
+// `includeClosed=false`, every station that closed for the night dropped out
+// of the run: its prices were deleted, then the station itself, and in the
+// morning both came back under a new id. On 2026-11-25 that had re-created
+// 1,046 of Austria's 1,685 priced stations in a single day, with no price
+// behind any of it. A closed station's price is still the one it charges
+// when it opens.
 // ---------------------------------------------------------------------------
 
 const BASE_URL =
@@ -74,7 +84,7 @@ export class AustriaScraper extends BaseScraper {
 
     for (const [ecFuel, fuelType] of FUEL_TYPE_MAP) {
       for (const [lat, lon] of grid) {
-        const url = `${BASE_URL}?latitude=${lat}&longitude=${lon}&fuelType=${ecFuel}&includeClosed=false`;
+        const url = `${BASE_URL}?latitude=${lat}&longitude=${lon}&fuelType=${ecFuel}&includeClosed=true`;
         try {
           const res = await fetch(url, {
             headers: {

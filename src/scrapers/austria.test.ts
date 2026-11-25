@@ -136,4 +136,33 @@ describe("AustriaScraper", () => {
     expect(dieselPrices).toHaveLength(1);
     expect(dieselPrices[0].price).toBe(1.4);
   }, 30_000);
+
+  // E-Control leaves a closed station out when asked with includeClosed=false,
+  // and lists it (price included, when it ranks among the 5 cheapest) when
+  // asked with includeClosed=true. A station closing for the night must not
+  // change what a run sends, or the run deletes its prices and the station.
+  it("sends the same stations and prices when a station closes for the night", async () => {
+    const { AustriaScraper } = await import("./austria");
+    let night = false;
+    const stationAt = (id: number, open: boolean) => ({
+      id,
+      name: `Station ${id}`,
+      location: { address: "Hauptstrasse 1", city: "Linz", postalCode: "4020", latitude: 48.3 + id / 1000, longitude: 14.29 },
+      prices: [{ fuelType: "DIE", amount: 1.5 + id / 1000, label: "Diesel" }],
+      open,
+    });
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const includeClosed = new URL(String(input)).searchParams.get("includeClosed") === "true";
+      const all = [stationAt(1, true), stationAt(2, !night)];
+      return { ok: true, json: async () => all.filter((s) => s.open || includeClosed) } as Response;
+    });
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const day = await new AustriaScraper().fetch();
+    night = true;
+    const atNight = await new AustriaScraper().fetch();
+
+    expect(day.prices.map((p) => p.stationExternalId).sort()).toEqual(["1", "2"]);
+    expect(atNight).toEqual(day);
+  }, 30_000);
 });
