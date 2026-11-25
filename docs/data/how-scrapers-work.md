@@ -112,7 +112,7 @@ A batch that fails is recorded as an error (`Station batch 500-1000: ...`) and t
 
 ### 4. Sync this source's prices { #sync-prices }
 
-The run looks up the database id of every station in the country, then maps each price to its station by `externalId`. A price whose station is not in the database is skipped. When the source lists one fuel twice for one station, the run keeps the lowest price, with its own fees and time, and logs `Collapsed N duplicate price rows (kept the lowest)`.
+The run looks up the database id of every station in the country, then maps each price to its station by `externalId`. A price whose station is not in the database is skipped. When the source lists one fuel twice for one station, the run keeps one row, with its own fees and time: the one with the newest upstream time, else the first one the source lists. That is the row the map showed before the run kept only one. The run logs `Collapsed N duplicate price rows (kept the newest, then the first listed)`. The price plays no part, because the lowest row of a pair is often a placeholder such as 1.000 or a stale entry.
 
 Then one transaction brings the stored prices to the run's set, writing only what changed:
 

@@ -12,6 +12,7 @@ on:
       - 'tsconfig.json'
       - 'next.config.*'
       - 'vitest.config.*'
+      - 'vitest.integration.config.*'
       - 'docker/**'
       - '.github/workflows/ci.yml'
   # Every PR runs this workflow, so "CI Summary" can be a required check. The
@@ -57,6 +58,7 @@ jobs:
               - 'tsconfig.json'
               - 'next.config.*'
               - 'vitest.config.*'
+              - 'vitest.integration.config.*'
               - 'docker/**'
               - '.github/workflows/ci.yml'
 

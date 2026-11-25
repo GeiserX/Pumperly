@@ -268,24 +268,18 @@ interface ResolvedPrice {
   reportedAt?: Date;
 }
 
-/** Order-independent preference between two prices for one key: lower wins, then a fixed tie-break. */
-function preferPrice(a: ResolvedPrice, b: ResolvedPrice): boolean {
-  if (a.price !== b.price) return a.price < b.price;
-  const at = (p: ResolvedPrice) => p.reportedAt?.getTime() ?? -Infinity;
-  if (at(a) !== at(b)) return at(a) > at(b);
-  const rest = (p: ResolvedPrice) => `${p.currency}\u0000${JSON.stringify(p.evFees ?? null)}`;
-  return rest(a) < rest(b);
-}
-
 /**
- * Keep one price per station and fuel: the lowest, with its own fees and
- * time. Some sources list a fuel twice for one station (Italy's self-service
- * and served prices, several products filed under one fuel type), and the
- * table holds one row per key and source. Lowest is what a driver pays at
- * the self-service pump, and it does not depend on the order the upstream
- * lists rows in, so a run never flips between them.
+ * Keep one price per station and fuel: the row the readers showed when every
+ * listed row was stored. That is the newest upstream time (an undated row
+ * counts as the run's time), then the first one the source lists. Some
+ * sources list a fuel twice for one station (Italy's self-service and served
+ * prices, several products filed under one fuel type), and the table holds
+ * one row per key and source. Price plays no part: the lowest row of a key is
+ * often a placeholder (1.000), a stale entry or another product, so picking
+ * it would change what the map shows.
  */
 export function dedupePrices<T extends ResolvedPrice>(prices: T[]): T[] {
+  const time = (p: ResolvedPrice) => p.reportedAt?.getTime() ?? Infinity;
   const at = new Map<string, number>();
   const kept: T[] = [];
   for (const p of prices) {
@@ -294,7 +288,7 @@ export function dedupePrices<T extends ResolvedPrice>(prices: T[]): T[] {
     if (i === undefined) {
       at.set(key, kept.length);
       kept.push(p);
-    } else if (preferPrice(p, kept[i])) {
+    } else if (time(p) > time(kept[i])) {
       kept[i] = p;
     }
   }
@@ -527,7 +521,7 @@ export abstract class BaseScraper {
       const uniquePrices = dedupePrices(resolvedPrices);
       const collapsed = resolvedPrices.length - uniquePrices.length;
       if (collapsed > 0) {
-        console.log(`[${this.source}] Collapsed ${collapsed} duplicate price rows (kept the lowest)`);
+        console.log(`[${this.source}] Collapsed ${collapsed} duplicate price rows (kept the newest, then the first listed)`);
       }
       pricesUpserted = uniquePrices.length;
 

@@ -390,9 +390,9 @@ describe("BaseScraper.run()", () => {
     expect(markParams()).toEqual(["XX", "test_source", true]);
   });
 
-  it("keeps the lowest of two prices for one station and fuel", async () => {
+  it("keeps the first listed of two undated prices for one station and fuel", async () => {
     scraper.mockStations = [makeStation("s1")];
-    scraper.mockPrices = [makePrice("s1", "B7", 1.62), makePrice("s1", "B7", 1.49), makePrice("s1", "E5", 1.7)];
+    scraper.mockPrices = [makePrice("s1", "B7", 1.62), makePrice("s1", "B7", 1.0), makePrice("s1", "E5", 1.7)];
 
     mockQueryRawUnsafe.mockResolvedValueOnce([{ id: "uuid-1", external_id: "s1" }]);
     mockQueryRawUnsafe.mockResolvedValueOnce([{ count: BigInt(0) }]);
@@ -401,8 +401,10 @@ describe("BaseScraper.run()", () => {
 
     const result = await scraper.run();
     expect(result.pricesUpserted).toBe(2);
-    expect(syncPayload().map((r) => [r.fuel_type, r.price])).toEqual([["B7", 1.49], ["E5", 1.7]]);
-    expect(log.mock.calls.flat().join("\n")).toContain("Collapsed 1 duplicate price rows (kept the lowest)");
+    expect(syncPayload().map((r) => [r.fuel_type, r.price])).toEqual([["B7", 1.62], ["E5", 1.7]]);
+    expect(log.mock.calls.flat().join("\n")).toContain(
+      "Collapsed 1 duplicate price rows (kept the newest, then the first listed)",
+    );
   });
 
   it("drops fuel stations with no valid prices (keeps EV chargers)", async () => {
@@ -613,24 +615,20 @@ describe("dedupePrices", () => {
     ...(extra.reportedAt ? { reportedAt: extra.reportedAt } : {}),
   });
 
-  it("keeps the lowest price per station and fuel, with its own fees and time", () => {
-    const cheap = p(1.49, { evFees: { perMinute: 0.1 }, reportedAt: new Date("2026-11-01T00:00:00Z") });
-    const kept = dedupePrices([p(1.62), cheap, p(1.7, { fuelType: "E5" })]);
-    expect(kept).toEqual([cheap, p(1.7, { fuelType: "E5" })]);
+  it("keeps the first listed price per station and fuel, never the lowest", () => {
+    const first = p(1.62, { evFees: { perMinute: 0.1 } });
+    const kept = dedupePrices([first, p(1.0), p(1.49), p(1.7, { fuelType: "E5" })]);
+    expect(kept).toEqual([first, p(1.7, { fuelType: "E5" })]);
   });
 
-  it("picks the same row whatever order the upstream lists them in", () => {
-    const rows = [
-      p(1.5, { reportedAt: new Date("2026-11-01T00:00:00Z") }),
-      p(1.5, { reportedAt: new Date("2026-11-02T00:00:00Z") }),
-      p(1.5, { evFees: { perMinute: 0.2 } }),
-      p(1.5),
-      p(1.6),
-    ];
-    const forward = dedupePrices(rows);
-    const backward = dedupePrices([...rows].reverse());
-    expect(forward).toHaveLength(1);
-    expect(backward).toEqual(forward);
+  it("keeps the newest upstream time, and an undated row counts as the run's time", () => {
+    const older = p(1.5, { reportedAt: new Date("2026-11-01T00:00:00Z") });
+    const newer = p(1.9, { reportedAt: new Date("2026-11-02T00:00:00Z") });
+    expect(dedupePrices([older, newer])).toEqual([newer]);
+    expect(dedupePrices([newer, older])).toEqual([newer]);
+    // As before this change: an undated row was stored with NOW(), newer than any upstream time.
+    expect(dedupePrices([newer, p(1.7)])).toEqual([p(1.7)]);
+    expect(dedupePrices([p(1.7), newer])).toEqual([p(1.7)]);
   });
 });
 

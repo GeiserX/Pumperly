@@ -165,7 +165,7 @@ The JSON object holds the parts of a charging tariff that a per-kWh price cannot
 | `perMinute` | A blocking fee per minute. |
 | `afterMin` | Minutes into the session at which `perMinute` starts. `0` means from the start. |
 
-A run keeps one row per station, fuel and source. When a source lists one fuel twice for a station (Italy's self-service and served prices, for example), the run keeps the lowest price. The database does not enforce it, so rows from two sources, or from a source that no longer runs, can sit side by side. Readers take the newest one by `GREATEST(reported_at, confirmed_at)`. The example query [below](#reading-the-newest-price) shows the pattern.
+A run keeps one row per station, fuel and source. When a source lists one fuel twice for a station (Italy's self-service and served prices, for example), the run keeps the row with the newest upstream time, else the first one listed. That is the row readers showed when every listed row was stored. The database does not enforce it, so rows from two sources, or from a source that no longer runs, can sit side by side. Readers take the newest one by `GREATEST(reported_at, confirmed_at)`. The example query [below](#reading-the-newest-price) shows the pattern.
 
 ## `price_sources` {#price_sources}
 

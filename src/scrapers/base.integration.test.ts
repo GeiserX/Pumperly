@@ -226,8 +226,9 @@ d("BaseScraper write-on-change (integration)", () => {
     const scraper = new FakeScraper("bulk");
     const data = fuelSet(3000);
     scraper.stations = data.stations;
-    // A duplicate key the upstream lists twice: the lower price is kept.
-    scraper.prices = [...data.prices, { stationExternalId: "st-0", fuelType: "B7", price: 1.9, currency: "EUR" }];
+    // A duplicate key the upstream lists twice, the second time with a
+    // placeholder price: the first listed is kept, as readers showed it.
+    scraper.prices = [...data.prices, { stationExternalId: "st-0", fuelType: "B7", price: 1.0, currency: "EUR" }];
 
     const first = await scraper.run();
     expect(first.errors).toEqual([]);
@@ -305,6 +306,53 @@ d("BaseScraper write-on-change (integration)", () => {
       await client.query("ROLLBACK");
     });
     expect(old.bytes).toBeGreaterThan(20 * repeat.bytes);
+  });
+
+  it("rewrites a price whose fees or currency alone changed, and only that row", async () => {
+    const scraper = new FakeScraper("fees");
+    const at = new Date("2026-11-20T03:00:00Z");
+    scraper.stations = [
+      station("fe-1", 1, { stationType: "ev_charger" }),
+      station("fe-2", 2, { stationType: "ev_charger" }),
+      station("fe-3", 3),
+      station("fe-4", 4),
+    ];
+    scraper.prices = [
+      { stationExternalId: "fe-1", fuelType: "EV", price: 0.59, currency: "EUR", reportedAt: at, evFees: { perMinute: 0.1 } },
+      { stationExternalId: "fe-2", fuelType: "EV", price: 0.59, currency: "EUR", reportedAt: at, evFees: { perMinute: 0.1 } },
+      { stationExternalId: "fe-3", fuelType: "B7", price: 1.5, currency: "EUR", reportedAt: at },
+      { stationExternalId: "fe-4", fuelType: "B7", price: 1.5, currency: "EUR", reportedAt: at },
+    ];
+    await scraper.run();
+    const ids = await client.query<{ key: string; id: string }>(
+      `SELECT s.external_id AS key, fp.id::text FROM fuel_prices fp JOIN stations s ON s.id = fp.station_id
+       WHERE fp.source = 'fees'`,
+    );
+    const id = new Map(ids.rows.map((r) => [r.key, r.id]));
+
+    // Same price and time; only fe-1's fee and fe-3's currency differ.
+    scraper.prices = scraper.prices.map((p) =>
+      p.stationExternalId === "fe-1"
+        ? { ...p, evFees: { perMinute: 0.2 } }
+        : p.stationExternalId === "fe-3"
+          ? { ...p, currency: "CHF" }
+          : p,
+    );
+    const before = await rowVersions("fuel_prices");
+    await scraper.run();
+    const diff = changedRows(before, await rowVersions("fuel_prices"));
+    expect(diff.removed).toEqual([]);
+    expect(diff.written.sort()).toEqual([id.get("fe-1"), id.get("fe-3")].sort());
+    const stored = await client.query<{ key: string; currency: string; fees: unknown }>(
+      `SELECT s.external_id AS key, fp.currency, fp.ev_fees AS fees FROM fuel_prices fp
+       JOIN stations s ON s.id = fp.station_id WHERE fp.source = 'fees' ORDER BY 1`,
+    );
+    expect(stored.rows).toEqual([
+      { key: "fe-1", currency: "EUR", fees: { perMinute: 0.2 } },
+      { key: "fe-2", currency: "EUR", fees: { perMinute: 0.1 } },
+      { key: "fe-3", currency: "CHF", fees: null },
+      { key: "fe-4", currency: "EUR", fees: null },
+    ]);
   });
 
   it("deletes a key the source no longer lists and inserts a new one, touching nothing else", async () => {
