@@ -404,6 +404,44 @@ d("BaseScraper write-on-change (integration)", () => {
     expect(left.rows.map((r) => r.external_id)).toEqual(["or-st-0", "or-st-1", "or-st-2", "or-st-3"]);
   });
 
+  it("keeps a listed station with no price when the source asks for it, and still removes an unlisted one", async () => {
+    class KeepScraper extends FakeScraper {
+      protected readonly keepListedStations = true;
+    }
+    const scraper = new KeepScraper("keep");
+    const data = fuelSet(4);
+    scraper.stations = data.stations.map((s) => ({ ...s, externalId: `kp-${s.externalId}` }));
+    scraper.prices = data.prices.map((p) => ({ ...p, stationExternalId: `kp-${p.stationExternalId}` }));
+    await scraper.run();
+    const before = await client.query<{ external_id: string; id: string }>(
+      `SELECT external_id, id FROM stations WHERE external_id = 'kp-st-1'`,
+    );
+
+    // kp-st-1 is still listed but lost its prices; kp-st-3 is gone from the list.
+    scraper.stations = scraper.stations.filter((s) => s.externalId !== "kp-st-3");
+    scraper.prices = scraper.prices.filter(
+      (p) => p.stationExternalId !== "kp-st-1" && p.stationExternalId !== "kp-st-3",
+    );
+    await scraper.run();
+
+    const left = await client.query<{ external_id: string; id: string }>(
+      `SELECT external_id, id FROM stations WHERE external_id LIKE 'kp-%' ORDER BY 1`,
+    );
+    expect(left.rows.map((r) => r.external_id)).toEqual(["kp-st-0", "kp-st-1", "kp-st-2"]);
+    // Same row, not a re-created one.
+    expect(left.rows[1].id).toBe(before.rows[0].id);
+
+    // Without the opt-in the same run deletes the priceless station.
+    const plain = new FakeScraper("keep");
+    plain.stations = scraper.stations;
+    plain.prices = scraper.prices;
+    await plain.run();
+    const after = await client.query<{ external_id: string }>(
+      `SELECT external_id FROM stations WHERE external_id LIKE 'kp-%' ORDER BY 1`,
+    );
+    expect(after.rows.map((r) => r.external_id)).toEqual(["kp-st-0", "kp-st-2"]);
+  });
+
   it("rewrites a station only when its content or position changed", async () => {
     const scraper = new FakeScraper("moves");
     const data = fuelSet(4);

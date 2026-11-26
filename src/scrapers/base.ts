@@ -368,6 +368,18 @@ export abstract class BaseScraper {
   protected lastRunExternalIds: string[] = [];
 
   /**
+   * Keep a fuel station the source still lists even when it has no price.
+   * Off by default: the orphan cleanup deletes every fuel station with no
+   * price. A source that prices only part of what it lists (E-Control prices
+   * the 5 cheapest of each query) turns that into churn: the station is
+   * deleted, then re-created under a new id when it gets a price again. A
+   * station the database does not hold yet is still added only with a price
+   * (step 0b). A station with no price never reaches the map, whose fuel
+   * queries need a price for the chosen fuel.
+   */
+  protected readonly keepListedStations: boolean = false;
+
+  /**
    * Run the full scrape-and-persist pipeline.
    *
    * 1. Fetch upstream data via the country-specific `fetch()`.
@@ -566,6 +578,7 @@ export abstract class BaseScraper {
         errors.push(msg);
         console.error(`[${this.source}] ${msg}`);
       } else {
+        const keep = this.keepListedStations;
         const cleaned: Array<{ count: bigint }> = await prisma.$queryRawUnsafe(
           `WITH deleted AS (
              DELETE FROM stations
@@ -573,10 +586,13 @@ export abstract class BaseScraper {
                AND station_type = 'fuel'
                AND NOT EXISTS (
                  SELECT 1 FROM fuel_prices fp WHERE fp.station_id = stations.id
-               )
+               )${keep ? `
+               AND NOT (external_id = ANY($2::text[]))` : ""}
              RETURNING id
            ) SELECT count(*) FROM deleted`,
-          this.country,
+          // Every station the source listed, priced or not: step 0b left the
+          // unpriced ones out of the upsert, so lastRunExternalIds lacks them.
+          ...(keep ? [this.country, stations.map((s) => s.externalId)] : [this.country]),
         );
         const cleanedCount = Number(cleaned[0]?.count ?? 0);
         if (cleanedCount > 0) {
