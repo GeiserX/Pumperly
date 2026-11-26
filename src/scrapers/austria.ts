@@ -17,6 +17,11 @@ import type { FuelType } from "../types/station";
 // morning both came back under a new id. On 2026-11-25 the runs at 05:00 and
 // 07:00 local time alone re-created 648 stations this way. A closed station's
 // price is still the one it charges when it opens.
+//
+// A station that drops out of the 5 cheapest for every fuel loses its prices
+// but stays listed, so it is kept (`keepListedStations`). Without that, the
+// daytime runs deleted 119 to 142 such stations each and re-created them
+// under a new id once they ranked again.
 // ---------------------------------------------------------------------------
 
 const BASE_URL =
@@ -70,6 +75,7 @@ function buildGrid(): Array<[number, number]> {
 export class AustriaScraper extends BaseScraper {
   readonly country = "AT";
   readonly source = "econtrol";
+  protected readonly keepListedStations = true;
 
   async fetch(): Promise<{ stations: RawStation[]; prices: RawFuelPrice[] }> {
     const stationMap = new Map<number, RawStation>();
